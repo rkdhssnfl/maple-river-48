@@ -166,11 +166,9 @@
   <section class="card">
     <h2>미리보기 <span class="count">파랑=보강, 초록=사례회의</span></h2>
     <div class="preview"><table class="pv" id="pv"></table></div>
-    <button class="btn primary" id="sendMail" type="button" style="margin-top:12px">엑셀 파일 만들어 메일로 보내기</button>
-    <div id="sendHint" class="foot" style="margin-top:6px"></div>
-    <button class="btn" id="makeXlsx" type="button" style="width:100%;margin-top:8px;background:#e3edf8;color:#1d3a5c;border-color:#c5d8ee;font-weight:700">엑셀 파일 저장만 하기</button>
+    <button class="btn primary" id="makeXlsx" type="button" style="margin-top:12px">엑셀 파일 저장하기</button>
     <div id="msg" hidden></div>
-    <p class="foot">파일 이름: <span id="fname"></span><br>입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
+    <p class="foot">파일 이름: <span id="fname"></span><br>저장된 엑셀 파일을 담당 선생님께 메일로 보내 주세요. 입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
     <button class="btn ghost" id="resetAll" type="button">입력 내용 모두 지우기</button>
   </section>
 </div>
@@ -541,88 +539,6 @@
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
   const summary = () => '(코칭 ' + coachCount() + '회, 사례회의 ' + state.meet.length + '회)';
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.userAgentData && navigator.userAgentData.mobile) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
-  // 파일 공유창은 휴대폰에서만 시도 (PC 브라우저는 지원이 불안정해 저장 + 메일 프로그램 열기로 처리)
-  const canShareFiles = () => isMobile && !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.xlsx', { type: XLSX_MIME })] }));
-  $('sendHint').textContent = canShareFiles()
-    ? ('엑셀 파일이 첨부된 채로 열립니다. 공유창에서 메일 앱을 골라 담당 선생님께 보내 주세요.' + (TEACHER_EMAIL ? ' (받는 사람: ' + TEACHER_EMAIL + ')' : ''))
-    : 'PC에서는 엑셀 파일이 먼저 저장(다운로드 폴더)되고 메일 프로그램이 열립니다. 메일 프로그램이 없으면 네이버·다음 메일 등에서 새 메일을 쓰고 저장된 파일을 첨부해 보내 주세요.';
-
-  // 공유창은 버튼을 누른 직후에만 열 수 있으므로, 파일을 미리 만들어 두었다가 즉시 공유한다
-  let cachedFile = null, cachedKey = '', preparing = null;
-  const stateKey = () => JSON.stringify([state.name, state.year, state.month, state.students.map(s => [s.group, s.dates, s.makeup]), state.meet]);
-  async function prepareFile() {
-    if (!window.ExcelJS || validate().length) { cachedFile = null; cachedKey = ''; return null; }
-    const key = stateKey();
-    if (cachedFile && cachedKey === key) return cachedFile;
-    if (preparing) return preparing;
-    preparing = (async () => {
-      try { const buf = await buildWorkbook(); cachedFile = new File([buf], fileName(), { type: XLSX_MIME }); cachedKey = key; return cachedFile; }
-      catch (e) { cachedFile = null; cachedKey = ''; return null; }
-      finally { preparing = null; }
-    })();
-    return preparing;
-  }
-  let prepTimer = null;
-  const origSave = save;
-  save = function () { origSave(); clearTimeout(prepTimer); prepTimer = setTimeout(prepareFile, 700); };
-  setTimeout(prepareFile, 1500);
-
-  function shareFile(file) {
-    const subject = file.name.replace(/\.xlsx$/, '');
-    return navigator.share({ files: [file], title: subject, text: '[코칭일자] ' + subject + ' ' + summary() + (TEACHER_EMAIL ? '\n받는 사람: ' + TEACHER_EMAIL : '') });
-  }
-
-  // 만들어 보내기: 휴대폰 공유 기능으로 파일을 첨부한 채 메일 앱 열기
-  async function sendVia(target, btn) {
-    const errs = validate();
-    if (errs.length) { showMsg('아직 입력이 끝나지 않았습니다.', true, errs); return; }
-    const label = btn.textContent;
-    try {
-      if (canShareFiles()) {
-        let file = (cachedFile && cachedKey === stateKey()) ? cachedFile : null;
-        if (!file) {
-          // 아직 준비 전이면 만들고 나서 한 번 더 누르도록 안내 (공유창은 누른 직후에만 열림)
-          btn.disabled = true; btn.textContent = '파일 준비 중...';
-          await prepareFile();
-          btn.disabled = false; btn.textContent = label;
-          showMsg('파일이 준비됐습니다. [' + label + ']를 한 번 더 눌러 주세요.');
-          return;
-        }
-        try {
-          await shareFile(file);
-          showMsg('공유창에서 메일 앱을 골라 담당 선생님께 보내 주세요. ' + summary());
-        } catch (e) {
-          if (e && e.name === 'AbortError') showMsg('보내기를 취소했습니다. 다시 누르면 보낼 수 있습니다.', true);
-          else if (e && e.name === 'NotAllowedError') {
-            downloadFile(file);
-            const subject = file.name.replace(/\.xlsx$/, '');
-            { showMsg('이 브라우저에서 공유창을 열 수 없어 파일을 저장했습니다: ' + file.name + '  →  메일 앱이 열리면 저장된 파일을 첨부해 보내 주세요.', true);
-              setTimeout(() => { window.location.href = 'mailto:' + encodeURIComponent(TEACHER_EMAIL) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('코칭일자 파일을 첨부합니다. ' + summary()); }, 600); }
-          }
-          else throw e;
-        }
-      } else {
-        btn.disabled = true; btn.textContent = '파일 만드는 중...';
-        const file = await makeFile(); if (!file) return;
-        const subject = file.name.replace(/\.xlsx$/, '');
-        downloadFile(file);
-        {
-          const mail = 'mailto:' + encodeURIComponent(TEACHER_EMAIL) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('코칭일자 파일을 첨부합니다. ' + summary());
-          showMsg('엑셀 파일을 저장했습니다: ' + file.name + '  →  메일 프로그램이 열리면 저장된 파일을 첨부해 보내 주세요. ' + summary());
-          setTimeout(() => { window.location.href = mail; }, 600);
-        }
-      }
-    } catch (e) {
-      showMsg('보내지 못했습니다. "엑셀 파일 저장만 하기"로 저장한 뒤 직접 보내 주세요. (오류: ' + ((e && e.message) || '알 수 없음') + ')', true);
-    } finally {
-      btn.disabled = false; btn.textContent = label;
-    }
-  }
-  $('sendMail').addEventListener('click', () => sendVia('mail', $('sendMail')));
-
-
-  // 저장만 하기
   $('makeXlsx').addEventListener('click', async () => {
     const btn = $('makeXlsx'); btn.disabled = true; btn.textContent = '파일 만드는 중...';
     try {
@@ -632,7 +548,7 @@
     } catch (e) {
       showMsg('저장하지 못했습니다. 다시 시도해 주세요. (오류: ' + ((e && e.message) || '알 수 없음') + ')', true);
     } finally {
-      btn.disabled = false; btn.textContent = '엑셀 파일 저장만 하기';
+      btn.disabled = false; btn.textContent = '엑셀 파일 저장하기';
     }
   });
 

@@ -487,10 +487,7 @@
     for (let c = 1; c <= K; c++) {
       const cell = ws.getCell(4, c);
       cell.font = font({ size: c === 3 ? 10 : 11, bold: true }); cell.fill = headFill; cell.alignment = center;
-      const bd = { top: thin, bottom: dbl };
-      if (c === 1 || c === 3 || c === K) bd.left = thin;
-      if (c === 2 || c === K) bd.right = thin;
-      cell.border = bd;
+      cell.border = { top: thin, bottom: dbl, left: thin, right: thin };
     }
     ws.mergeCells(4, 3, 4, 2 + DATE_COLS);
     ws.getRow(4).height = 17.25;
@@ -503,7 +500,7 @@
       for (let c = 1; c <= K; c++) {
         const cell = ws.getCell(r, c);
         cell.font = font({ size: (c >= 3 && c < K) ? 10 : 11 }); cell.alignment = center;
-        cell.border = { left: thin, right: thin, bottom: r === bot ? dbl : thin };
+        cell.border = { left: thin, right: thin, top: thin, bottom: r === bot ? dbl : thin };
         if (c >= 3 && c < K) cell.numFmt = DATE_FMT;
       }
       ws.getRow(r).height = 17.25;

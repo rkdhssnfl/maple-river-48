@@ -92,7 +92,8 @@
   .stats { display: flex; gap: 18px; flex-wrap: wrap; margin: 8px 0; font-variant-numeric: tabular-nums; }
   .stats div .k { font-size: 11px; color: var(--muted); } .stats div .v { font-size: 20px; font-weight: 700; }
   .stats .ok .v { color: var(--ok); } .stats .warn .v { color: var(--warn); }
-  .tbl { overflow-x: hidden; }
+  .tbl { overflow-x: hidden; width: 100%; }
+  #tbl { width: 100% !important; min-width: 100%; table-layout: fixed; }
   table { border-collapse: collapse; font-size: 12px; width: 100%; table-layout: fixed; font-variant-numeric: tabular-nums; }
   th, td { border: 1px solid var(--line); padding: 4px 3px; text-align: center; overflow-wrap: anywhere; vertical-align: middle; }
   @media (max-width: 480px) { table { font-size: 11px; } th, td { padding: 3px 2px; } }

@@ -143,7 +143,10 @@
   const files = new Map(); // name -> parsed {name, fileName, rows:[{group, dates:[Date]}], meet:[Date]}
   const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const md = d => (d.getMonth() + 1) + '/' + d.getDate();
-  const norm = s => String(s || '').replace(/\s+/g, '').trim();
+  // 비교용 정규화: 공백 제거, 전각 괄호·쉼표를 반각으로, 앞뒤 특수문자 정리
+  const norm = s => String(s || '').replace(/\s+/g, '').replace(/[（]/g, '(').replace(/[）]/g, ')').replace(/[，、]/g, ',').replace(/[\u200b\ufeff]/g, '').trim();
+  const schoolOf = k => k.split('(')[0];
+  const studentOf = k => (k.match(/\(([^)]*)\)/) || ['', ''])[1];
 
   /* ---------- 교통비 양식 파일 읽기 (명단) ---------- */
   async function parseTemplate(file) {
@@ -264,9 +267,11 @@
       if (sub) {
         sub.rows.forEach(sr => {
           const key = norm(sr.group);
-          let row = rows.find(r => norm(r.group) === key && !r.filled);
-          if (!row) { const school = key.split('(')[0]; row = rows.find(r => !r.filled && norm(r.group).split('(')[0] === school && norm(r.group).includes(key.replace(/^[^(]*\(|\)$/g, ''))); }
-          if (!row) { row = { group: sr.group, weekday: '', dates: [], v: '', w: '', extra: true }; rows.push(row); notes.push('양식에 없는 학교(학생): ' + sr.group); }
+          // 1) 완전 일치 → 2) 학교 같고 학생 이름 포함 → 3) 학교만 같음 → 4) 비어 있는 행에 추가
+          let row = rows.find(r => !r.filled && norm(r.group) === key);
+          if (!row) { const sc = schoolOf(key), st = studentOf(key); row = rows.find(r => !r.filled && schoolOf(norm(r.group)) === sc && st && (norm(r.group).includes(st) || studentOf(norm(r.group)).includes(st) || st.includes(studentOf(norm(r.group))))); }
+          if (!row) { const sc = schoolOf(key); row = rows.find(r => !r.filled && schoolOf(norm(r.group)) === sc); if (row && norm(row.group) !== key) notes.push('학교만 맞춤: ' + sr.group + ' → ' + row.group); }
+          if (!row) { row = { group: sr.group, weekday: '', dates: [], v: '', w: '', extra: true }; rows.push(row); notes.push('양식에 없는 학교(학생): ' + sr.group + ' (양식: ' + c.groups.map(g => g.g).join(', ') + ')'); }
           row.filled = true;
           row.dates = sr.dates.slice().sort((a, b) => a - b);
         });

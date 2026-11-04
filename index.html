@@ -166,9 +166,11 @@
   <section class="card">
     <h2>미리보기 <span class="count">파랑=보강, 초록=사례회의</span></h2>
     <div class="preview"><table class="pv" id="pv"></table></div>
-    <button class="btn primary" id="makeXlsx" type="button" style="margin-top:12px">엑셀 파일 만들기 (저장)</button>
+    <button class="btn primary" id="sendXlsx" type="button" style="margin-top:12px">엑셀 파일 만들어 보내기</button>
+    <div id="sendHint" class="foot" style="margin-top:6px"></div>
+    <button class="btn" id="makeXlsx" type="button" style="width:100%;margin-top:8px">엑셀 파일 저장만 하기</button>
     <div id="msg" hidden></div>
-    <p class="foot">파일 이름: <span id="fname"></span><br>저장된 엑셀 파일을 담당 선생님께 메일로 보내 주세요. 입력 내용은 이 휴대폰에 임시 저장되어 다시 열어도 유지됩니다.</p>
+    <p class="foot">파일 이름: <span id="fname"></span><br>"만들어 보내기"를 누르면 엑셀 파일이 첨부된 채로 메일·카톡 앱이 열립니다. 받는 사람을 고르고 보내기만 누르세요. 입력 내용은 이 휴대폰에 임시 저장되어 다시 열어도 유지됩니다.</p>
     <button class="btn ghost" id="resetAll" type="button">입력 내용 모두 지우기</button>
   </section>
 </div>
@@ -176,6 +178,7 @@
 <script>
 (function () {
   const CENTER = ''; // 센터명은 수합 시 선생님이 채움
+  const TEACHER_EMAIL = ''; // 담당 선생님 메일 (넣어 두면 메일 앱에 받는 사람이 자동 입력됨)
   const DATE_COLS = 8;
   const MIN_BLOCK_ROWS = 6;
   const MAX_STUDENTS = 6;
@@ -527,22 +530,63 @@
     msg.innerHTML = esc(text) + (list && list.length ? '<ul>' + list.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '');
   }
 
-  $('makeXlsx').addEventListener('click', async () => {
+  const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  async function makeFile() {
     const errs = validate();
-    if (errs.length) { showMsg('아직 입력이 끝나지 않았습니다.', true, errs); return; }
-    if (!window.ExcelJS) { showMsg('엑셀 생성 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.', true); return; }
+    if (errs.length) { showMsg('아직 입력이 끝나지 않았습니다.', true, errs); return null; }
+    if (!window.ExcelJS) { showMsg('엑셀 생성 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.', true); return null; }
+    const buf = await buildWorkbook();
+    return new File([buf], fileName(), { type: XLSX_MIME });
+  }
+  function downloadFile(file) {
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+  const summary = () => '(코칭 ' + coachCount() + '회, 사례회의 ' + state.meet.length + '회)';
+  const canShareFiles = () => !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.xlsx', { type: XLSX_MIME })] }));
+  $('sendHint').textContent = canShareFiles()
+    ? (TEACHER_EMAIL ? '받는 사람: ' + TEACHER_EMAIL : '메일 앱에서 담당 선생님 주소를 선택해 보내 주세요.')
+    : '이 브라우저는 바로 보내기를 지원하지 않아, 파일을 저장한 뒤 메일 앱이 열립니다. 저장된 파일을 첨부해 주세요.';
+
+  // 만들어 보내기: 휴대폰 공유 기능으로 파일을 첨부한 채 메일·카톡 열기
+  $('sendXlsx').addEventListener('click', async () => {
+    const btn = $('sendXlsx'); btn.disabled = true; btn.textContent = '파일 만드는 중...';
+    try {
+      const file = await makeFile(); if (!file) return;
+      const subject = file.name.replace(/\.xlsx$/, '');
+      if (canShareFiles()) {
+        try {
+          await navigator.share({ files: [file], title: subject, text: '[코칭일자] ' + subject + ' ' + summary() + (TEACHER_EMAIL ? '\n받는 사람: ' + TEACHER_EMAIL : '') });
+          showMsg('보내기 창을 열었습니다. 메일 또는 카톡을 골라 담당 선생님께 보내 주세요. ' + summary());
+        } catch (e) {
+          if (e && e.name === 'AbortError') showMsg('보내기를 취소했습니다. 다시 누르면 보낼 수 있습니다.', true);
+          else throw e;
+        }
+      } else {
+        downloadFile(file);
+        const mail = 'mailto:' + encodeURIComponent(TEACHER_EMAIL) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('코칭일자 파일을 첨부합니다. ' + summary());
+        showMsg('엑셀 파일을 저장했습니다: ' + file.name + '  →  메일 앱이 열리면 저장된 파일을 첨부해 보내 주세요. ' + summary());
+        setTimeout(() => { window.location.href = mail; }, 600);
+      }
+    } catch (e) {
+      showMsg('보내지 못했습니다. "엑셀 파일 저장만 하기"로 저장한 뒤 직접 보내 주세요. (오류: ' + ((e && e.message) || '알 수 없음') + ')', true);
+    } finally {
+      btn.disabled = false; btn.textContent = '엑셀 파일 만들어 보내기';
+    }
+  });
+
+  // 저장만 하기
+  $('makeXlsx').addEventListener('click', async () => {
     const btn = $('makeXlsx'); btn.disabled = true; btn.textContent = '파일 만드는 중...';
     try {
-      const buf = await buildWorkbook();
-      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = fileName(); document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-      showMsg('엑셀 파일을 저장했습니다: ' + fileName() + '  →  이 파일을 담당 선생님께 보내 주세요. (코칭 ' + coachCount() + '회, 사례회의 ' + state.meet.length + '회)  ※ 아이폰은 "다운로드" 확인창에서 허용을 누르면 파일 앱에 저장됩니다.');
+      const file = await makeFile(); if (!file) return;
+      downloadFile(file);
+      showMsg('엑셀 파일을 저장했습니다: ' + file.name + '  →  이 파일을 담당 선생님께 보내 주세요. ' + summary() + '  ※ 아이폰은 "다운로드" 확인창에서 허용을 누르면 파일 앱에 저장됩니다.');
     } catch (e) {
       showMsg('저장하지 못했습니다. 다시 시도해 주세요. (오류: ' + ((e && e.message) || '알 수 없음') + ')', true);
     } finally {
-      btn.disabled = false; btn.textContent = '엑셀 파일 만들기 (저장)';
+      btn.disabled = false; btn.textContent = '엑셀 파일 저장만 하기';
     }
   });
 

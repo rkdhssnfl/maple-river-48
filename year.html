@@ -64,6 +64,7 @@
   .msg ul { margin: 4px 0 0; padding-left: 18px; }
   .legend { font-size: 12px; color: var(--muted); margin: 6px 0; }
   th.mo { cursor: pointer; text-decoration: underline dotted; } th.mo.on { background: var(--accent); color: var(--accent-fg); }
+  td.mcell { cursor: pointer; } td.mcell:hover { background: var(--accent-soft); } td.mcell.on { background: var(--accent); color: var(--accent-fg); } td.mcell.on .mk, td.mcell.on .meet { color: var(--accent-fg); }
   /* 월별 달력 */
   .cal { margin-top: 12px; }
   .cal-head { display: flex; align-items: center; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
@@ -103,7 +104,7 @@
       <div><div class="k">보강</div><div class="v mk" id="stMk">0회</div></div>
       <div><div class="k">사례회의</div><div class="v meet" id="stMeet">0회</div></div>
     </div>
-    <div class="legend">칸 표기: 수업 횟수 / <span class="mk">보강</span> / <span class="meet">사례회의</span>. 이름을 누르면 아래에 학생별 일지가 펼쳐집니다.</div>
+    <div class="legend">칸 표기: 수업 횟수 / <span class="mk">보강</span> / <span class="meet">사례회의</span>. 이름을 누르면 학생별 일지가, 월 칸을 누르면 그 달 달력이 아래에 펼쳐집니다.</div>
     <div class="tbl"><table id="sumTbl"></table></div>
   </section>
 
@@ -227,11 +228,17 @@
     coaches.forEach(c => {
       let tc = 0, tm = 0, tt = 0;
       html += '<tr><td class="l"><a href="#" data-n="' + esc(c.name) + '" style="color:var(--accent);font-weight:700;text-decoration:none">' + esc(c.name) + '</a></td>';
-      MONTHS.forEach(m => { const x = c.months[m]; if (!x) { html += '<td class="small">-</td>'; return; } tc += x.cls; tm += x.mk; tt += x.meet; html += '<td>' + x.cls + (x.mk ? ' / <span class="mk">' + x.mk + '</span>' : '') + (x.meet ? ' / <span class="meet">' + x.meet + '</span>' : '') + '</td>'; });
+      MONTHS.forEach(m => { const x = c.months[m]; if (!x) { html += '<td class="small">-</td>'; return; } tc += x.cls; tm += x.mk; tt += x.meet; html += '<td class="mcell' + (selected === c.name && selMonth === m ? ' on' : '') + '" data-n="' + esc(c.name) + '" data-m="' + m + '" title="누르면 달력 보기">' + x.cls + (x.mk ? ' / <span class="mk">' + x.mk + '</span>' : '') + (x.meet ? ' / <span class="meet">' + x.meet + '</span>' : '') + '</td>'; });
       html += '<td class="sum">' + tc + '</td><td class="sum mk">' + tm + '</td><td class="sum meet">' + tt + '</td></tr>';
     });
     $('sumTbl').innerHTML = html;
     $('sumTbl').querySelectorAll('a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); selected = a.dataset.n; renderDetail(coaches); $('detailCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+    $('sumTbl').querySelectorAll('td.mcell').forEach(td => td.addEventListener('click', () => {
+      const n = td.dataset.n, m = Number(td.dataset.m);
+      if (selected === n && selMonth === m) selMonth = null; else { selected = n; selMonth = m; }
+      render();
+      if (selMonth) $('cal').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
     renderDetail(coaches);
     $('make').disabled = !subs.size;
   }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<title>학습코칭단 코칭일자 제출</title>
+<title>학습코칭단 코칭일자 제출 (파일)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 </head>
@@ -171,9 +171,9 @@
     <div id="msg" hidden></div>
     <p class="foot">파일 이름: <span id="fname"></span></p>
     <a class="btn primary" id="wallaSubmit" href="https://walla.my/v/JCVUXo3ZR92bs2yEiujD" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:#1f4e9c;border-color:#1f4e9c">폰으로 제출하기 (저장한 파일 첨부)</a>
+    <p class="foot">카톡으로 글로 보내기로 하신 분은 <a href="kakao.html">카톡 제출 페이지</a>를 쓰세요.</p>
     <p class="foot">① 위 초록 버튼으로 엑셀 파일을 저장 → ② 파란 버튼을 눌러 열리는 제출 화면에서 이름을 적고 <b>파일 첨부</b>로 방금 저장한 파일을 올려 제출하면 끝. 컴퓨터에서는 저장한 파일을 메일로 보내도 됩니다. 입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
-    <button class="btn" id="kakaoText" type="button" style="width:100%;margin-top:10px;background:#fee500;border-color:#e5cf00;color:#1d1d1d;font-weight:700">카톡으로 보내기 (글로 보내기)</button>
-    <p class="foot">파일 첨부가 어려우면 이 버튼을 눌러요. 입력한 날짜가 글로 만들어져 복사되고, 보내기 창이 뜨면 <b>카카오톡 → 담당 선생님</b>을 고르면 됩니다. 창이 안 뜨면 카톡을 열어 붙여넣기 하세요.</p>
+    <button class="btn" id="kakaoText" type="button" hidden>카톡으로 보내기</button>
     <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
       <button class="btn" id="blankXlsx" type="button" style="width:100%">빈 양식 내려받기 (엑셀에 직접 작성할 때)</button>
       <div class="foot" style="margin-top:6px">달력 입력이 어려우면 이 양식을 내려받아 엑셀에서 직접 적어 보내도 됩니다. 결과는 같은 모양입니다.</div>

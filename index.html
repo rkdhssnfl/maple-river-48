@@ -166,15 +166,11 @@
   <section class="card">
     <h2>미리보기 <span class="count">파랑=보강, 초록=사례회의</span></h2>
     <div class="preview"><table class="pv" id="pv"></table></div>
-    <div class="row-actions" style="margin-top:12px;gap:8px">
-      <button class="btn primary" id="sendMail" type="button" style="flex:1">메일로 보내기</button>
-      <button class="btn primary" id="sendKakao" type="button" style="flex:1;background:#f7e600;color:#1d2a24;border-color:#e5d500">카톡으로 보내기</button>
-    </div>
+    <button class="btn primary" id="sendMail" type="button" style="margin-top:12px">엑셀 파일 만들어 메일로 보내기</button>
     <div id="sendHint" class="foot" style="margin-top:6px"></div>
-    <textarea id="copyBox" hidden readonly style="width:100%;margin-top:8px;font:inherit;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);min-height:120px"></textarea>
     <button class="btn" id="makeXlsx" type="button" style="width:100%;margin-top:8px;background:#e3edf8;color:#1d3a5c;border-color:#c5d8ee;font-weight:700">엑셀 파일 저장만 하기</button>
     <div id="msg" hidden></div>
-    <p class="foot">파일 이름: <span id="fname"></span><br>"만들어 보내기"를 누르면 엑셀 파일이 첨부된 채로 메일·카톡 앱이 열립니다. 받는 사람을 고르고 보내기만 누르세요. 입력 내용은 이 휴대폰에 임시 저장되어 다시 열어도 유지됩니다.</p>
+    <p class="foot">파일 이름: <span id="fname"></span><br>입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
     <button class="btn ghost" id="resetAll" type="button">입력 내용 모두 지우기</button>
   </section>
 </div>
@@ -532,18 +528,6 @@
   }
 
   const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-  /* 카톡용 텍스트 (카카오톡은 엑셀 파일 공유를 받지 않으므로 내용을 글로 보냄) */
-  function submissionText() {
-    const lines = ['[코칭일자] ' + state.year + '년 ' + state.month + '월 ' + state.name.trim()];
-    state.students.filter(s => s.group.trim() || s.dates.length || s.makeup.length).forEach(s => {
-      const mk = new Set(s.makeup);
-      const all = Array.from(new Set(s.dates.concat(s.makeup))).sort().map(x => md(fromIso(x)) + (mk.has(x) ? '*' : ''));
-      lines.push(s.group.trim() + ': ' + all.join(', '));
-    });
-    if (state.meet.length) lines.push(MEET_LABEL + ': ' + state.meet.slice().sort().map(x => md(fromIso(x))).join(', '));
-    lines.push('(*는 보강)');
-    return lines.join('\n');
-  }
   async function makeFile() {
     const errs = validate();
     if (errs.length) { showMsg('아직 입력이 끝나지 않았습니다.', true, errs); return null; }
@@ -561,10 +545,8 @@
   // 파일 공유창은 휴대폰에서만 시도 (PC 브라우저는 지원이 불안정해 저장 + 메일 프로그램 열기로 처리)
   const canShareFiles = () => isMobile && !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.xlsx', { type: XLSX_MIME })] }));
   $('sendHint').textContent = canShareFiles()
-    ? ((/iPhone|iPad|iPod/i.test(navigator.userAgent)
-        ? '메일: 엑셀 파일이 첨부된 채로 열립니다. 카톡: 아이폰 카카오톡은 엑셀 첨부를 받지 않아 제출 내용을 글로 보냅니다(선생님이 그대로 집계 가능).'
-        : '메일·카톡 모두 엑셀 파일이 첨부된 채로 열립니다. 공유창에서 앱을 골라 담당 선생님께 보내 주세요.') + (TEACHER_EMAIL ? ' (받는 사람: ' + TEACHER_EMAIL + ')' : ''))
-    : 'PC에서는 메일: 엑셀 파일 저장 후 메일 프로그램이 열림(파일 첨부). 카톡: 제출 내용이 글로 복사되니 카카오톡에 붙여넣어 보내세요.';
+    ? ('엑셀 파일이 첨부된 채로 열립니다. 공유창에서 메일 앱을 골라 담당 선생님께 보내 주세요.' + (TEACHER_EMAIL ? ' (받는 사람: ' + TEACHER_EMAIL + ')' : ''))
+    : 'PC에서는 엑셀 파일이 먼저 저장(다운로드 폴더)되고 메일 프로그램이 열립니다. 메일 프로그램이 없으면 네이버·다음 메일 등에서 새 메일을 쓰고 저장된 파일을 첨부해 보내 주세요.';
 
   // 공유창은 버튼을 누른 직후에만 열 수 있으므로, 파일을 미리 만들어 두었다가 즉시 공유한다
   let cachedFile = null, cachedKey = '', preparing = null;
@@ -591,21 +573,11 @@
     return navigator.share({ files: [file], title: subject, text: '[코칭일자] ' + subject + ' ' + summary() + (TEACHER_EMAIL ? '\n받는 사람: ' + TEACHER_EMAIL : '') });
   }
 
-  // 만들어 보내기: 휴대폰 공유 기능으로 파일을 첨부한 채 메일·카톡 열기
+  // 만들어 보내기: 휴대폰 공유 기능으로 파일을 첨부한 채 메일 앱 열기
   async function sendVia(target, btn) {
     const errs = validate();
     if (errs.length) { showMsg('아직 입력이 끝나지 않았습니다.', true, errs); return; }
     const label = btn.textContent;
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
-    // 카톡: 안드로이드는 엑셀 파일 공유 가능, 아이폰 카카오톡은 문서 파일을 받지 않으므로 글로 보냄
-    if (target === 'kakao' && (isIOS || !canShareFiles())) {
-      const text = submissionText();
-      if (isMobile && navigator.share) {
-        try { await navigator.share({ title: '[코칭일자] ' + state.month + '월 ' + state.name.trim(), text }); showMsg('공유창에서 카카오톡을 골라 담당 선생님께 보내 주세요. ' + summary()); }
-        catch (e) { if (e && e.name === 'AbortError') showMsg('보내기를 취소했습니다.', true); else { await copyText(text); } }
-      } else { await copyText(text); }
-      return;
-    }
     try {
       if (canShareFiles()) {
         let file = (cachedFile && cachedKey === stateKey()) ? cachedFile : null;
@@ -619,14 +591,13 @@
         }
         try {
           await shareFile(file);
-          showMsg('공유창에서 ' + (target === 'kakao' ? '카카오톡' : '메일') + '을 골라 담당 선생님께 보내 주세요. ' + summary());
+          showMsg('공유창에서 메일 앱을 골라 담당 선생님께 보내 주세요. ' + summary());
         } catch (e) {
           if (e && e.name === 'AbortError') showMsg('보내기를 취소했습니다. 다시 누르면 보낼 수 있습니다.', true);
           else if (e && e.name === 'NotAllowedError') {
             downloadFile(file);
             const subject = file.name.replace(/\.xlsx$/, '');
-            if (target === 'kakao') showMsg('이 브라우저에서 공유창을 열 수 없어 파일을 저장했습니다: ' + file.name + '  →  카카오톡 대화창에 저장된 파일을 첨부해 보내 주세요.', true);
-            else { showMsg('이 브라우저에서 공유창을 열 수 없어 파일을 저장했습니다: ' + file.name + '  →  메일 앱이 열리면 저장된 파일을 첨부해 보내 주세요.', true);
+            { showMsg('이 브라우저에서 공유창을 열 수 없어 파일을 저장했습니다: ' + file.name + '  →  메일 앱이 열리면 저장된 파일을 첨부해 보내 주세요.', true);
               setTimeout(() => { window.location.href = 'mailto:' + encodeURIComponent(TEACHER_EMAIL) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('코칭일자 파일을 첨부합니다. ' + summary()); }, 600); }
           }
           else throw e;
@@ -636,9 +607,7 @@
         const file = await makeFile(); if (!file) return;
         const subject = file.name.replace(/\.xlsx$/, '');
         downloadFile(file);
-        if (target === 'kakao') {
-          showMsg('엑셀 파일을 저장했습니다: ' + file.name + '  →  PC 카카오톡에서 담당 선생님 대화창을 열고, 저장된 파일(다운로드 폴더)을 끌어다 놓아 보내 주세요. ' + summary());
-        } else {
+        {
           const mail = 'mailto:' + encodeURIComponent(TEACHER_EMAIL) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('코칭일자 파일을 첨부합니다. ' + summary());
           showMsg('엑셀 파일을 저장했습니다: ' + file.name + '  →  메일 프로그램이 열리면 저장된 파일을 첨부해 보내 주세요. ' + summary());
           setTimeout(() => { window.location.href = mail; }, 600);
@@ -650,13 +619,8 @@
       btn.disabled = false; btn.textContent = label;
     }
   }
-  async function copyText(text) {
-    const box = $('copyBox'); box.value = text; box.hidden = false;
-    try { await navigator.clipboard.writeText(text); showMsg('제출 내용을 복사했습니다. 카카오톡 대화창에 붙여넣어 담당 선생님께 보내 주세요. ' + summary()); }
-    catch (e) { box.focus(); box.select(); showMsg('아래 내용을 전체 선택해 복사한 뒤 카카오톡에 붙여넣어 보내 주세요.', true); }
-  }
   $('sendMail').addEventListener('click', () => sendVia('mail', $('sendMail')));
-  $('sendKakao').addEventListener('click', () => sendVia('kakao', $('sendKakao')));
+
 
   // 저장만 하기
   $('makeXlsx').addEventListener('click', async () => {

@@ -52,6 +52,8 @@
   .btn.ghost { color: var(--muted); font-size: 13px; padding: 6px 10px; }
   .btn:disabled { opacity: .5; cursor: default; }
   .coach { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+  .coach.done { background: #e6f4ea; border-color: #9ccc9f; }
+  .coach.done h3 .cnt.dl { color: #2e7d32; font-weight: 700; }
   .coach h3 { margin: 0 0 6px; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .coach h3 .cnt { font-size: 12px; color: var(--muted); font-weight: 400; }
   .coach .pvw { overflow-x: auto; }
@@ -435,6 +437,8 @@
     renderCoaches(blocks);
   }
   let CUR_SUBS = [];
+  const DONE = new Set(); // 코칭일자 파일을 내려받은 사람 (이름|연월)
+  const doneKey = p => norm(p.name) + '|' + yearSel.value + '-' + monthSel.value;
   function renderCoaches(blocks) {
     const subs = blocks.filter(b => b.sub).map(b => b.sub);
     $('coachCnt').textContent = subs.length ? '(' + subs.length + '명)' : '';
@@ -451,7 +455,8 @@
         t += '</tr>';
       });
       const src = p.src === 'walla' ? '왈라 응답' : p.src === 'text' ? '카톡 글' : '엑셀 파일';
-      return '<div class="coach"><h3>' + esc(p.name) + (p.region ? ' <span class="cnt">' + esc(p.region) + '</span>' : '') + ' <span class="cnt">' + total + '회 · ' + src + (p.src ? '' : ' (' + esc(p.fileName) + ')') + '</span>' +
+      const done = DONE.has(doneKey(p));
+      return '<div class="coach' + (done ? ' done' : '') + '" data-idx="' + i + '"><h3>' + esc(p.name) + (done ? ' <span class="cnt dl">파일 받음</span>' : '') + (p.region ? ' <span class="cnt">' + esc(p.region) + '</span>' : '') + ' <span class="cnt">' + total + '회 · ' + src + (p.src ? '' : ' (' + esc(p.fileName) + ')') + '</span>' +
         '<button class="btn ghost" data-coach="' + i + '" type="button" style="margin-left:auto">코칭일자 파일 내려받기</button></h3><div class="pvw"><table class="pv">' + t + '</table></div></div>';
     }).join('');
     list.querySelectorAll('button[data-coach]').forEach(b => b.addEventListener('click', async () => {
@@ -464,6 +469,7 @@
         const a = document.createElement('a'); a.href = url; a.download = coachFileName(p); document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 60000);
         cm.textContent = '저장했습니다: ' + coachFileName(p);
+        DONE.add(doneKey(p)); render(); $('coachMsg').hidden = false;
       } catch (e) { cm.className = 'msg err'; cm.textContent = '만들지 못했습니다. (' + ((e && e.message) || '오류') + ')'; }
     }));
   }
@@ -482,6 +488,7 @@
         const a = document.createElement('a'); a.href = url; a.download = zipName; document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 60000);
         cm.textContent = CUR_SUBS.length + '명의 코칭일자 파일을 압축해 저장했습니다: ' + zipName + ' (다운로드 폴더에서 압축을 풀어 쓰세요)';
+        CUR_SUBS.forEach(p => DONE.add(doneKey(p))); render();
       } else {
         // 압축 라이브러리를 못 불러오면 한 파일씩 내려받기
         for (const p of CUR_SUBS) {
@@ -493,6 +500,7 @@
           await new Promise(r => setTimeout(r, 400));
         }
         cm.textContent = CUR_SUBS.length + '개 파일을 하나씩 저장했습니다 (다운로드 폴더). 브라우저가 "여러 파일 다운로드 허용"을 물으면 허용해 주세요.';
+        CUR_SUBS.forEach(p => DONE.add(doneKey(p))); render();
       }
     } catch (e) { cm.className = 'msg err'; cm.textContent = '만들지 못했습니다. (' + ((e && e.message) || '오류') + ')'; }
     finally { btn.disabled = !CUR_SUBS.length; }

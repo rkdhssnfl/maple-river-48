@@ -109,7 +109,7 @@
 
   <section class="card" id="detailCard" hidden>
     <h2><span class="step">3</span><span id="detailTitle">학생별 일지</span></h2>
-    <div class="small">월 제목을 누르면 그 달 달력이 아래에 표시됩니다.</div>
+    <div class="small">월 제목을 누르면 그 달 달력이 아래에 표시되고, 다시 누르면 닫힙니다.</div>
     <div class="tbl"><table id="detailTbl"></table></div>
     <div class="cal" id="cal" hidden>
       <div class="cal-head"><b id="calTitle"></b><span class="small">검정=수업 · <span class="mk">파랑=보강</span> · <span class="meet">초록=사례회의</span></span></div>
@@ -251,7 +251,7 @@
     });
     html += '<tr><td class="l meet">사례회의</td>' + months.map(m => '<td class="l meet">' + (c.months[m].meetDates.map(md).join(', ') || '') + '</td>').join('') + '<td></td><td class="sum meet">' + months.reduce((n, m) => n + c.months[m].meet, 0) + '</td></tr>';
     $('detailTbl').innerHTML = html;
-    $('detailTbl').querySelectorAll('th.mo').forEach(th => th.addEventListener('click', () => { selMonth = Number(th.dataset.m); renderDetail(coaches); }));
+    $('detailTbl').querySelectorAll('th.mo').forEach(th => th.addEventListener('click', () => { const m = Number(th.dataset.m); selMonth = (selMonth === m) ? null : m; renderDetail(coaches); }));
     renderCal(c);
   }
   function renderCal(c) {

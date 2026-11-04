@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>카톡 글 → 코칭일자 파일</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+  html, body { margin: 0; } [hidden] { display: none !important; }
+  :root {
+    --bg: #f4f5f7; --surface: #ffffff; --fg: #1c2430; --muted: #66707d; --line: #d9dee5;
+    --accent: #1d5fa6; --accent-fg: #ffffff; --accent-soft: #e3edf8; --input: #fffbe6;
+    --ok: #2e7d32; --warn: #b4542b; --err: #c62828;
+    --font-body: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151a21; --surface: #1e2530; --fg: #e7ebf0; --muted: #98a3b0; --line: #333c48;
+      --accent: #6aa7e8; --accent-fg: #0d1521; --accent-soft: #233447; --input: #2a2b1f;
+      --ok: #66bb6a; --warn: #e8936a; --err: #ef5350; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151a21; --surface: #1e2530; --fg: #e7ebf0; --muted: #98a3b0; --line: #333c48;
+    --accent: #6aa7e8; --accent-fg: #0d1521; --accent-soft: #233447; --input: #2a2b1f;
+    --ok: #66bb6a; --warn: #e8936a; --err: #ef5350; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; margin: 0; }
+  .wrap { max-width: 760px; margin: 0 auto; padding-block: 20px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 15px; margin: 0 0 10px; }
+  .step { display: inline-block; background: var(--accent); color: var(--accent-fg); border-radius: 999px; font-size: 12px; padding: 1px 9px; margin-right: 6px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
+  select { font: inherit; font-size: 16px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--input); color: var(--fg); }
+  textarea { width: 100%; font: inherit; font-size: 14px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--input); color: var(--fg); min-height: 180px; }
+  .btn { font: inherit; font-size: 15px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; width: 100%; font-size: 16px; padding: 14px; }
+  .btn.ghost { color: var(--muted); font-size: 13px; padding: 6px 10px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .homebtn { display:inline-block; margin:0 0 10px; padding:6px 12px; border-radius:999px; background:#1f6f5c; color:#fff; font-size:13px; font-weight:700; text-decoration:none; }
+  .small { font-size: 12px; color: var(--muted); }
+  .msg { margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); white-space: pre-wrap; }
+  .msg.err { background: #fdecea; color: var(--err); }
+  .coach { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-top: 10px; }
+  .coach h3 { margin: 0 0 6px; font-size: 15px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .coach h3 .cnt { font-size: 12px; color: var(--muted); font-weight: 400; }
+  table.pv { border-collapse: collapse; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  table.pv th, table.pv td { border: 1px solid var(--line); padding: 4px 8px; text-align: center; }
+  table.pv th { background: var(--accent-soft); font-weight: 500; }
+  table.pv td.l { text-align: left; }
+  table.pv td.mt { color: #2e7d32; font-weight: 700; }
+  table.pv td.mk { color: #1e88e5; font-weight: 700; }
+  .preview { overflow-x: auto; }
+  .dl { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="home.html" class="homebtn">⌂ 관리 모음</a>
+  <h1>카톡 글 → 코칭일자 파일</h1>
+  <p class="sub">코칭단이 카톡으로 보낸 글을 붙여 넣으면, 코칭단이 직접 저장한 것과 같은 모양의 "코칭일자 확인" 엑셀 파일을 만들어 줍니다. 여러 명을 한 번에 넣으면 사람마다 파일이 하나씩 나옵니다. 그 파일을 교통비 수합·연간 일지에 그대로 쓰면 됩니다.</p>
+
+  <section class="card">
+    <h2><span class="step">1</span>연도·월</h2>
+    <div class="row">
+      <label class="f">연도<select id="year"></select></label>
+      <label class="f">월<select id="month"></select></label>
+    </div>
+    <div class="small" style="margin-top:6px">글에 "[코칭일자] 2026년 11월"처럼 월이 있으면 자동으로 맞춥니다.</div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">2</span>카톡 글 붙여넣기</h2>
+    <textarea id="box" placeholder="[코칭일자] 2026년 11월 박서연&#10;푸른솔초(김하늘): 11/3, 11/10, 11/17*&#10;사례회의: 11/14&#10;&#10;김민준&#10;하늘초(정우진) 11/4, 11/11&#10;바다초(최하준) 11월 6일, 11월 13일"></textarea>
+    <div class="small" style="margin-top:6px">첫 줄 이름, 그 아래 "학교(학생) 날짜, 날짜…" 줄. 날짜는 11/3, 11.3, 11월 3일 모두 되고, 날짜 뒤 <b>*</b>는 보강, "사례회의 11/14"는 사례회의로 읽습니다. 여러 명은 이어서 붙여 넣으면 됩니다.</div>
+    <button class="btn primary" id="readBtn" type="button" style="margin-top:10px">글 읽기</button>
+    <div id="readMsg" hidden></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">3</span>확인하고 파일 받기</h2>
+    <div id="list"><div class="small">아직 읽은 글이 없습니다.</div></div>
+    <button class="btn primary" id="allBtn" type="button" style="margin-top:12px" disabled>모든 코칭단 파일 한꺼번에 내려받기</button>
+    <div id="msg" hidden></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const DATE_COLS = 8, MIN_BLOCK_ROWS = 6, MEET_LABEL = '사례회의', CENTER = '';
+  const now = new Date();
+  const yearSel = $('year'), monthSel = $('month');
+  for (let y = now.getFullYear() - 1; y <= now.getFullYear() + 1; y++) yearSel.add(new Option(y + '년', y));
+  for (let m = 1; m <= 12; m++) monthSel.add(new Option(m + '월', m));
+  yearSel.value = now.getFullYear(); monthSel.value = now.getMonth() + 1;
+
+  const norm = s => String(s || '').replace(/\s+/g, '');
+  const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const md = d => (d.getMonth() + 1) + '/' + d.getDate();
+  let COACHES = [];
+
+  /* ---------- 글 읽기 ---------- */
+  function parseText(text) {
+    const out = [], errs = [];
+    let cur = null;
+    const start = name => { cur = { name, rows: [], meet: [] }; out.push(cur); };
+    text.split(/\r?\n/).map(x => x.trim()).filter(Boolean).forEach(l => {
+      const h = l.match(/^\[?코칭일자\]?\s*(?:(\d{4})년)?\s*(?:(\d{1,2})월)?\s*(.+)$/);
+      if (h) { if (h[1]) yearSel.value = Number(h[1]); if (h[2]) monthSel.value = Number(h[2]); start(h[3].replace(/[:\s]+$/, '').trim()); return; }
+      if (/^\(.*\)$/.test(l) || /^\[.*\]$/.test(l)) return;
+      const re = /(\d{1,2})\s*(?:[\/.]|월)\s*(\d{1,2})\s*일?\s*(\*?)/g;
+      const dates = []; let m;
+      while ((m = re.exec(l))) { const d = new Date(Number(yearSel.value), Number(m[1]) - 1, Number(m[2])); if (!isNaN(d)) dates.push({ d, mk: m[3] === '*' }); }
+      const firstDate = l.search(/\d{1,2}\s*(?:[\/.]|월)\s*\d{1,2}/);
+      let label = (firstDate >= 0 ? l.slice(0, firstDate) : l).replace(/[:：\-–—]\s*$/, '').trim();
+      if (!dates.length) {
+        const nm = label.replace(/^(이름|코칭단)\s*[:：]?\s*/, '').replace(/\s*(선생님|쌤|코치)$/, '').trim();
+        if (nm && /^[가-힣]{2,5}$/.test(nm) && !/(초|중|고|학교|사례회의)$/.test(nm)) { start(nm); return; }
+        if (/^\d{4}년/.test(l) || /^\d{1,2}월/.test(l)) { const mm = l.match(/(\d{1,2})월/); if (mm) monthSel.value = Number(mm[1]); return; }
+        if (!cur) errs.push('읽지 못한 줄: ' + l);
+        return;
+      }
+      if (!cur) { errs.push('이름 줄이 먼저 와야 합니다: ' + l); return; }
+      if (/사례\s*회의/.test(label) || norm(label) === MEET_LABEL) { cur.meet.push(...dates.map(x => x.d)); return; }
+      if (!label) label = cur.rows.length ? cur.rows[cur.rows.length - 1].group : '(학교 없음)';
+      const ex = cur.rows.find(r => r.group === label);
+      if (ex) ex.dates.push(...dates); else cur.rows.push({ group: label, dates });
+    });
+    return { out: out.filter(p => p.rows.length || p.meet.length), errs };
+  }
+
+  /* ---------- 행 구성 (코칭단 페이지와 같은 규칙) ---------- */
+  const WD = ['월', '화', '수', '목', '금'];
+  function weekdayOf(dates) { const set = new Set(dates.map(d => (d.getDay() + 6) % 7).filter(i => i < 5)); return WD.filter((w, i) => set.has(i)).join(','); }
+  function buildLines(c) {
+    const lines = [];
+    const push = (group, weekday, items, meet) => {
+      const uniq = new Map(); items.forEach(x => { const k = x.d.getTime(); if (!uniq.has(k) || x.mk) uniq.set(k, x); });
+      const all = Array.from(uniq.values()).sort((a, b) => a.d - b.d);
+      const chunks = []; for (let k = 0; k < Math.max(1, all.length); k += DATE_COLS) chunks.push(all.slice(k, k + DATE_COLS));
+      chunks.forEach((ch, ci) => lines.push({ group: ci ? '' : group, weekday: ci ? '' : weekday, dates: ch.map(x => x.d), mk: ch.map(x => x.mk), meet }));
+    };
+    const rows = c.rows.slice().sort((a, b) => { const o = r => { const w = weekdayOf(r.dates.map(x => x.d)).split(',')[0]; return w ? WD.indexOf(w) : 9; }; return o(a) - o(b); });
+    rows.forEach(r => push(r.group, weekdayOf(r.dates.map(x => x.d)), r.dates, false));
+    if (c.meet.length) push(MEET_LABEL, '', c.meet.map(d => ({ d, mk: false })), true);
+    return lines;
+  }
+
+  /* ---------- 엑셀 (코칭단 페이지와 같은 모양) ---------- */
+  async function buildWorkbook(c) {
+    const wb = new ExcelJS.Workbook();
+    const font = (o) => Object.assign({ name: '맑은 고딕', size: 11 }, o || {});
+    const thin = { style: 'thin', color: { argb: 'FF000000' } };
+    const dbl = { style: 'double', color: { argb: 'FF000000' } };
+    const center = { horizontal: 'center', vertical: 'middle' };
+    const headFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2EFDA' } };
+    const mkFont = font({ size: 10, bold: true, color: { argb: 'FF1F4E9C' } });
+    const meetFont = font({ size: 10, bold: true, color: { argb: 'FF2E7D32' } });
+    const ws = wb.addWorksheet('코칭일자');
+    ws.getColumn(1).width = 7.375; ws.getColumn(2).width = 24.625;
+    for (let col = 3; col <= 2 + DATE_COLS; col++) ws.getColumn(col).width = 5.625;
+    const K = 3 + DATE_COLS;
+    ws.mergeCells(2, 1, 2, K);
+    ws.getCell(2, 1).value = yearSel.value + '학년도 학습코칭단  코칭일자 확인';
+    ws.getCell(2, 1).font = font({ size: 14, bold: true }); ws.getCell(2, 1).alignment = center; ws.getRow(2).height = 20.25;
+    if (CENTER) ws.getCell(3, K).value = CENTER; ws.getCell(3, K).font = font({ size: 10, bold: true });
+    ws.getCell(3, K).alignment = { horizontal: 'right', vertical: 'middle' }; ws.getRow(3).height = 20.25;
+    ws.getCell(4, 1).value = '코칭단'; ws.getCell(4, 2).value = '학교(학생이름)'; ws.getCell(4, 3).value = '코칭 일자(월/일)'; ws.getCell(4, K).value = '횟수';
+    for (let col = 1; col <= K; col++) { const cell = ws.getCell(4, col); cell.font = font({ size: col === 3 ? 10 : 11, bold: true }); cell.fill = headFill; cell.alignment = center; cell.border = { top: thin, bottom: dbl, left: thin, right: thin }; }
+    ws.mergeCells(4, 3, 4, 2 + DATE_COLS); ws.getRow(4).height = 17.25;
+    const lines = buildLines(c);
+    const rows = Math.max(MIN_BLOCK_ROWS, lines.length);
+    const top = 5, bot = top + rows - 1;
+    for (let r = top; r <= bot; r++) {
+      const ln = lines[r - top];
+      for (let col = 1; col <= K; col++) { const cell = ws.getCell(r, col); cell.font = font({ size: (col >= 3 && col < K) ? 10 : 11 }); cell.alignment = center; cell.border = { left: thin, right: thin, top: thin, bottom: r === bot ? dbl : thin }; if (col >= 3 && col < K) cell.numFmt = 'm/d'; }
+      ws.getRow(r).height = 17.25;
+      if (!ln) continue;
+      ws.getCell(r, 2).value = ln.group;
+      if (ln.meet) ws.getCell(r, 2).font = Object.assign({}, meetFont, { size: 11 });
+      ln.dates.forEach((d, k) => { const cell = ws.getCell(r, 3 + k); cell.value = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); if (ln.meet) cell.font = meetFont; else if (ln.mk[k]) cell.font = mkFont; });
+    }
+    const cnt = lines.reduce((n, ln) => n + ln.dates.length, 0);
+    ws.getCell(top, 1).value = c.name;
+    ws.getCell(top, K).value = { formula: 'COUNT(C' + top + ':' + String.fromCharCode(64 + 2 + DATE_COLS) + bot + ')', result: cnt };
+    ws.mergeCells(top, 1, bot, 1); ws.mergeCells(top, K, bot, K);
+    return wb.xlsx.writeBuffer();
+  }
+  const fileName = c => yearSel.value + '학년도 학습코칭단 ' + monthSel.value + '월 코칭일자_' + c.name.replace(/[\\/:*?"<>|]/g, '') + '.xlsx';
+  async function download(c) {
+    const buf = await buildWorkbook(c);
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = fileName(c); document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  /* ---------- 화면 ---------- */
+  function showMsg(el, t, isErr) { el.hidden = false; el.className = 'msg' + (isErr ? ' err' : ''); el.textContent = t; }
+  function render() {
+    const list = $('list');
+    if (!COACHES.length) { list.innerHTML = '<div class="small">아직 읽은 글이 없습니다.</div>'; $('allBtn').disabled = true; return; }
+    list.innerHTML = COACHES.map((c, i) => {
+      const lines = buildLines(c);
+      const total = lines.reduce((n, ln) => n + ln.dates.length, 0);
+      let t = '<tr><th>학교(학생이름)</th><th colspan="' + DATE_COLS + '">코칭 일자(월/일)</th></tr>';
+      lines.forEach(ln => {
+        t += '<tr><td class="l' + (ln.meet ? ' mt' : '') + '">' + esc(ln.group) + '</td>';
+        for (let k = 0; k < DATE_COLS; k++) { const d = ln.dates[k]; t += '<td class="' + (d ? (ln.meet ? 'mt' : (ln.mk[k] ? 'mk' : '')) : '') + '">' + (d ? md(d) : '') + '</td>'; }
+        t += '</tr>';
+      });
+      return '<div class="coach"><h3>' + esc(c.name) + ' <span class="cnt">' + total + '회 · 파일: ' + esc(fileName(c)) + '</span></h3><div class="preview"><table class="pv">' + t + '</table></div>' +
+        '<div class="dl"><button class="btn" data-i="' + i + '" type="button">이 사람 파일 내려받기</button><button class="btn ghost" data-del="' + i + '" type="button">빼기</button></div></div>';
+    }).join('');
+    list.querySelectorAll('button[data-i]').forEach(b => b.addEventListener('click', async () => { try { await download(COACHES[Number(b.dataset.i)]); showMsg($('msg'), '저장했습니다: ' + fileName(COACHES[Number(b.dataset.i)])); } catch (e) { showMsg($('msg'), '저장 실패: ' + (e.message || e), true); } }));
+    list.querySelectorAll('button[data-del]').forEach(b => b.addEventListener('click', () => { COACHES.splice(Number(b.dataset.del), 1); render(); }));
+    $('allBtn').disabled = false;
+  }
+  $('readBtn').addEventListener('click', () => {
+    const { out, errs } = parseText($('box').value);
+    out.forEach(p => { const i = COACHES.findIndex(c => norm(c.name) === norm(p.name)); if (i >= 0) COACHES[i] = p; else COACHES.push(p); });
+    showMsg($('readMsg'), (out.length ? out.length + '명 읽음: ' + out.map(p => p.name).join(', ') : '읽은 내용이 없습니다. 첫 줄에 이름이 있는지 확인하세요.') + (errs.length ? '\n' + errs.join('\n') : ''), !out.length || errs.length > 0);
+    if (out.length) $('box').value = '';
+    render();
+  });
+  $('allBtn').addEventListener('click', async () => {
+    if (!window.ExcelJS) { showMsg($('msg'), '엑셀 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.', true); return; }
+    const btn = $('allBtn'); btn.disabled = true;
+    try {
+      for (const c of COACHES) { await download(c); await new Promise(r => setTimeout(r, 400)); }
+      showMsg($('msg'), COACHES.length + '개 파일을 저장했습니다. 브라우저가 "여러 파일 다운로드 허용"을 물으면 허용해 주세요. 파일은 다운로드 폴더에 있습니다.');
+    } catch (e) { showMsg($('msg'), '저장 실패: ' + (e.message || e), true); }
+    finally { btn.disabled = false; }
+  });
+  yearSel.addEventListener('change', render); monthSel.addEventListener('change', render);
+})();
+</script>
+</body>
+</html>

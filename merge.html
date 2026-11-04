@@ -150,11 +150,7 @@
     <button class="btn primary" id="make" type="button" disabled>교통비 지급 내역서 엑셀 만들기</button>
     <div id="msg" hidden></div>
     <p class="small" style="margin-top:10px">파일 이름: <span id="fname"></span><br>횟수·교통비는 엑셀 수식(COUNTA·COUNTIF)으로 들어가므로 엑셀에서 날짜를 고치면 자동으로 다시 계산됩니다.</p>
-    <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
-      <button class="btn" id="makeEach" type="button" style="width:100%" disabled>코칭단별 "코칭일자" 파일도 내려받기 (왈라·카톡 글로 낸 사람)</button>
-      <div class="small" style="margin-top:6px">왈라 응답이나 카톡 글로 낸 사람은 코칭일자 엑셀 파일이 따로 없으므로, 코칭단이 직접 저장한 것과 같은 모양으로 사람마다 한 파일씩 만들어 줍니다(연간 일지에 쓸 때 필요). 브라우저가 "여러 파일 다운로드 허용"을 물으면 허용해 주세요.</div>
-      <div id="eachMsg" hidden></div>
-    </div>
+    <div hidden><button id="makeEach" type="button"></button><div id="eachMsg"></div></div>
     <button class="btn ghost" id="reset" type="button">올린 파일 모두 지우기</button>
   </section>
 </div>

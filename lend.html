@@ -107,7 +107,13 @@
   </section>
 
   <section class="card">
-    <h2><span class="step">3</span>전체 기록 <span class="small">(최근 순)</span></h2>
+    <h2><span class="step">3</span>코칭단별 대출·반납 현황</h2>
+    <table id="byNameTbl"></table>
+    <div class="small" style="margin-top:6px">이름을 누르면 아래 전체 기록이 그 코칭단으로 걸러집니다.</div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">4</span>전체 기록 <span class="small">(최근 순)</span></h2>
     <div class="row" style="margin-bottom:8px">
       <label class="f">이름<select id="fName"><option value="">전체</option></select></label>
       <label class="f">구분<select id="fType"><option value="">전체</option><option>대출</option><option>반납</option></select></label>
@@ -117,7 +123,7 @@
   </section>
 
   <section class="card">
-    <h2><span class="step">4</span>대장 엑셀 내려받기</h2>
+    <h2><span class="step">5</span>대장 엑셀 내려받기</h2>
     <div class="row" style="margin-bottom:10px">
       <label class="f">기간 시작<input type="date" id="dFrom"></label>
       <label class="f">기간 끝<input type="date" id="dTo"></label>
@@ -125,7 +131,7 @@
     </div>
     <button class="btn primary" id="make" type="button" disabled>대출·반납 대장 엑셀 만들기</button>
     <div id="msg" hidden></div>
-    <p class="small" style="margin-top:10px">시트 구성: ① 대출 대장(연번·이름·대출 일자·관리번호·상태) ② 반납 대장 ③ 미반납 현황 ④ 전체 기록. 물품사이트에 옮겨 적을 때 ④ 시트를 보면 됩니다.</p>
+    <p class="small" style="margin-top:10px">시트 구성: ① 대출 대장 ② 반납 대장 ③ 미반납 현황 ④ 코칭단별 현황 ⑤ 전체 기록. 물품사이트에 옮겨 적을 때 ⑤ 시트를 보면 됩니다.</p>
     <button class="btn ghost" id="reset" type="button">올린 파일 모두 지우기</button>
   </section>
 </div>
@@ -312,6 +318,26 @@
     open.sort((a, b) => (a.at ? a.at.getTime() : 0) - (b.at ? b.at.getTime() : 0));
     return open;
   }
+  function byName() {
+    const open = openItems();
+    const m = {};
+    sorted().forEach(r => {
+      const b = m[r.name] || (m[r.name] = { name: r.name, lend: 0, ret: 0, bad: 0, last: null, open: [] });
+      if (r.type === '대출') b.lend++; else b.ret++;
+      if (r.status === '이상') b.bad++;
+      if (!b.last || (r.at && r.at > b.last)) b.last = r.at;
+    });
+    open.forEach(o => { if (m[o.name]) m[o.name].open.push(o.num + (o.days !== null && o.days >= 30 ? '(' + o.days + '일)' : '')); });
+    return Object.values(m).sort((a, b) => (b.open.length - a.open.length) || a.name.localeCompare(b.name, 'ko'));
+  }
+  function renderByName() {
+    const list = byName();
+    let html = '<colgroup><col style="width:18%"><col style="width:12%"><col style="width:12%"><col style="width:12%"><col style="width:20%"><col></colgroup><tr><th>이름</th><th>대출</th><th>반납</th><th>미반납</th><th>최근 활동</th><th>미반납 관리번호</th></tr>';
+    if (!list.length) html += '<tr><td colspan="6" class="small">기록이 없습니다.</td></tr>';
+    list.forEach(b => { html += '<tr><td><a href="#" class="nm" data-n="' + esc(b.name) + '" style="color:var(--accent);font-weight:700;text-decoration:none">' + esc(b.name) + '</a></td><td>' + b.lend + '건</td><td>' + b.ret + '건</td><td' + (b.open.length ? ' class="lend"' : '') + '>' + b.open.length + '개</td><td>' + esc(fmtDate(b.last)) + '</td><td class="l">' + esc(b.open.join(', ')) + '</td></tr>'; });
+    $('byNameTbl').innerHTML = html;
+    $('byNameTbl').querySelectorAll('a.nm').forEach(a => a.addEventListener('click', e => { e.preventDefault(); $('fName').value = a.dataset.n; renderAll(); $('allTbl').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+  }
   function render() {
     const open = openItems();
     $('fileState').textContent = records.length ? '(' + srcFiles.size + '개 파일, ' + records.length + '건)' : '';
@@ -329,6 +355,7 @@
     // 이름 필터 목록
     const names = Array.from(new Set(records.map(r => r.name))).sort();
     const sel = $('fName'); const cur = sel.value; sel.innerHTML = '<option value="">전체</option>' + names.map(n => '<option' + (n === cur ? ' selected' : '') + '>' + esc(n) + '</option>').join('');
+    renderByName();
     renderAll();
     $('make').disabled = !records.length;
   }
@@ -379,6 +406,12 @@
     wo.mergeCells('A1:F1'); wo.getCell('A1').value = '미반납 현황 (기준 ' + fmtDT(new Date()) + ')'; wo.getCell('A1').font = font({ size: 14, bold: true }); wo.getCell('A1').alignment = center;
     ['관리 번호', '이름', '대출 일자', '경과(일)', '상태', '비고'].forEach((h, i) => { const c = wo.getCell(2, i + 1); c.value = h; c.font = font({ bold: true }); c.fill = head; c.alignment = center; c.border = border; });
     openItems().forEach((o, i) => { [o.num, o.name, fmtDate(o.at), o.days === null ? '' : o.days, o.status, o.note].forEach((v, c) => { const cell = wo.getCell(3 + i, c + 1); cell.value = v; cell.font = font(o.days !== null && o.days >= 30 ? { color: { argb: 'FFC00000' }, bold: true } : {}); cell.alignment = center; cell.border = border; }); });
+
+    const wn = wb.addWorksheet('코칭단별 현황');
+    [14, 10, 10, 10, 14, 40].forEach((w, i) => wn.getColumn(i + 1).width = w);
+    wn.mergeCells('A1:F1'); wn.getCell('A1').value = '코칭단별 대출·반납 현황 (기준 ' + fmtDT(new Date()) + ')'; wn.getCell('A1').font = font({ size: 14, bold: true }); wn.getCell('A1').alignment = center;
+    ['이름', '대출', '반납', '미반납', '최근 활동', '미반납 관리번호'].forEach((h, i) => { const c = wn.getCell(2, i + 1); c.value = h; c.font = font({ bold: true }); c.fill = head; c.alignment = center; c.border = border; });
+    byName().forEach((b, i) => { [b.name, b.lend, b.ret, b.open.length, fmtDate(b.last), b.open.join(', ')].forEach((v, c) => { const cell = wn.getCell(3 + i, c + 1); cell.value = v; cell.font = font(c === 3 && b.open.length ? { bold: true, color: { argb: 'FFC00000' } } : {}); cell.alignment = c === 5 ? { horizontal: 'left', vertical: 'middle', wrapText: true } : center; cell.border = border; }); });
 
     const wa = wb.addWorksheet('전체 기록');
     [18, 8, 12, 12, 10, 24, 20].forEach((w, i) => wa.getColumn(i + 1).width = w);

@@ -166,7 +166,7 @@
     if (typeof v === 'number' && v > 20000) { const ms = Math.round((v - 25569) * 86400000); const d = new Date(ms); return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes()); }
     if (typeof v === 'string') {
       const s = v.trim();
-      let m = s.match(/(\d{4})[.\-\/년]\s*(\d{1,2})[.\-\/월]\s*(\d{1,2})[일]?\s*(?:[T ]\s*(?:(오전|오후)\s*)?(\d{1,2}):(\d{2}))?/);
+      let m = s.match(/(\d{4})[.\-\/년]\s*(\d{1,2})[.\-\/월]\s*(\d{1,2})[일.]?\s*(?:[T,\s]+\s*(?:(오전|오후)\s*)?(\d{1,2}):(\d{2}))?/);
       if (m) { let h = m[5] ? Number(m[5]) : 0; if (m[4] === '오후' && h < 12) h += 12; if (m[4] === '오전' && h === 12) h = 0; return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), h, m[6] ? Number(m[6]) : 0); }
       m = s.match(/^(\d{2})[.\-\/](\d{1,2})[.\-\/](\d{1,2})$/);
       if (m) return new Date(2000 + Number(m[1]), Number(m[2]) - 1, Number(m[3]));
@@ -219,6 +219,27 @@
     if (cols.name < 0 || cols.num < 0) {
       // 머리글이 둘째 줄일 수도 있음
       for (let k = hi + 1; k < Math.min(rows.length, hi + 4); k++) { const c2 = findCols(rows[k].map(x => x == null ? '' : String(x))); if (c2.name >= 0 && c2.num >= 0) { hi = k; cols = c2; break; } }
+    }
+    // 왈라식 가로 양식: "반납- 관리 번호::1_반납", "대출- 관리 번호::3_대출" 처럼 열 이름에 대출/반납이 든 번호 칸이 여러 개
+    const header = rows[hi].map(x => x == null ? '' : String(x));
+    const wide = header.map((h, i) => ({ i, type: typeOf(h) })).filter(x => x.type && (norm(header[x.i]).includes('번호') || norm(header[x.i]).includes('관리')));
+    if (cols.name < 0 && wide.length) cols.name = header.findIndex(h => norm(h).includes('이름') || norm(h).includes('성명'));
+    if (cols.name >= 0 && wide.length >= 2) {
+      const out = []; let skipped = 0;
+      for (let r = hi + 1; r < rows.length; r++) {
+        const row = rows[r]; if (!row) continue;
+        const name = String(row[cols.name] || '').trim();
+        if (!name) { skipped++; continue; }
+        const at = cols.at >= 0 ? toDate(row[cols.at]) : null;
+        const status = cols.status >= 0 ? statusOf(row[cols.status]) : '';
+        const note = cols.note >= 0 ? String(row[cols.note] || '').trim() : '';
+        let any = false;
+        wide.forEach(w => {
+          splitNums(row[w.i]).forEach(num => { any = true; out.push({ name, type: forced || w.type, num: num.length > 4 ? num.slice(-4) : num, numRaw: num, status, at, note, src: file.name }); });
+        });
+        if (!any) skipped++;
+      }
+      return { out, skipped, cols };
     }
     if (cols.name < 0 || cols.num < 0) throw new Error('"이름"과 "관리번호" 열을 찾지 못했습니다 (첫 줄 제목: ' + rows[hi].filter(Boolean).join(', ').slice(0, 80) + ')');
     const out = []; let skipped = 0;

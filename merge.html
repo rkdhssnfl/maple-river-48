@@ -277,12 +277,13 @@
           row.filled = true;
           row.dates = sr.dates.slice().sort((a, b) => a - b);
         });
-        const kind = c.region === '청도' ? '(관외)' : '(관내)';
-        sub.meet.slice().sort((a, b) => a - b).forEach(d => rows.push({ group: MEET_LABEL, weekday: '', dates: [], v: kind, w: MEET_LABEL + ' ' + md(d), meet: true }));
       }
+      // 사례회의는 별도 행을 만들지 않고 비고(V열)에 블록 맨 위부터 한 줄씩 기록
+      const kind = c.region === '청도' ? '(관외)' : '(관내)';
+      const memo = sub ? sub.meet.slice().sort((a, b) => a - b).map(d => kind + ' ' + MEET_LABEL + ' ' + md(d)) : [];
       const visits = rows.reduce((n, r) => n + r.dates.length, 0);
-      const inCnt = rows.filter(r => r.v === '(관내)').length, outCnt = rows.filter(r => r.v === '(관외)').length;
-      return { coach: c, sub, rows, notes, visits, inCnt, outCnt, pay: visits * VISIT_PAY + inCnt * IN_PAY + outCnt * OUT_PAY };
+      const inCnt = kind === '(관내)' ? memo.length : 0, outCnt = kind === '(관외)' ? memo.length : 0;
+      return { coach: c, sub, rows, memo, notes, visits, inCnt, outCnt, pay: visits * VISIT_PAY + inCnt * IN_PAY + outCnt * OUT_PAY };
     });
     const unknown = Array.from(files.values()).filter(p => !used.has(p.name)).map(p => p.name + ' (' + p.fileName + ')');
     return { blocks, unknown };
@@ -347,7 +348,7 @@
     let r = 4;
     const firstData = r;
     blocks.forEach((b, idx) => {
-      const rows = Math.max(MIN_BLOCK_ROWS, b.rows.length);
+      const rows = Math.max(MIN_BLOCK_ROWS, b.rows.length, b.memo.length);
       const top = r, bot = r + rows - 1;
       for (let rr = top; rr <= bot; rr++) {
         const ln = b.rows[rr - top];
@@ -361,12 +362,11 @@
           if (c === 22) cell.alignment = { horizontal: 'left', vertical: 'middle' };
         }
         ws.getRow(rr).height = 18.75;
+        if (b.memo[rr - top]) ws.getCell(rr, 22).value = b.memo[rr - top];
         if (!ln) continue;
         ws.getCell(rr, 4).value = ln.group;
         ws.getCell(rr, 5).value = ln.weekday || null;
         ln.dates.slice(0, DATE_COLS).forEach((d, k) => { ws.getCell(rr, 6 + k).value = toUtc(d); });
-        if (ln.v || ln.w) ws.getCell(rr, 22).value = [ln.v, ln.w].filter(Boolean).join(' ');
-        if (ln.meet) { ws.getCell(rr, 4).font = font({ color: { argb: 'FF2E7D32' }, bold: true }); }
       }
       ws.getCell(top, 1).value = idx + 1;
       ws.getCell(top, 2).value = b.coach.region;

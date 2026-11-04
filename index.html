@@ -48,16 +48,16 @@
   body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
   .wrap { max-width: 560px; margin: 0 auto; padding-block: 0 48px;
     padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-  header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line);
-    margin: 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 16px calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
-    padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); }
-  .top-inner { max-width: 560px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .top h1 { font-size: 16px; margin: 0; font-weight: 700; }
+  header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); margin: 0 0 16px; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); }
+  .top-inner { max-width: 560px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+  .top-inner > div:first-child { min-width: 0; }
+  .top h1 { font-size: 15px; margin: 0; font-weight: 700; white-space: nowrap; }
+  @media (max-width: 360px) { .top h1 { font-size: 14px; } .top .sub { display: none; } }
   .top .sub { font-size: 12px; color: var(--muted); }
-  .stat { display: flex; gap: 14px; font-variant-numeric: tabular-nums; }
+  .stat { display: flex; gap: 10px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
   .stat div { text-align: right; }
   .stat .k { font-size: 11px; color: var(--muted); letter-spacing: .04em; }
-  .stat .v { font-size: 17px; font-weight: 700; color: var(--accent); }
+  .stat .v { font-size: 15px; font-weight: 700; color: var(--accent); }
   .intro { font-size: 13px; color: var(--muted); margin: 0 0 14px; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
   .card.meet { border-color: var(--meet); }

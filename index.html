@@ -561,7 +561,9 @@
   // 파일 공유창은 휴대폰에서만 시도 (PC 브라우저는 지원이 불안정해 저장 + 메일 프로그램 열기로 처리)
   const canShareFiles = () => isMobile && !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.xlsx', { type: XLSX_MIME })] }));
   $('sendHint').textContent = canShareFiles()
-    ? ('메일: 엑셀 파일이 첨부된 채로 열립니다. 카톡: 카카오톡은 엑셀 첨부를 받지 않아 제출 내용을 글로 보냅니다(선생님이 그대로 집계 가능).' + (TEACHER_EMAIL ? ' (받는 사람: ' + TEACHER_EMAIL + ')' : ''))
+    ? ((/iPhone|iPad|iPod/i.test(navigator.userAgent)
+        ? '메일: 엑셀 파일이 첨부된 채로 열립니다. 카톡: 아이폰 카카오톡은 엑셀 첨부를 받지 않아 제출 내용을 글로 보냅니다(선생님이 그대로 집계 가능).'
+        : '메일·카톡 모두 엑셀 파일이 첨부된 채로 열립니다. 공유창에서 앱을 골라 담당 선생님께 보내 주세요.') + (TEACHER_EMAIL ? ' (받는 사람: ' + TEACHER_EMAIL + ')' : ''))
     : 'PC에서는 메일: 엑셀 파일 저장 후 메일 프로그램이 열림(파일 첨부). 카톡: 제출 내용이 글로 복사되니 카카오톡에 붙여넣어 보내세요.';
 
   // 공유창은 버튼을 누른 직후에만 열 수 있으므로, 파일을 미리 만들어 두었다가 즉시 공유한다
@@ -594,7 +596,9 @@
     const errs = validate();
     if (errs.length) { showMsg('아직 입력이 끝나지 않았습니다.', true, errs); return; }
     const label = btn.textContent;
-    if (target === 'kakao') {
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+    // 카톡: 안드로이드는 엑셀 파일 공유 가능, 아이폰 카카오톡은 문서 파일을 받지 않으므로 글로 보냄
+    if (target === 'kakao' && (isIOS || !canShareFiles())) {
       const text = submissionText();
       if (isMobile && navigator.share) {
         try { await navigator.share({ title: '[코칭일자] ' + state.month + '월 ' + state.name.trim(), text }); showMsg('공유창에서 카카오톡을 골라 담당 선생님께 보내 주세요. ' + summary()); }

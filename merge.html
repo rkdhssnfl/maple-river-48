@@ -157,8 +157,13 @@
     for (let r = hdr + 1; r <= ws.rowCount; r++) {
       const a = norm(ws.getCell(r, 1).text);
       if (a === '합계') break;
-      const name = String(ws.getCell(r, 3).text || '').trim();
-      if (name) { cur = { region: String(ws.getCell(r, 2).text || '').trim(), name, groups: [] }; list.push(cur); }
+      const nameCell = ws.getCell(r, 3);
+      const name = String(nameCell.text || '').trim();
+      // 세로로 병합된 이름 칸은 맨 위 행에서만 새 코칭단으로 읽음 (병합된 아래 행은 같은 사람)
+      const isTop = !nameCell.isMerged || (nameCell.master && nameCell.master.address === nameCell.address);
+      if (name && isTop && !(cur && norm(cur.name) === norm(name) && !nameCell.isMerged && !String(ws.getCell(r, 1).text || '').trim())) {
+        cur = { region: String(ws.getCell(r, 2).text || '').trim(), name, groups: [] }; list.push(cur);
+      }
       const g = String(ws.getCell(r, 4).text || '').trim();
       if (g && cur && norm(g) !== MEET_LABEL) cur.groups.push({ g, w: String(ws.getCell(r, 5).text || '').trim() });
     }

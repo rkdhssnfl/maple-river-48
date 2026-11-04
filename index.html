@@ -166,7 +166,10 @@
   <section class="card">
     <h2>미리보기 <span class="count">파랑=보강, 초록=사례회의</span></h2>
     <div class="preview"><table class="pv" id="pv"></table></div>
-    <button class="btn primary" id="sendXlsx" type="button" style="margin-top:12px">엑셀 파일 만들어 보내기</button>
+    <div class="row-actions" style="margin-top:12px;gap:8px">
+      <button class="btn primary" id="sendMail" type="button" style="flex:1">메일로 보내기</button>
+      <button class="btn primary" id="sendKakao" type="button" style="flex:1;background:#f7e600;color:#1d2a24;border-color:#e5d500">카톡으로 보내기</button>
+    </div>
     <div id="sendHint" class="foot" style="margin-top:6px"></div>
     <button class="btn" id="makeXlsx" type="button" style="width:100%;margin-top:8px">엑셀 파일 저장만 하기</button>
     <div id="msg" hidden></div>
@@ -545,8 +548,8 @@
   // 파일 공유창은 휴대폰에서만 시도 (PC 브라우저는 지원이 불안정해 저장 + 메일 프로그램 열기로 처리)
   const canShareFiles = () => isMobile && !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.xlsx', { type: XLSX_MIME })] }));
   $('sendHint').textContent = canShareFiles()
-    ? (TEACHER_EMAIL ? '받는 사람: ' + TEACHER_EMAIL : '메일 앱에서 담당 선생님 주소를 선택해 보내 주세요.')
-    : 'PC에서는 파일을 저장한 뒤 메일 프로그램이 열립니다. 저장된 파일을 첨부해 보내 주세요. (휴대폰에서는 파일이 첨부된 채로 바로 열립니다)';
+    ? ('엑셀 파일이 첨부된 채로 열립니다. 담당 선생님께 보내 주세요.' + (TEACHER_EMAIL ? ' (받는 사람: ' + TEACHER_EMAIL + ')' : ''))
+    : 'PC에서는 엑셀 파일이 먼저 저장됩니다. 메일은 메일 프로그램이 열리면 파일을 첨부하고, 카톡은 PC 카카오톡 대화창에 저장된 파일을 끌어다 놓으세요.';
 
   // 공유창은 버튼을 누른 직후에만 열 수 있으므로, 파일을 미리 만들어 두었다가 즉시 공유한다
   let cachedFile = null, cachedKey = '', preparing = null;
@@ -574,31 +577,32 @@
   }
 
   // 만들어 보내기: 휴대폰 공유 기능으로 파일을 첨부한 채 메일·카톡 열기
-  $('sendXlsx').addEventListener('click', async () => {
+  async function sendVia(target, btn) {
     const errs = validate();
     if (errs.length) { showMsg('아직 입력이 끝나지 않았습니다.', true, errs); return; }
-    const btn = $('sendXlsx');
+    const label = btn.textContent;
     try {
       if (canShareFiles()) {
         let file = (cachedFile && cachedKey === stateKey()) ? cachedFile : null;
         if (!file) {
           // 아직 준비 전이면 만들고 나서 한 번 더 누르도록 안내 (공유창은 누른 직후에만 열림)
-          btn.disabled = true; btn.textContent = '파일 준비 중... 잠시 후 다시 눌러 주세요';
+          btn.disabled = true; btn.textContent = '파일 준비 중...';
           await prepareFile();
-          btn.disabled = false; btn.textContent = '엑셀 파일 만들어 보내기';
-          showMsg('파일이 준비됐습니다. [엑셀 파일 만들어 보내기]를 한 번 더 눌러 주세요.');
+          btn.disabled = false; btn.textContent = label;
+          showMsg('파일이 준비됐습니다. [' + label + ']를 한 번 더 눌러 주세요.');
           return;
         }
         try {
           await shareFile(file);
-          showMsg('보내기 창을 열었습니다. 메일 또는 카톡을 골라 담당 선생님께 보내 주세요. ' + summary());
+          showMsg('공유창에서 ' + (target === 'kakao' ? '카카오톡' : '메일') + '을 골라 담당 선생님께 보내 주세요. ' + summary());
         } catch (e) {
           if (e && e.name === 'AbortError') showMsg('보내기를 취소했습니다. 다시 누르면 보낼 수 있습니다.', true);
           else if (e && e.name === 'NotAllowedError') {
             downloadFile(file);
             const subject = file.name.replace(/\.xlsx$/, '');
-            showMsg('이 브라우저에서 공유창을 열 수 없어 파일을 저장했습니다: ' + file.name + '  →  메일 앱이 열리면 저장된 파일을 첨부해 보내 주세요.', true);
-            setTimeout(() => { window.location.href = 'mailto:' + encodeURIComponent(TEACHER_EMAIL) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('코칭일자 파일을 첨부합니다. ' + summary()); }, 600);
+            if (target === 'kakao') showMsg('이 브라우저에서 공유창을 열 수 없어 파일을 저장했습니다: ' + file.name + '  →  카카오톡 대화창에 저장된 파일을 첨부해 보내 주세요.', true);
+            else { showMsg('이 브라우저에서 공유창을 열 수 없어 파일을 저장했습니다: ' + file.name + '  →  메일 앱이 열리면 저장된 파일을 첨부해 보내 주세요.', true);
+              setTimeout(() => { window.location.href = 'mailto:' + encodeURIComponent(TEACHER_EMAIL) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('코칭일자 파일을 첨부합니다. ' + summary()); }, 600); }
           }
           else throw e;
         }
@@ -607,16 +611,22 @@
         const file = await makeFile(); if (!file) return;
         const subject = file.name.replace(/\.xlsx$/, '');
         downloadFile(file);
-        const mail = 'mailto:' + encodeURIComponent(TEACHER_EMAIL) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('코칭일자 파일을 첨부합니다. ' + summary());
-        showMsg('엑셀 파일을 저장했습니다: ' + file.name + '  →  메일 앱이 열리면 저장된 파일을 첨부해 보내 주세요. ' + summary());
-        setTimeout(() => { window.location.href = mail; }, 600);
+        if (target === 'kakao') {
+          showMsg('엑셀 파일을 저장했습니다: ' + file.name + '  →  PC 카카오톡에서 담당 선생님 대화창을 열고, 저장된 파일(다운로드 폴더)을 끌어다 놓아 보내 주세요. ' + summary());
+        } else {
+          const mail = 'mailto:' + encodeURIComponent(TEACHER_EMAIL) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('코칭일자 파일을 첨부합니다. ' + summary());
+          showMsg('엑셀 파일을 저장했습니다: ' + file.name + '  →  메일 프로그램이 열리면 저장된 파일을 첨부해 보내 주세요. ' + summary());
+          setTimeout(() => { window.location.href = mail; }, 600);
+        }
       }
     } catch (e) {
       showMsg('보내지 못했습니다. "엑셀 파일 저장만 하기"로 저장한 뒤 직접 보내 주세요. (오류: ' + ((e && e.message) || '알 수 없음') + ')', true);
     } finally {
-      btn.disabled = false; btn.textContent = '엑셀 파일 만들어 보내기';
+      btn.disabled = false; btn.textContent = label;
     }
-  });
+  }
+  $('sendMail').addEventListener('click', () => sendVia('mail', $('sendMail')));
+  $('sendKakao').addEventListener('click', () => sendVia('kakao', $('sendKakao')));
 
   // 저장만 하기
   $('makeXlsx').addEventListener('click', async () => {

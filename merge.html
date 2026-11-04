@@ -299,8 +299,8 @@
     $('stMeetIn').textContent = blocks.filter(b => b.coach.region === '경산' && b.inCnt > 0).length + '명 참석';
     $('stMeetOut').textContent = blocks.filter(b => b.coach.region === '청도' && b.outCnt > 0).length + '명 참석';
     $('stPay').textContent = blocks.reduce((n, b) => n + b.pay, 0).toLocaleString('ko-KR') + '원';
-    let html = '<colgroup><col style="width:6%"><col style="width:8%"><col style="width:11%"><col style="width:12%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:17%"><col></colgroup>' +
-      '<tr><th>순</th><th>지역</th><th>이름</th><th>제출</th><th>코칭</th><th>관내</th><th>관외</th><th>교통비</th><th>학교(학생)</th></tr>';
+    let html = '<colgroup><col style="width:6%"><col style="width:8%"><col style="width:11%"><col style="width:12%"><col style="width:8%"><col style="width:10%"><col style="width:10%"><col style="width:16%"><col></colgroup>' +
+      '<tr><th>순</th><th>지역</th><th>이름</th><th>제출</th><th>코칭</th><th>관내<br>(사례회의)</th><th>관외<br>(사례회의)</th><th>교통비</th><th>학교(학생)</th></tr>';
     blocks.forEach((b, i) => {
       html += '<tr><td>' + (i + 1) + '</td><td>' + esc(b.coach.region) + '</td><td>' + esc(b.coach.name) + '</td>' +
         '<td class="' + (b.sub ? 'ok">제출' : 'warn">미제출') + '</td>' +

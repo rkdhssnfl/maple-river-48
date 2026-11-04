@@ -72,7 +72,7 @@
   .chip[aria-pressed="true"] { background: var(--c); color: var(--on-color); }
   .cal { margin-top: 10px; }
   .cal-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
   .dow { text-align: center; font-size: 11px; font-weight: 700; padding: 2px 0; color: var(--c, var(--muted)); }
   .day { --c: var(--muted); font: inherit; font-size: 14px; aspect-ratio: 1; max-width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--fg); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; padding: 0; font-variant-numeric: tabular-nums; }
   .day small { font-size: 9px; color: var(--muted); }
@@ -97,6 +97,9 @@
   .half.top[aria-pressed="true"] small { color: var(--on-color); }
   .half.bot[aria-pressed="true"] { background: repeating-linear-gradient(135deg, var(--c) 0 3px, transparent 3px 6px); color: var(--fg); font-weight: 700; border-top-color: var(--c); text-shadow: 0 0 3px var(--surface), 0 0 3px var(--surface); }
   .half:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .day2.today, .day.today { box-shadow: 0 0 0 2px var(--accent); }
+  .day2.today .half.top::before, .day.today::before { content: "오늘"; font-size: 8px; color: var(--accent); font-weight: 700; line-height: 1; }
+  .day2.today .half.top[aria-pressed="true"]::before { color: var(--on-color); }
   .legend { display: flex; gap: 8px; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-top: 6px; }
   .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--c); margin-right: 3px; vertical-align: -1px; }
   .row-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
@@ -134,7 +137,7 @@
 </header>
 
 <div class="wrap">
-  <p class="intro">① 이름·연도·월 → ② 학생별로 학교(학생) 입력 → ③ 달력에서 코칭한 날의 <b>위쪽(수업)</b>을 탭, 보강한 날은 <b>아래쪽(보강)</b>을 탭 → ④ 사례회의 참석일 선택 → ⑤ 맨 아래 <b>엑셀 파일 만들기</b>를 눌러 저장한 뒤 담당 선생님께 보내 주세요.</p>
+  <p class="intro">매일 수업 후 그날 날짜를 탭해 두면 한 달 동안 이 휴대폰에 누적됩니다. 월말에 엑셀로 저장해 보내 주세요.<br>① 이름·연도·월 → ② 학생별로 학교(학생) 입력 → ③ 달력에서 코칭한 날의 <b>위쪽(수업)</b>을 탭, 보강한 날은 <b>아래쪽(보강)</b>을 탭 → ④ 사례회의 참석일 선택 → ⑤ 맨 아래 <b>엑셀 파일 만들기</b>를 눌러 저장한 뒤 담당 선생님께 보내 주세요.</p>
 
   <section class="card">
     <h2>기본 정보</h2>
@@ -182,6 +185,7 @@
   const STORE = 'coach-report-v3';
 
   const now = new Date();
+  const TODAY = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
   const state = load() || { name: '', region: '', year: now.getFullYear(), month: now.getMonth() + 1, students: [], meet: [], meetNote: '' };
   if (!state.students.length) state.students.push(newStudent());
   if (!Array.isArray(state.meet)) state.meet = [];
@@ -215,10 +219,24 @@
   for (let m = 1; m <= 12; m++) monthSel.add(new Option(m + '월', m));
   $('name').value = state.name; yearSel.value = state.year; monthSel.value = state.month;
   $('name').addEventListener('input', e => { state.name = e.target.value; save(); renderPreview(); });
+  /* 달별 기록 보관: 월을 바꾸면 현재 달 기록을 보관하고, 그 달에 보관된 기록이 있으면 되살림 */
+  const ymKey = () => state.year + '-' + String(state.month).padStart(2, '0');
+  function stashMonth() {
+    state.archive = state.archive || {};
+    state.archive[ymKey()] = { students: state.students.map(s => ({ group: s.group, dates: s.dates.slice(), makeup: s.makeup.slice(), note: s.note || '' })), meet: state.meet.slice() };
+  }
   function onPeriodChange() {
+    stashMonth();
     state.year = Number(yearSel.value); state.month = Number(monthSel.value);
-    state.students.forEach(s => { s.dates = []; s.makeup = []; });
-    state.meet = [];
+    const saved = state.archive && state.archive[ymKey()];
+    if (saved) {
+      state.students = saved.students.map(s => ({ group: s.group, dates: s.dates.slice(), makeup: s.makeup.slice(), note: s.note || '' }));
+      state.meet = saved.meet.slice();
+      if (!state.students.length) state.students.push(newStudent());
+    } else {
+      state.students.forEach(s => { s.dates = []; s.makeup = []; }); // 학교(학생)는 유지, 날짜만 새로
+      state.meet = [];
+    }
     save(); renderAll();
   }
   yearSel.addEventListener('change', onPeriodChange);
@@ -247,6 +265,7 @@
         if (dow >= 5) cell.classList.add('wk');
         if (isPrev) cell.classList.add('prev');
         if (opts.matchDow >= 0 && dow === opts.matchDow) cell.classList.add('match');
+        if (key === TODAY) cell.classList.add('today');
         const otherBtn = h => h.classList.contains('top') ? cell.lastElementChild : cell.firstElementChild;
         const mkHalf = (cls, list, other, text, aria) => {
           const h = document.createElement('button');
@@ -271,6 +290,7 @@
       if (color) b.style.setProperty('--c', color);
       if (dow >= 5) b.classList.add('wk');
       if (isPrev) b.classList.add('prev');
+      if (key === TODAY) b.classList.add('today');
       b.innerHTML = label;
       b.setAttribute('aria-pressed', opts.selected.includes(key));
       b.setAttribute('aria-label', md(d) + ' ' + DOW7[dow]);

@@ -79,19 +79,7 @@
       <span class="small">설문 서비스의 "응답 내려받기" 파일 그대로 올리면 됩니다. 열 이름(이름·구분·관리번호·상태·제출일시)을 자동으로 찾습니다.</span>
     </label>
     <div id="parseMsg" hidden></div>
-    <details style="margin-top:10px" open>
-      <summary>응답 표를 복사해서 붙여넣기 (엑셀 내려받기가 안 될 때)</summary>
-      <div class="small" style="margin-top:6px">설문 서비스의 응답 표를 마우스로 드래그해 복사(Ctrl+C)한 뒤 아래에 붙여넣고 [읽기]를 누르세요. 첫 줄에 열 이름(이름·구분·관리번호…)이 들어 있어야 합니다. 엑셀 표를 복사해 붙여넣어도 됩니다.</div>
-      <textarea id="pasteBox" placeholder="제출일시	이름	구분	관리번호&#10;2026-03-16 09:10	박서연	대출	1237, 1240" style="width:100%;margin-top:8px;font:inherit;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--input);color:var(--fg);min-height:110px"></textarea>
-      <button class="btn" id="pasteBtn" type="button" style="margin-top:6px">읽기</button>
-    </details>
-    <details style="margin-top:10px">
-      <summary>파일에 "대출/반납 구분" 열이 없을 때 (대출 설문과 반납 설문을 따로 만든 경우)</summary>
-      <div class="row" style="margin-top:8px">
-        <label class="f">이 파일의 종류<select id="forceType"><option value="">자동(파일 안의 구분 열 사용)</option><option value="대출">대출 응답 파일</option><option value="반납">반납 응답 파일</option></select></label>
-        <span class="small">파일을 올리기 전에 고르면 그 파일의 모든 행이 해당 종류로 읽힙니다.</span>
-      </div>
-    </details>
+    <select id="forceType" hidden><option value=""></option></select>
   </section>
 
   <section class="card">
@@ -286,18 +274,6 @@
     pm.innerHTML = (oks.length ? '읽음: ' + esc(oks.join(', ')) : '읽은 파일 없음') + (errs.length ? '<ul>' + errs.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '');
     render();
   }
-  $('pasteBtn').addEventListener('click', async () => {
-    const text = $('pasteBox').value; if (!text.trim()) return;
-    const pm = $('parseMsg'); pm.hidden = false;
-    const name = '붙여넣기 ' + fmtDT(new Date());
-    try {
-      const { out, skipped } = await parseFile({ name }, $('forceType').value || '', parseTSV(text));
-      out.forEach(x => records.push(x)); srcFiles.add(name);
-      pm.className = 'msg'; pm.textContent = '읽음: ' + out.length + '건' + (skipped ? ' (건너뜀 ' + skipped + ')' : '');
-      if (out.length) $('pasteBox').value = '';
-    } catch (e) { pm.className = 'msg err'; pm.textContent = '읽지 못했습니다: ' + (e.message || '오류'); }
-    render();
-  });
   $('reset').addEventListener('click', () => { records.length = 0; srcFiles.clear(); $('parseMsg').hidden = true; $('msg').hidden = true; render(); });
 
   /* ---------- 집계 ---------- */

@@ -325,8 +325,8 @@
     const fill = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
     const HEAD = fill('FFCFE2F3'), BLUE = fill('FFDAEEF3'), PINK = fill('FFFDE9D9'), PEACH = fill('FFFCE5CD');
     const center = { horizontal: 'center', vertical: 'middle' };
-    const COLS = 23; // A~W
-    const widths = { A: 6, B: 7.125, C: 8, D: 21.25, E: 8, O: 14.625, P: 12.625, Q: 18.125, R: 17.5, S: 18.625, T: 17.875, U: 13.875, V: 12.625, W: 22.375 };
+    const COLS = 22; // A~V (범위·항목을 합쳐 V열 '비고')
+    const widths = { A: 6, B: 7.125, C: 8, D: 21.25, E: 8, O: 14.625, P: 12.625, Q: 18.125, R: 17.5, S: 18.625, T: 17.875, U: 13.875, V: 26 };
     for (let c = 1; c <= COLS; c++) { const L = String.fromCharCode(64 + c); ws.getColumn(c).width = widths[L] || 6.375; }
 
     ws.mergeCells(1, 1, 1, COLS);
@@ -339,7 +339,7 @@
     for (let c = 1; c <= COLS; c++) ws.getCell(2, c).border = { bottom: thin };
     ws.getRow(2).height = 18.75;
 
-    const heads = ['순', '지역', '이름', '학교(그룹)', '요일', '코칭 일자(월/일)', '', '', '', '', '', '', '', '', '코칭방문횟수', '코칭교통비', '관내연수참여횟수', '관내연수교통비', '관외연수참여횟수', '관외연수교통비', '합계', '범위', '항목'];
+    const heads = ['순', '지역', '이름', '학교(그룹)', '요일', '코칭 일자(월/일)', '', '', '', '', '', '', '', '', '코칭방문횟수', '코칭교통비', '관내연수참여횟수', '관내연수교통비', '관외연수참여횟수', '관외연수교통비', '합계', '비고'];
     heads.forEach((h, i) => { const c = ws.getCell(3, i + 1); c.value = h; c.font = font({ bold: true }); c.fill = HEAD; c.alignment = center; c.border = { left: thin, right: thin, top: thin, bottom: dbl }; });
     ws.mergeCells(3, 6, 3, 14);
     ws.getRow(3).height = 17.25;
@@ -358,15 +358,14 @@
           if (c >= 6 && c <= 14) cell.numFmt = 'm/d';
           if (c === 16 || c === 18 || c === 20) { cell.fill = BLUE; cell.numFmt = '#,##0'; }
           if (c === 21) { cell.fill = PINK; cell.numFmt = '#,##0'; }
-          if (c === 22 || c === 23) cell.alignment = { horizontal: 'left', vertical: 'middle' };
+          if (c === 22) cell.alignment = { horizontal: 'left', vertical: 'middle' };
         }
         ws.getRow(rr).height = 18.75;
         if (!ln) continue;
         ws.getCell(rr, 4).value = ln.group;
         ws.getCell(rr, 5).value = ln.weekday || null;
         ln.dates.slice(0, DATE_COLS).forEach((d, k) => { ws.getCell(rr, 6 + k).value = toUtc(d); });
-        if (ln.v) ws.getCell(rr, 22).value = ln.v;
-        if (ln.w) ws.getCell(rr, 23).value = ln.w;
+        if (ln.v || ln.w) ws.getCell(rr, 22).value = [ln.v, ln.w].filter(Boolean).join(' ');
         if (ln.meet) { ws.getCell(rr, 4).font = font({ color: { argb: 'FF2E7D32' }, bold: true }); }
       }
       ws.getCell(top, 1).value = idx + 1;
@@ -374,9 +373,9 @@
       ws.getCell(top, 3).value = b.coach.name;
       ws.getCell(top, 15).value = { formula: 'COUNTA(F' + top + ':N' + bot + ')', result: b.visits };
       ws.getCell(top, 16).value = { formula: 'PRODUCT(O' + top + '*' + VISIT_PAY + ')', result: b.visits * VISIT_PAY };
-      ws.getCell(top, 17).value = { formula: 'COUNTIF(V' + top + ':V' + bot + ', "(관내)")', result: b.inCnt };
+      ws.getCell(top, 17).value = { formula: 'COUNTIF(V' + top + ':V' + bot + ', "*(관내)*")', result: b.inCnt };
       ws.getCell(top, 18).value = { formula: 'PRODUCT(Q' + top + '*' + IN_PAY + ')', result: b.inCnt * IN_PAY };
-      ws.getCell(top, 19).value = { formula: 'COUNTIF(V' + top + ':V' + bot + ', "(관외)")', result: b.outCnt };
+      ws.getCell(top, 19).value = { formula: 'COUNTIF(V' + top + ':V' + bot + ', "*(관외)*")', result: b.outCnt };
       ws.getCell(top, 20).value = { formula: 'PRODUCT(S' + top + '*' + OUT_PAY + ')', result: b.outCnt * OUT_PAY };
       ws.getCell(top, 21).value = { formula: 'SUM(P' + top + ',R' + top + ',T' + top + ')', result: b.pay };
       [1, 2, 3, 15, 16, 17, 18, 19, 20, 21].forEach(c => ws.mergeCells(top, c, bot, c));
@@ -397,7 +396,6 @@
       ws.getCell(r, c).value = { formula: 'SUM(' + L + firstData + ':' + L + lastData + ')', result: total };
       if (i % 2 === 1 || i === 6) ws.getCell(r, c).numFmt = '#,##0';
     });
-    ws.dataValidations.add('V' + firstData + ':V' + lastData, { type: 'list', allowBlank: true, formulae: ['"(관내),(관외)"'] });
     ws.views = [{ state: 'frozen', ySplit: 3 }];
     return wb.xlsx.writeBuffer();
   }

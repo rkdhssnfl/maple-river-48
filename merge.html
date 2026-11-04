@@ -54,8 +54,9 @@
   .coach h3 { margin: 0 0 6px; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .coach h3 .cnt { font-size: 12px; color: var(--muted); font-weight: 400; }
   .coach .pvw { overflow-x: auto; }
-  table.pv { border-collapse: collapse; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  table.pv th, table.pv td { border: 1px solid var(--line); padding: 3px 7px; text-align: center; }
+  table.pv { border-collapse: collapse; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; width: auto; table-layout: auto; }
+  table.pv th, table.pv td { border: 1px solid var(--line); padding: 3px 7px; text-align: center; overflow-wrap: normal; white-space: nowrap; }
+  table.pv td.l, table.pv th:first-child { min-width: 120px; }
   table.pv th { background: var(--accent-soft); font-weight: 500; }
   table.pv td.l { text-align: left; }
   table.pv td.mt { color: #2e7d32; font-weight: 700; }
@@ -420,12 +421,12 @@
     $('stMeetOut').textContent = blocks.filter(b => b.coach.region === '청도' && b.outCnt > 0).length + '명 참석';
     $('stPay').textContent = blocks.reduce((n, b) => n + b.pay, 0).toLocaleString('ko-KR') + '원';
     let html = '<colgroup><col style="width:6%"><col style="width:8%"><col style="width:11%"><col style="width:12%"><col style="width:8%"><col style="width:10%"><col style="width:10%"><col style="width:16%"><col></colgroup>' +
-      '<tr><th>순</th><th>지역</th><th>이름</th><th>제출</th><th>코칭</th><th>관내<br>(사례회의)</th><th>관외<br>(사례회의)</th><th>교통비</th><th>학교(학생)</th></tr>';
+      '<tr><th>순</th><th>지역</th><th>이름</th><th>제출</th><th>코칭</th><th>관내<br>(사례회의)</th><th>관외<br>(사례회의)</th><th>교통비</th></tr>';
     blocks.forEach((b, i) => {
       html += '<tr><td>' + (i + 1) + '</td><td>' + esc(b.coach.region) + '</td><td>' + esc(b.coach.name) + '</td>' +
         '<td class="' + (b.sub ? 'ok">제출' : 'warn">미제출') + '</td>' +
         '<td>' + (b.sub ? b.visits : '') + '</td><td>' + (b.sub ? b.inCnt : '') + '</td><td>' + (b.sub ? b.outCnt : '') + '</td>' +
-        '<td>' + (b.sub ? b.pay.toLocaleString('ko-KR') : '') + '</td><td class="l">' + esc(b.notes.join(', ')) + '</td></tr>';
+        '<td>' + (b.sub ? b.pay.toLocaleString('ko-KR') : '') + '</td></tr>';
     });
     $('tbl').innerHTML = html;
     $('notes').innerHTML = (unknown.length && MASTER.length) ? '<div class="msg err">양식 명단에 없는 이름: ' + esc(unknown.join(', ')) + ' — 명단 맨 아래에 따로 넣었습니다. 이름이 틀린 것이면 고쳐서 다시 올려 주세요.</div>' : '';

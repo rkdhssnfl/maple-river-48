@@ -137,7 +137,7 @@
 </header>
 
 <div class="wrap">
-  <p class="intro">매일 수업 후 그날 날짜를 탭해 두면 한 달 동안 이 휴대폰에 누적됩니다. 월말에 엑셀로 저장해 보내 주세요.<br>① 이름·연도·월 → ② 학생별로 학교(학생) 입력 → ③ 달력에서 코칭한 날의 <b>위쪽(수업)</b>을 탭, 보강한 날은 <b>아래쪽(보강)</b>을 탭 → ④ 사례회의 참석일 선택 → ⑤ 맨 아래 <b>엑셀 파일 만들기</b>를 눌러 저장한 뒤 담당 선생님께 보내 주세요.</p>
+  <p class="intro">매일 수업 후 그날 날짜를 탭해 두면 한 달 동안 이 휴대폰에 누적됩니다. 월말에 엑셀로 저장해 보내 주세요.<br>① 이름·연도·월 → ② 학생별로 학교와 학생 이름 입력 → ③ 달력에서 코칭한 날의 <b>위쪽(수업)</b>을 탭, 보강한 날은 <b>아래쪽(보강)</b>을 탭 → ④ 사례회의 참석일 선택 → ⑤ 맨 아래 <b>엑셀 파일 만들기</b>를 눌러 저장한 뒤 담당 선생님께 보내 주세요.</p>
 
   <section class="card">
     <h2>코칭단</h2>
@@ -193,7 +193,7 @@
   state.students.forEach(s => { if (!Array.isArray(s.makeup)) s.makeup = []; });
   if (typeof state.meetNote !== 'string') state.meetNote = '';
 
-  function newStudent() { return { group: '', dates: [], makeup: [], note: '' }; }
+  function newStudent() { return { group: '', school: '', student: '', dates: [], makeup: [], note: '' }; }
   function load() { try { const s = localStorage.getItem(STORE); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
   function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
 
@@ -224,14 +224,14 @@
   const ymKey = () => state.year + '-' + String(state.month).padStart(2, '0');
   function stashMonth() {
     state.archive = state.archive || {};
-    state.archive[ymKey()] = { students: state.students.map(s => ({ group: s.group, dates: s.dates.slice(), makeup: s.makeup.slice(), note: s.note || '' })), meet: state.meet.slice() };
+    state.archive[ymKey()] = { students: state.students.map(s => ({ group: s.group, school: s.school, student: s.student, dates: s.dates.slice(), makeup: s.makeup.slice(), note: s.note || '' })), meet: state.meet.slice() };
   }
   function onPeriodChange() {
     stashMonth();
     state.year = Number(yearSel.value); state.month = Number(monthSel.value);
     const saved = state.archive && state.archive[ymKey()];
     if (saved) {
-      state.students = saved.students.map(s => ({ group: s.group, dates: s.dates.slice(), makeup: s.makeup.slice(), note: s.note || '' }));
+      state.students = saved.students.map(s => ({ group: s.group, school: s.school, student: s.student, dates: s.dates.slice(), makeup: s.makeup.slice(), note: s.note || '' }));
       state.meet = saved.meet.slice();
       if (!state.students.length) state.students.push(newStudent());
     } else {
@@ -324,14 +324,19 @@
     card.className = 'card';
     card.innerHTML =
       '<h2>학생 ' + (i + 1) + ' <span class="count" id="cnt' + i + '"></span></h2>' +
-      '<label class="f">학교(학생)<input type="text" id="group' + i + '" placeholder="예) 푸른솔초(김하늘)"></label>' +
+      '<div class="grid2"><label class="f">학교<input type="text" id="school' + i + '" placeholder="예) 푸른솔초"></label>' +
+      '<label class="f">학생 이름<input type="text" id="student' + i + '" placeholder="예) 김하늘"></label></div>' +
       '<div class="cal" style="margin-top:12px"><div class="cal-head"><span>코칭한 날을 탭하세요 (칸 위쪽 = 수업, 아래쪽 = 보강)</span><span id="calHint' + i + '"></span></div><div class="cal-grid" id="cal' + i + '"></div></div>' +
       '<div class="sel-list" id="sel' + i + '"></div>' +
       '<div class="row-actions"><span></span><button class="btn ghost" type="button" id="rm' + i + '">이 학생 삭제</button></div>';
 
-    const groupIn = card.querySelector('#group' + i);
-    groupIn.value = s.group;
-    groupIn.addEventListener('input', e => { s.group = e.target.value; save(); renderPreview(); });
+    // 학교·학생 이름을 따로 입력받아 "학교(학생)" 형태로 합침
+    if (s.school === undefined) { const m = String(s.group || '').match(/^(.*?)\s*\((.*)\)\s*$/); s.school = m ? m[1].trim() : String(s.group || '').trim(); s.student = m ? m[2].trim() : ''; }
+    const joinGroup = () => { s.group = s.school.trim() + (s.student.trim() ? '(' + s.student.trim() + ')' : ''); };
+    const schoolIn = card.querySelector('#school' + i), studentIn = card.querySelector('#student' + i);
+    schoolIn.value = s.school; studentIn.value = s.student;
+    schoolIn.addEventListener('input', e => { s.school = e.target.value; joinGroup(); save(); renderPreview(); });
+    studentIn.addEventListener('input', e => { s.student = e.target.value; joinGroup(); save(); renderPreview(); });
 
     const selEl = card.querySelector('#sel' + i), cntEl = card.querySelector('#cnt' + i), hint = card.querySelector('#calHint' + i);
     function updateSel() {
@@ -445,7 +450,7 @@
     const filled = state.students.filter(s => s.group.trim() || s.dates.length || s.makeup.length);
     if (!filled.length && !state.meet.length) errs.push('학생을 1명 이상 입력하세요.');
     filled.forEach(s => {
-      if (!s.group.trim()) errs.push('학교(학생)가 비어 있는 학생이 있습니다.');
+      if (!s.group.trim()) errs.push('학교가 비어 있는 학생이 있습니다.');
       if (!s.dates.length && !s.makeup.length) errs.push(s.group.trim() + ': 코칭한 날짜를 선택하세요.');
     });
     return errs;

@@ -63,6 +63,18 @@
   .msg.err { background: transparent; border: 1px solid var(--err); color: var(--err); }
   .msg ul { margin: 4px 0 0; padding-left: 18px; }
   .legend { font-size: 12px; color: var(--muted); margin: 6px 0; }
+  th.mo { cursor: pointer; text-decoration: underline dotted; } th.mo.on { background: var(--accent); color: var(--accent-fg); }
+  /* 월별 달력 */
+  .cal { margin-top: 12px; }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+  .dow { text-align: center; font-size: 11px; color: var(--muted); }
+  .day { min-height: 64px; border: 1px solid var(--line); border-radius: 8px; padding: 3px 4px; font-size: 11px; overflow: hidden; }
+  .day .n { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .day.wk { opacity: .55; } .day.empty { visibility: hidden; }
+  .day .e { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+  .day .e.cls { color: var(--fg); } .day .e.mk { color: var(--mk); font-weight: 700; } .day .e.meet { color: var(--meet); font-weight: 700; }
+  .day.has { background: var(--accent-soft); }
 </style>
 
 <div class="wrap">
@@ -97,7 +109,12 @@
 
   <section class="card" id="detailCard" hidden>
     <h2><span class="step">3</span><span id="detailTitle">학생별 일지</span></h2>
+    <div class="small">월 제목을 누르면 그 달 달력이 아래에 표시됩니다.</div>
     <div class="tbl"><table id="detailTbl"></table></div>
+    <div class="cal" id="cal" hidden>
+      <div class="cal-head"><b id="calTitle"></b><span class="small">검정=수업 · <span class="mk">파랑=보강</span> · <span class="meet">초록=사례회의</span></span></div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
   </section>
 
   <section class="card">
@@ -125,7 +142,7 @@
 
   // subs: key name|month -> { name, month, year, groups: [{group, dates:[{d, kind}]}], meet:[Date], fileName }
   const subs = new Map();
-  let selected = '';
+  let selected = '', selMonth = null;
 
   function toDate(v) {
     if (v instanceof Date) return isNaN(v) ? null : new Date(v.getUTCFullYear(), v.getUTCMonth(), v.getUTCDate());
@@ -224,7 +241,8 @@
     if (!c) return;
     $('detailTitle').textContent = c.name + ' 학생별 일지';
     const months = MONTHS.filter(m => c.months[m]);
-    let html = '<tr><th>학교(학생)</th>' + months.map(m => '<th>' + m + '월</th>').join('') + '<th>수업</th><th>보강</th></tr>';
+    if (selMonth && !months.includes(selMonth)) selMonth = null;
+    let html = '<tr><th>학교(학생)</th>' + months.map(m => '<th class="mo' + (m === selMonth ? ' on' : '') + '" data-m="' + m + '">' + m + '월</th>').join('') + '<th>수업</th><th>보강</th></tr>';
     Object.values(c.students).forEach(s => {
       let tc = 0, tm = 0;
       html += '<tr><td class="l">' + esc(s.group) + '</td>';
@@ -233,6 +251,33 @@
     });
     html += '<tr><td class="l meet">사례회의</td>' + months.map(m => '<td class="l meet">' + (c.months[m].meetDates.map(md).join(', ') || '') + '</td>').join('') + '<td></td><td class="sum meet">' + months.reduce((n, m) => n + c.months[m].meet, 0) + '</td></tr>';
     $('detailTbl').innerHTML = html;
+    $('detailTbl').querySelectorAll('th.mo').forEach(th => th.addEventListener('click', () => { selMonth = Number(th.dataset.m); renderDetail(coaches); }));
+    renderCal(c);
+  }
+  function renderCal(c) {
+    const m = selMonth;
+    $('cal').hidden = !m;
+    if (!m) return;
+    const year = Number(yearSel.value) + (m <= 2 ? 1 : 0);
+    // 날짜별 항목: 학교(학생) 수업/보강, 사례회의
+    const byDay = {};
+    const add = (d, text, cls) => { const k = d.getDate(); (byDay[k] = byDay[k] || []).push({ text, cls }); };
+    Object.values(c.students).forEach(s => { const x = s.months[m]; if (!x) return; x.cls.forEach(d => { if (d.getMonth() + 1 === m) add(d, s.group, 'cls'); }); x.mk.forEach(d => { if (d.getMonth() + 1 === m) add(d, '보강 ' + s.group, 'mk'); }); });
+    (c.months[m] ? c.months[m].meetDates : []).forEach(d => { if (d.getMonth() + 1 === m) add(d, MEET_LABEL, 'meet'); });
+    // 전월 말 날짜(예: 3/30·3/31이 4월 파일에)도 보여 주기 위해 달 앞에 붙은 날짜 수집
+    const extra = [];
+    Object.values(c.students).forEach(s => { const x = s.months[m]; if (!x) return; x.cls.concat(x.mk).forEach(d => { if (d.getMonth() + 1 !== m) extra.push(md(d) + ' ' + s.group); }); });
+    $('calTitle').textContent = c.name + ' — ' + year + '년 ' + m + '월' + (extra.length ? '  (이 달 파일에 포함된 다른 달 날짜: ' + extra.join(', ') + ')' : '');
+    const first = new Date(year, m - 1, 1), last = new Date(year, m, 0);
+    const lead = (first.getDay() + 6) % 7;
+    let html = ['월', '화', '수', '목', '금', '토', '일'].map(d => '<div class="dow">' + d + '</div>').join('');
+    for (let i = 0; i < lead; i++) html += '<div class="day empty"></div>';
+    for (let d = 1; d <= last.getDate(); d++) {
+      const dow = (new Date(year, m - 1, d).getDay() + 6) % 7;
+      const items = byDay[d] || [];
+      html += '<div class="day' + (dow >= 5 ? ' wk' : '') + (items.length ? ' has' : '') + '"><span class="n">' + d + '</span>' + items.map(it => '<span class="e ' + it.cls + '" title="' + esc(it.text) + '">' + esc(it.text) + '</span>').join('') + '</div>';
+    }
+    $('calGrid').innerHTML = html;
   }
 
   /* ---------- 엑셀 ---------- */

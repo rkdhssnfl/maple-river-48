@@ -170,7 +170,7 @@
     <div id="msg" hidden></div>
     <p class="foot">파일 이름: <span id="fname"></span><br>저장된 엑셀 파일을 담당 선생님께 메일로 보내 주세요. 입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
     <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
-      <a class="btn" href="코칭일자_양식.xlsx" download style="display:block;text-align:center;text-decoration:none">빈 양식 내려받기 (엑셀에 직접 작성할 때)</a>
+      <button class="btn" id="blankXlsx" type="button" style="width:100%">빈 양식 내려받기 (엑셀에 직접 작성할 때)</button>
       <div class="foot" style="margin-top:6px">달력 입력이 어려우면 이 양식을 내려받아 엑셀에서 직접 적어 보내도 됩니다. 결과는 같은 모양입니다.</div>
     </div>
     <button class="btn ghost" id="resetAll" type="button">입력 내용 모두 지우기</button>
@@ -460,7 +460,7 @@
     return errs;
   }
 
-  async function buildWorkbook() {
+  async function buildWorkbook(blank) {
     const wb = new ExcelJS.Workbook();
     const font = (o) => Object.assign({ name: '맑은 고딕', size: 11 }, o || {});
     const thin = { style: 'thin', color: { argb: 'FF000000' } };
@@ -499,7 +499,7 @@
     ws.mergeCells(4, 3, 4, 2 + DATE_COLS);
     ws.getRow(4).height = 17.25;
 
-    const lines = buildLines();
+    const lines = blank ? [] : buildLines();
     const rows = Math.max(MIN_BLOCK_ROWS, lines.length);
     const top = 5, bot = top + rows - 1;
     for (let r = top; r <= bot; r++) {
@@ -520,7 +520,7 @@
       });
     }
     const cnt = lines.reduce((n, ln) => n + ln.dates.length, 0);
-    ws.getCell(top, 1).value = state.name.trim();
+    ws.getCell(top, 1).value = blank ? '' : state.name.trim();
     const colL = String.fromCharCode(64 + 3), colR = String.fromCharCode(64 + 2 + DATE_COLS);
     ws.getCell(top, K).value = { formula: 'COUNT(' + colL + top + ':' + colR + bot + ')', result: cnt };
     ws.mergeCells(top, 1, bot, 1);
@@ -548,6 +548,17 @@
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
   const summary = () => '(코칭 ' + coachCount() + '회, 사례회의 ' + state.meet.length + '회)';
+  $('blankXlsx').addEventListener('click', async () => {
+    if (!window.ExcelJS) { showMsg('엑셀 생성 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.', true); return; }
+    const btn = $('blankXlsx'); btn.disabled = true;
+    try {
+      const buf = await buildWorkbook(true);
+      downloadFile(new File([buf], '코칭일자_양식.xlsx', { type: XLSX_MIME }));
+      showMsg('빈 양식을 저장했습니다: 코칭일자_양식.xlsx  →  엑셀에서 코칭단 이름, 학교(학생이름), 날짜(월/일)를 적어 보내 주세요. 사례회의는 학교(학생이름) 칸에 "사례회의"라고 적으면 됩니다.');
+    } catch (e) { showMsg('양식을 만들지 못했습니다. (' + ((e && e.message) || '오류') + ')', true); }
+    finally { btn.disabled = false; }
+  });
+
   $('makeXlsx').addEventListener('click', async () => {
     const btn = $('makeXlsx'); btn.disabled = true; btn.textContent = '파일 만드는 중...';
     try {

@@ -62,28 +62,34 @@
   .msg ul { margin: 4px 0 0; padding-left: 18px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
   label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
-  select, input[type=text], input[type=date] { font: inherit; font-size: 15px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--input); color: var(--fg); }
+  select, input[type=text], input[type=password], input[type=date] { font: inherit; font-size: 15px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--input); color: var(--fg); }
   .pill { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--fg); }
   details summary { cursor: pointer; font-size: 13px; color: var(--muted); }
 </style>
 
 <div class="wrap">
   <h1>교구·교재 대출 관리</h1>
-  <p class="sub">설문(왈라·모아폼 등)으로 받은 대출·반납 응답 엑셀을 올리면 미반납 현황을 정리하고, 종이 양식과 같은 모양의 대출·반납 대장 엑셀을 만들어 줍니다. 올린 파일은 이 기기 안에서만 처리됩니다.</p>
+  <p class="sub">코칭단이 제출 페이지에서 보낸 대출·반납 기록이 바로 모입니다. 미반납 현황을 정리하고 종이 양식 모양의 대장 엑셀을 만들어 줍니다.</p>
 
   <section class="card">
-    <h2><span class="step">1</span>응답 파일 올리기 <span class="small" id="fileState"></span></h2>
-    <label class="drop" id="drop">
-      <input type="file" id="files" multiple accept=".xlsx,.csv">
-      <b>여기를 눌러 응답 엑셀(.xlsx) 또는 CSV 선택</b> (여러 개 가능) 또는 끌어다 놓기<br>
-      <span class="small">설문 서비스의 "응답 내려받기" 파일 그대로 올리면 됩니다. 열 이름(이름·구분·관리번호·상태·제출일시)을 자동으로 찾습니다.</span>
-    </label>
-    <div id="parseMsg" hidden></div>
+    <h2><span class="step">1</span>접수된 기록 불러오기 <span class="small" id="fileState"></span></h2>
+    <div class="row">
+      <label class="f">관리 비밀번호<input type="password" id="pw" placeholder="비밀번호" style="width:160px"></label>
+      <button class="btn" id="connect" type="button">불러오기</button>
+      <label class="chk" style="font-size:13px;display:flex;align-items:center;gap:6px"><input type="checkbox" id="remember" checked> 이 기기에 비밀번호 기억</label>
+    </div>
+    <div id="connMsg" hidden></div>
+    <div class="small" style="margin-top:8px">불러온 뒤에는 30초마다 자동으로 새 기록을 확인합니다. <button class="btn ghost" id="refresh" type="button">지금 새로고침</button> <button class="btn ghost" id="chpw" type="button">비밀번호 변경</button></div>
     <details style="margin-top:10px">
-      <summary>파일에 "대출/반납 구분" 열이 없을 때 (대출 설문과 반납 설문을 따로 만든 경우)</summary>
+      <summary>엑셀·CSV 파일로 올리기 (설문 서비스 응답 파일 등)</summary>
+      <label class="drop" id="drop" style="margin-top:8px">
+        <input type="file" id="files" multiple accept=".xlsx,.csv">
+        <b>응답 엑셀(.xlsx) 또는 CSV 선택</b> 또는 끌어다 놓기<br>
+        <span class="small">이름·구분·관리번호·상태·제출일시 열을 자동으로 찾습니다.</span>
+      </label>
+      <div id="parseMsg" hidden></div>
       <div class="row" style="margin-top:8px">
-        <label class="f">이 파일의 종류<select id="forceType"><option value="">자동(파일 안의 구분 열 사용)</option><option value="대출">대출 응답 파일</option><option value="반납">반납 응답 파일</option></select></label>
-        <span class="small">파일을 올리기 전에 고르면 그 파일의 모든 행이 해당 종류로 읽힙니다.</span>
+        <label class="f">파일 종류<select id="forceType"><option value="">자동(파일 안의 구분 열 사용)</option><option value="대출">대출 응답 파일</option><option value="반납">반납 응답 파일</option></select></label>
       </div>
     </details>
   </section>
@@ -108,6 +114,10 @@
       <label class="f">관리번호<input type="text" id="fNum" placeholder="4자리" style="width:90px"></label>
     </div>
     <table id="allTbl"></table>
+    <div class="row" style="margin-top:8px">
+      <button class="btn ghost" id="delSel" type="button">선택한 기록 삭제</button>
+      <button class="btn ghost" id="delOld" type="button">반납 완료된 지난달 이전 기록 삭제</button>
+    </div>
   </section>
 
   <section class="card">
@@ -120,7 +130,7 @@
     <button class="btn primary" id="make" type="button" disabled>대출·반납 대장 엑셀 만들기</button>
     <div id="msg" hidden></div>
     <p class="small" style="margin-top:10px">시트 구성: ① 대출 대장(연번·이름·대출 일자·관리번호·상태) ② 반납 대장 ③ 미반납 현황 ④ 전체 기록. 물품사이트에 옮겨 적을 때 ④ 시트를 보면 됩니다.</p>
-    <button class="btn ghost" id="reset" type="button">올린 파일 모두 지우기</button>
+    <button class="btn ghost" id="reset" type="button">파일로 올린 기록만 지우기</button>
   </section>
 </div>
 
@@ -248,7 +258,58 @@
     pm.innerHTML = (oks.length ? '읽음: ' + esc(oks.join(', ')) : '읽은 파일 없음') + (errs.length ? '<ul>' + errs.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '');
     render();
   }
-  $('reset').addEventListener('click', () => { records.length = 0; srcFiles.clear(); $('parseMsg').hidden = true; $('msg').hidden = true; render(); });
+  $('reset').addEventListener('click', () => { for (let i = records.length - 1; i >= 0; i--) if (records[i].src !== SERVER_SRC) records.splice(i, 1); srcFiles.forEach(f => { if (f !== SERVER_SRC) srcFiles.delete(f); }); $('parseMsg').hidden = true; $('msg').hidden = true; render(); });
+
+  /* ---------- 서버(Supabase) 연결 ---------- */
+  const SUPABASE_URL = 'https://anrieakjjyiithncdnoi.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_yZ6fvQ7G0x9qz9BgGWAMmQ_s8sDIq_o';
+  const SERVER_SRC = '서버';
+  async function rpc(fn, body) {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY }, body: JSON.stringify(body) });
+    const text = await res.text();
+    if (!res.ok) { let m = text; try { m = JSON.parse(text).message || text; } catch (e) {} throw new Error(m); }
+    return text ? JSON.parse(text) : null;
+  }
+  const connMsg = $('connMsg');
+  function showConn(t, isErr) { connMsg.hidden = false; connMsg.className = 'msg' + (isErr ? ' err' : ''); connMsg.textContent = t; }
+  let timer = null;
+  function pw() { return $('pw').value; }
+  async function loadServer(quiet) {
+    if (!pw()) { if (!quiet) showConn('관리 비밀번호를 입력하세요.', true); return; }
+    try {
+      const rows = await rpc('lend_list', { p_pw: pw() });
+      for (let i = records.length - 1; i >= 0; i--) if (records[i].src === SERVER_SRC) records.splice(i, 1);
+      rows.forEach(r => records.push({ id: r.id, name: r.name, type: r.type, num: r.num, status: r.status || '', at: new Date(r.created_at), note: r.note || '', src: SERVER_SRC }));
+      srcFiles.add(SERVER_SRC);
+      try { if ($('remember').checked) localStorage.setItem('lend-pw', pw()); else localStorage.removeItem('lend-pw'); } catch (e) {}
+      showConn('불러왔습니다: ' + rows.length + '건 (' + fmtDT(new Date()) + ')');
+      if (!timer) timer = setInterval(() => loadServer(true), 30000);
+      render();
+    } catch (e) { showConn('불러오지 못했습니다: ' + ((e && e.message) || '오류'), true); }
+  }
+  $('connect').addEventListener('click', () => loadServer(false));
+  $('refresh').addEventListener('click', () => loadServer(false));
+  $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') loadServer(false); });
+  $('chpw').addEventListener('click', async () => {
+    const nw = window.prompt('새 관리 비밀번호 (4자 이상)'); if (!nw) return;
+    try { await rpc('lend_set_pw', { p_pw: pw(), p_new: nw }); $('pw').value = nw; try { if ($('remember').checked) localStorage.setItem('lend-pw', nw); } catch (e) {} showConn('비밀번호를 바꿨습니다.'); }
+    catch (e) { showConn('바꾸지 못했습니다: ' + ((e && e.message) || '오류'), true); }
+  });
+  async function deleteIds(ids, label) {
+    if (!ids.length) { showConn('삭제할 기록이 없습니다.', true); return; }
+    if (!window.confirm(label + ' ' + ids.length + '건을 서버에서 삭제할까요? 되돌릴 수 없습니다.')) return;
+    try { const n = await rpc('lend_delete', { p_pw: pw(), p_ids: ids }); showConn(n + '건 삭제했습니다.'); await loadServer(true); }
+    catch (e) { showConn('삭제하지 못했습니다: ' + ((e && e.message) || '오류'), true); }
+  }
+  $('delSel').addEventListener('click', () => deleteIds(Array.from(document.querySelectorAll('.selrow:checked')).map(x => x.value), '선택한 기록'));
+  $('delOld').addEventListener('click', () => {
+    // 지난달 말 이전 기록 중, 현재 미반납 물품에 해당하지 않는 것만
+    const now = new Date(); const cutoff = new Date(now.getFullYear(), now.getMonth(), 1);
+    const openNums = new Set(openItems().map(o => o.num));
+    const ids = records.filter(r => r.id && r.at && r.at < cutoff && !openNums.has(r.num)).map(r => r.id);
+    deleteIds(ids, '지난달 이전(반납 완료) 기록');
+  });
+  try { const saved = localStorage.getItem('lend-pw'); if (saved) { $('pw').value = saved; setTimeout(() => loadServer(true), 300); } } catch (e) {}
 
   /* ---------- 집계 ---------- */
   function sorted() { return records.slice().sort((a, b) => (a.at ? a.at.getTime() : 0) - (b.at ? b.at.getTime() : 0)); }
@@ -270,7 +331,7 @@
   }
   function render() {
     const open = openItems();
-    $('fileState').textContent = records.length ? '(' + srcFiles.size + '개 파일, ' + records.length + '건)' : '';
+    $('fileState').textContent = records.length ? '(' + records.length + '건)' : '';
     $('asOf').textContent = records.length ? '기준: ' + fmtDT(new Date()) : '';
     $('stOpen').textContent = open.length + '개';
     $('stLend').textContent = records.filter(r => r.type === '대출').length + '건';
@@ -291,10 +352,10 @@
   function renderAll() {
     const fn = $('fName').value, ft = $('fType').value, fnum = $('fNum').value.trim();
     const list = sorted().reverse().filter(r => (!fn || r.name === fn) && (!ft || r.type === ft) && (!fnum || r.num.includes(fnum)));
-    let html = '<colgroup><col style="width:26%"><col style="width:12%"><col style="width:18%"><col style="width:16%"><col style="width:12%"><col></colgroup><tr><th>일시</th><th>구분</th><th>이름</th><th>관리번호</th><th>상태</th><th>비고</th></tr>';
-    list.slice(0, 300).forEach(r => { html += '<tr><td>' + esc(fmtDT(r.at)) + '</td><td class="' + (r.type === '대출' ? 'lend' : 'ret') + '">' + r.type + '</td><td>' + esc(r.name) + '</td><td>' + esc(r.num) + '</td><td' + (r.status === '이상' ? ' class="bad"' : '') + '>' + esc(r.status) + '</td><td class="l">' + esc(r.note) + '</td></tr>'; });
-    if (!list.length) html += '<tr><td colspan="6" class="small">기록 없음</td></tr>';
-    if (list.length > 300) html += '<tr><td colspan="6" class="small">… 외 ' + (list.length - 300) + '건 (엑셀에서 전체 확인)</td></tr>';
+    let html = '<colgroup><col style="width:6%"><col style="width:24%"><col style="width:11%"><col style="width:16%"><col style="width:15%"><col style="width:11%"><col></colgroup><tr><th></th><th>일시</th><th>구분</th><th>이름</th><th>관리번호</th><th>상태</th><th>비고</th></tr>';
+    list.slice(0, 300).forEach(r => { html += '<tr><td>' + (r.id ? '<input type="checkbox" class="selrow" value="' + esc(r.id) + '">' : '') + '</td><td>' + esc(fmtDT(r.at)) + '</td><td class="' + (r.type === '대출' ? 'lend' : 'ret') + '">' + r.type + '</td><td>' + esc(r.name) + '</td><td>' + esc(r.num) + '</td><td' + (r.status === '이상' ? ' class="bad"' : '') + '>' + esc(r.status) + '</td><td class="l">' + esc(r.note) + '</td></tr>'; });
+    if (!list.length) html += '<tr><td colspan="7" class="small">기록 없음</td></tr>';
+    if (list.length > 300) html += '<tr><td colspan="7" class="small">… 외 ' + (list.length - 300) + '건 (엑셀에서 전체 확인)</td></tr>';
     $('allTbl').innerHTML = html;
   }
   ['fName', 'fType'].forEach(id => $(id).addEventListener('change', renderAll));

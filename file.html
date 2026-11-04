@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>학습코칭단 코칭일자 제출 (파일)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+</head>
+<body>
+<style>
+  html, body { margin: 0; } [hidden] { display: none !important; }
+  body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  /* 레이아웃: 휴대폰 한 열. 상단 고정 요약바, 학생 카드(각각 달력) + 사례회의 카드가 세로로 쌓임. 요일마다 다른 색. */
+  :root {
+    --bg: #f3f5f2;
+    --surface: #ffffff;
+    --fg: #1d2a24;
+    --muted: #65736c;
+    --line: #d6ddd8;
+    --accent: #1f6f5c;
+    --accent-fg: #ffffff;
+    --accent-soft: #dcefe8;
+    --input: #fffbe6;
+    --warn: #b4542b;
+    --wd0: #2e7d32; --wd1: #1565c0; --wd2: #6a1b9a; --wd3: #ef6c00; --wd4: #c62828;
+    --meet: #37474f;
+    --on-color: #ffffff;
+    --font-body: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141a17; --surface: #1d2622; --fg: #e8ede9; --muted: #98a59e; --line: #34403a;
+      --accent: #5fc3a5; --accent-fg: #0d1a15; --accent-soft: #223b33; --input: #2a2b1f; --warn: #e8936a;
+      --wd0: #66bb6a; --wd1: #64b5f6; --wd2: #ba68c8; --wd3: #ffa726; --wd4: #ef5350; --meet: #90a4ae; --on-color: #10140f;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141a17; --surface: #1d2622; --fg: #e8ede9; --muted: #98a59e; --line: #34403a;
+    --accent: #5fc3a5; --accent-fg: #0d1a15; --accent-soft: #223b33; --input: #2a2b1f; --warn: #e8936a;
+    --wd0: #66bb6a; --wd1: #64b5f6; --wd2: #ba68c8; --wd3: #ffa726; --wd4: #ef5350; --meet: #90a4ae; --on-color: #10140f;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; margin: 0; }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+  .wrap { max-width: 560px; margin: 0 auto; padding-block: 0 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); margin: 0 0 16px; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); }
+  .top-inner { max-width: 560px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+  .top-inner > div:first-child { min-width: 0; }
+  .top h1 { font-size: 15px; margin: 0; font-weight: 700; white-space: nowrap; }
+  @media (max-width: 360px) { .top h1 { font-size: 14px; } .top .sub { display: none; } }
+  .top .sub { font-size: 12px; color: var(--muted); }
+  .stat { display: flex; gap: 10px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .stat div { text-align: right; }
+  .stat .k { font-size: 11px; color: var(--muted); letter-spacing: .04em; }
+  .stat .v { font-size: 15px; font-weight: 700; color: var(--accent); }
+  .intro { font-size: 13px; color: var(--muted); margin: 0 0 14px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  .card.meet { border-color: var(--meet); }
+  .card h2 { font-size: 14px; margin: 0 0 10px; display: flex; align-items: center; justify-content: space-between; }
+  .card h2 .count { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
+  input[type=text], select { font: inherit; font-size: 16px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--input); color: var(--fg); width: 100%; min-width: 0; }
+  input:focus, select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font: inherit; font-size: 14px; padding: 7px 0; flex: 1 1 0; min-width: 44px; border: 2px solid var(--c); border-radius: 8px; background: var(--surface); color: var(--c); cursor: pointer; font-weight: 700; }
+  .chip[aria-pressed="true"] { background: var(--c); color: var(--on-color); }
+  .cal { margin-top: 10px; }
+  .cal-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+  .dow { text-align: center; font-size: 11px; font-weight: 700; padding: 2px 0; color: var(--c, var(--muted)); }
+  .day { --c: var(--muted); font: inherit; font-size: 14px; aspect-ratio: 1; max-width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--fg); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; padding: 0; font-variant-numeric: tabular-nums; }
+  .day small { font-size: 9px; color: var(--muted); }
+  .day.prev { color: var(--muted); border-style: dashed; }
+  .day.wk { opacity: .5; }
+  .day.match { border: 2px solid var(--c); color: var(--c); font-weight: 700; }
+  .day[aria-pressed="true"] { background: var(--c); color: var(--on-color); border-color: var(--c); font-weight: 700; }
+  .day[aria-pressed="true"] small { color: var(--on-color); }
+  .day.empty { visibility: hidden; }
+  /* 분할 날짜칸: 위 = 수업, 아래 = 보강 */
+  .day2 { --c: var(--muted); display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); min-width: 0; }
+  .day2.prev { border-style: dashed; }
+  .day2.prev .half.top { color: var(--muted); }
+  .day2.wk { opacity: .5; }
+  .day2.match { border: 2px solid var(--c); }
+  .day2.match .half.top { color: var(--c); font-weight: 700; }
+  .half { font: inherit; border: 0; background: transparent; color: var(--fg); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; gap: 2px; font-variant-numeric: tabular-nums; min-width: 0; }
+  .half.top { font-size: 14px; min-height: 32px; line-height: 1; flex-direction: column; gap: 1px; }
+  .half.top small { font-size: 8px; color: var(--muted); line-height: 1; }
+  .half.bot { font-size: 9px; min-height: 17px; color: var(--muted); border-top: 1px dashed var(--line); }
+  .half.top[aria-pressed="true"] { background: var(--c); color: var(--on-color); font-weight: 700; }
+  .half.top[aria-pressed="true"] small { color: var(--on-color); }
+  .half.bot[aria-pressed="true"] { background: repeating-linear-gradient(135deg, var(--c) 0 3px, transparent 3px 6px); color: var(--fg); font-weight: 700; border-top-color: var(--c); text-shadow: 0 0 3px var(--surface), 0 0 3px var(--surface); }
+  .half:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .day2.today, .day.today { box-shadow: 0 0 0 2px var(--accent); }
+  .day2.today .half.top::before, .day.today::before { content: "오늘"; font-size: 8px; color: var(--accent); font-weight: 700; line-height: 1; }
+  .day2.today .half.top[aria-pressed="true"]::before { color: var(--on-color); }
+  .legend { display: flex; gap: 8px; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--c); margin-right: 3px; vertical-align: -1px; }
+  .row-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
+  .btn { font: inherit; font-size: 15px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; width: 100%; font-size: 16px; padding: 14px; }
+  .btn.ghost { color: var(--muted); font-size: 13px; padding: 6px 10px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .sel-list { font-size: 12px; color: var(--muted); margin-top: 6px; min-height: 1.4em; }
+  .sel-list b { color: var(--fg); }
+  .msg { margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--fg); white-space: pre-wrap; }
+  .msg.err { background: transparent; border: 1px solid var(--warn); color: var(--warn); }
+  .msg ul { margin: 4px 0 0; padding-left: 18px; }
+  .preview { overflow-x: auto; margin-top: 10px; }
+  table.pv { border-collapse: collapse; font-size: 16px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  table.pv th, table.pv td { border: 1px solid var(--line); padding: 8px 10px; text-align: center; }
+  table.pv th { background: var(--accent-soft); font-weight: 500; }
+  table.pv td.l { text-align: left; }
+  table.pv td.mt { color: #2e7d32; font-weight: 700; }
+  table.pv td.mk { color: #1e88e5; font-weight: 700; }
+  .foot { font-size: 12px; color: var(--muted); margin-top: 16px; }
+  @media (prefers-reduced-motion: no-preference) { .day, .chip { transition: background .12s, color .12s; } }
+</style>
+
+<header class="top">
+  <div class="top-inner">
+    <div>
+      <h1>학습코칭단 코칭일자 제출</h1>
+      <div class="sub">코칭일자 입력 양식</div>
+    </div>
+    <div class="stat">
+      <div><div class="k">코칭</div><div class="v" id="statCount">0회</div></div>
+      <div><div class="k">사례회의</div><div class="v" id="statMeet">0회</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="intro">매일 수업 후 그날 날짜를 탭해 두면 한 달 동안 이 휴대폰에 누적됩니다. 월말에 엑셀로 저장해 보내 주세요.<br>① 이름·연도·월 → ② 학생별로 학교와 학생 이름 입력 → ③ 달력에서 코칭한 날의 <b>위쪽(수업)</b>을 탭, 보강한 날은 <b>아래쪽(보강)</b>을 탭 → ④ 사례회의 참석일 선택 → ⑤ 맨 아래 <b>엑셀 파일 저장하기</b>를 눌러 저장 → ⑥ <b>폰으로 제출하기</b>를 눌러 저장한 파일을 첨부해 제출 (컴퓨터는 메일로 보내도 됩니다).</p>
+
+  <section class="card">
+    <h2>코칭단</h2>
+    <div class="grid2">
+      <label class="f" style="grid-column:1 / -1">이름<input type="text" id="name" placeholder="예) 박서연" autocomplete="name"></label>
+      <label class="f">연도<select id="year"></select></label>
+      <label class="f">월<select id="month"></select></label>
+    </div>
+    <div class="sel-list" id="periodInfo"></div>
+    <div class="legend">
+      <span style="--c:var(--wd0)">월</span><span style="--c:var(--wd1)">화</span><span style="--c:var(--wd2)">수</span>
+      <span style="--c:var(--wd3)">목</span><span style="--c:var(--wd4)">금</span><span style="--c:var(--meet)">사례회의</span><span style="--c:repeating-linear-gradient(135deg, var(--muted) 0 3px, transparent 3px 6px)">보강(칸 아래쪽)</span>
+    </div>
+  </section>
+
+
+  <div id="students"></div>
+
+  <button class="btn" id="addStudent" type="button" style="width:100%">+ 학생 추가</button>
+
+  <section class="card meet" style="margin-top:14px">
+    <h2>사례회의 참석 <span class="count" id="meetCnt"></span></h2>
+    <div class="cal"><div class="cal-head"><span>참석한 날을 탭하세요</span><span id="meetHint"></span></div><div class="cal-grid" id="meetCal"></div></div>
+    <div class="sel-list" id="meetSel"></div>
+  </section>
+
+  <section class="card">
+    <h2>미리보기 <span class="count">파랑=보강, 초록=사례회의</span></h2>
+    <div class="preview"><table class="pv" id="pv"></table></div>
+    <button class="btn primary" id="makeXlsx" type="button" style="margin-top:12px">엑셀 파일 저장하기</button>
+    <div id="msg" hidden></div>
+    <p class="foot">파일 이름: <span id="fname"></span></p>
+    <a class="btn primary" id="wallaSubmit" href="https://walla.my/v/JCVUXo3ZR92bs2yEiujD" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:#1f4e9c;border-color:#1f4e9c">폰으로 제출하기 (저장한 파일 첨부)</a>
+    <p class="foot">카톡으로 글로 보내기로 하신 분은 <a href="kakao.html">카톡 제출 페이지</a>를 쓰세요.</p>
+    <p class="foot">① 위 초록 버튼으로 엑셀 파일을 저장 → ② 파란 버튼을 눌러 열리는 제출 화면에서 이름을 적고 <b>파일 첨부</b>로 방금 저장한 파일을 올려 제출하면 끝. 컴퓨터에서는 저장한 파일을 메일로 보내도 됩니다. 입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
+    <button class="btn" id="kakaoText" type="button" hidden>카톡으로 보내기</button>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
+      <button class="btn" id="blankXlsx" type="button" style="width:100%">빈 양식 내려받기 (엑셀에 직접 작성할 때)</button>
+      <div class="foot" style="margin-top:6px">달력 입력이 어려우면 이 양식을 내려받아 엑셀에서 직접 적어 보내도 됩니다. 결과는 같은 모양입니다.</div>
+    </div>
+    <button class="btn ghost" id="resetAll" type="button">입력 내용 모두 지우기</button>
+  </section>
+
+  <details class="card" id="xferCard" style="padding:12px 16px;margin-top:14px" open>
+    <summary style="cursor:pointer;font-size:14px;font-weight:700">다른 기기에서 이어서 입력하기 (기록 옮기기)</summary>
+    <div class="foot" style="margin-top:8px">기록은 이 기기(브라우저)에만 저장됩니다. 휴대폰 ↔ PC처럼 기기를 바꿀 때는 ① 쓰던 기기에서 [내 기록 코드 복사] → 카톡 "나에게 보내기" 등으로 옮김 → ② 새 기기에서 아래 칸에 붙여넣고 [불러오기]. 매일 할 필요는 없고 기기를 바꿀 때만 하면 됩니다.</div>
+    <div class="row-actions" style="margin-top:8px;gap:8px">
+      <button class="btn" id="xferCopy" type="button" style="flex:1;background:#f0a04b;border-color:#e08a2e;color:#1d2a24;font-weight:700">내 기록 코드 복사</button>
+    </div>
+    <textarea id="xferBox" placeholder="여기에 기록 코드를 붙여넣기" style="width:100%;margin-top:8px;font:inherit;font-size:12px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--input);color:var(--fg);min-height:70px"></textarea>
+    <button class="btn" id="xferLoad" type="button" style="width:100%;margin-top:6px">불러오기 (이 기기의 기록을 코드 내용으로 바꿈)</button>
+    <div id="xferMsg" hidden></div>
+  </details>
+</div>
+
+<script>
+(function () {
+  const CENTER = ''; // 센터명은 수합 시 선생님이 채움
+  const TEACHER_EMAIL = ''; // 담당 선생님 메일 (넣어 두면 메일 앱에 받는 사람이 자동 입력됨)
+  const DATE_COLS = 8;
+  const MIN_BLOCK_ROWS = 6;
+  const MAX_STUDENTS = 6;
+  const MEET_LABEL = '사례회의';
+  const WD = ['월', '화', '수', '목', '금'];
+  const DOW7 = ['월', '화', '수', '목', '금', '토', '일'];
+  const STORE = 'coach-report-v3';
+
+  const now = new Date();
+  const TODAY = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  const state = load() || { name: '', region: '', year: now.getFullYear(), month: now.getMonth() + 1, students: [], meet: [], meetNote: '' };
+  if (!state.students.length) state.students.push(newStudent());
+  if (!Array.isArray(state.meet)) state.meet = [];
+  state.students.forEach(s => { if (!Array.isArray(s.makeup)) s.makeup = []; });
+  if (typeof state.meetNote !== 'string') state.meetNote = '';
+
+  function newStudent() { return { group: '', school: '', student: '', dates: [], makeup: [], note: '' }; }
+  function load() { try { const s = localStorage.getItem(STORE); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+  function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
+
+  /* 기간: 1일이 속한 주의 월요일 ~ 말일 (기존 수당내역 방식) */
+  function period(y, m) {
+    const first = new Date(y, m - 1, 1);
+    const dow = (first.getDay() + 6) % 7; // 월=0
+    return { start: new Date(y, m - 1, 1 - dow), end: new Date(y, m, 0) };
+  }
+  const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const fromIso = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const md = d => (d.getMonth() + 1) + '/' + d.getDate();
+  function datesOfWeekday(y, m, wdIdx) {
+    const { start, end } = period(y, m);
+    const out = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) if ((d.getDay() + 6) % 7 === wdIdx) out.push(iso(d));
+    return out;
+  }
+
+  /* ---------- 기본 정보 ---------- */
+  const $ = id => document.getElementById(id);
+  const yearSel = $('year'), monthSel = $('month');
+  for (let y = now.getFullYear() - 1; y <= now.getFullYear() + 1; y++) yearSel.add(new Option(y + '년', y));
+  for (let m = 1; m <= 12; m++) monthSel.add(new Option(m + '월', m));
+  $('name').value = state.name; yearSel.value = state.year; monthSel.value = state.month;
+  $('name').addEventListener('input', e => { state.name = e.target.value; save(); renderPreview(); });
+  /* 달별 기록 보관: 월을 바꾸면 현재 달 기록을 보관하고, 그 달에 보관된 기록이 있으면 되살림 */
+  const ymKey = () => state.year + '-' + String(state.month).padStart(2, '0');
+  function stashMonth() {
+    state.archive = state.archive || {};
+    state.archive[ymKey()] = { students: state.students.map(s => ({ group: s.group, school: s.school, student: s.student, dates: s.dates.slice(), makeup: s.makeup.slice(), note: s.note || '' })), meet: state.meet.slice() };
+  }
+  function onPeriodChange() {
+    stashMonth();
+    state.year = Number(yearSel.value); state.month = Number(monthSel.value);
+    const saved = state.archive && state.archive[ymKey()];
+    if (saved) {
+      state.students = saved.students.map(s => ({ group: s.group, school: s.school, student: s.student, dates: s.dates.slice(), makeup: s.makeup.slice(), note: s.note || '' }));
+      state.meet = saved.meet.slice();
+      if (!state.students.length) state.students.push(newStudent());
+    } else {
+      state.students.forEach(s => { s.dates = []; s.makeup = []; }); // 학교(학생)는 유지, 날짜만 새로
+      state.meet = [];
+    }
+    save(); renderAll();
+  }
+  yearSel.addEventListener('change', onPeriodChange);
+  monthSel.addEventListener('change', onPeriodChange);
+
+  /* ---------- 달력 공통 ---------- */
+  // opts: { selected:[], colorFor(dow)->css var or null, matchDow, onToggle(key, nowSelected) }
+  function buildCalendar(container, opts) {
+    container.innerHTML = '';
+    const { start, end } = period(state.year, state.month);
+    WD.forEach((d, i) => {
+      const h = document.createElement('div'); h.className = 'dow'; h.textContent = d;
+      h.style.setProperty('--c', 'var(--wd' + i + ')');
+      container.appendChild(h);
+    });
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = iso(d);
+      const dow = (d.getDay() + 6) % 7;
+      if (dow >= 5) continue; // 주말은 표시하지 않음
+      const color = opts.colorFor(dow);
+      const isPrev = d.getMonth() + 1 !== state.month;
+      const label = (isPrev ? '<small>' + (d.getMonth() + 1) + '월</small>' : '') + d.getDate();
+      if (opts.split) {
+        const cell = document.createElement('div');
+        cell.className = 'day2';
+        if (color) cell.style.setProperty('--c', color);
+        if (dow >= 5) cell.classList.add('wk');
+        if (isPrev) cell.classList.add('prev');
+        if (opts.matchDow >= 0 && dow === opts.matchDow) cell.classList.add('match');
+        if (key === TODAY) cell.classList.add('today');
+        const otherBtn = h => h.classList.contains('top') ? cell.lastElementChild : cell.firstElementChild;
+        const mkHalf = (cls, list, other, text, aria) => {
+          const h = document.createElement('button');
+          h.type = 'button'; h.className = 'half ' + cls; h.innerHTML = text;
+          h.setAttribute('aria-pressed', list.includes(key)); h.setAttribute('aria-label', aria);
+          h.addEventListener('click', () => {
+            const k = list.indexOf(key);
+            if (k >= 0) list.splice(k, 1);
+            else { list.push(key); list.sort(); const j = other.indexOf(key); if (j >= 0) { other.splice(j, 1); otherBtn(h).setAttribute('aria-pressed', 'false'); } }
+            h.setAttribute('aria-pressed', k < 0);
+            save(); opts.onToggle();
+          });
+          return h;
+        };
+        cell.appendChild(mkHalf('top', opts.selected, opts.makeup, label, md(d) + ' ' + DOW7[dow] + ' 수업'));
+        cell.appendChild(mkHalf('bot', opts.makeup, opts.selected, '보강', md(d) + ' ' + DOW7[dow] + ' 보강'));
+        container.appendChild(cell);
+        continue;
+      }
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'day';
+      if (color) b.style.setProperty('--c', color);
+      if (dow >= 5) b.classList.add('wk');
+      if (isPrev) b.classList.add('prev');
+      if (key === TODAY) b.classList.add('today');
+      b.innerHTML = label;
+      b.setAttribute('aria-pressed', opts.selected.includes(key));
+      b.setAttribute('aria-label', md(d) + ' ' + DOW7[dow]);
+      b.addEventListener('click', () => {
+        const k = opts.selected.indexOf(key);
+        if (k >= 0) opts.selected.splice(k, 1); else opts.selected.push(key);
+        opts.selected.sort();
+        b.setAttribute('aria-pressed', k < 0);
+        save(); opts.onToggle();
+      });
+      container.appendChild(b);
+    }
+    const endDow = (end.getDay() + 6) % 7;
+    const tail = endDow >= 5 ? 0 : 4 - endDow;
+    for (let k = 0; k < tail; k++) { const e = document.createElement('div'); e.className = 'day empty'; container.appendChild(e); }
+  }
+  const wdColor = dow => dow < 5 ? 'var(--wd' + dow + ')' : null;
+
+  /* ---------- 학생 카드 ---------- */
+  const studentsEl = $('students');
+  function renderStudents() {
+    studentsEl.innerHTML = '';
+    const { start, end } = period(state.year, state.month);
+    $('periodInfo').textContent = '집계 기간: ' + md(start) + ' ~ ' + md(end) + ' (1일이 속한 주의 월요일부터)';
+    state.students.forEach((s, i) => studentsEl.appendChild(studentCard(s, i)));
+    $('addStudent').disabled = state.students.length >= MAX_STUDENTS;
+  }
+
+  function studentCard(s, i) {
+    const card = document.createElement('section');
+    card.className = 'card';
+    card.innerHTML =
+      '<h2>학생 ' + (i + 1) + ' <span class="count" id="cnt' + i + '"></span></h2>' +
+      '<div class="grid2"><label class="f">학교<input type="text" id="school' + i + '" placeholder="예) 푸른솔초"></label>' +
+      '<label class="f">학생 이름<input type="text" id="student' + i + '" placeholder="예) 김하늘"></label></div>' +
+      '<div class="cal" style="margin-top:12px"><div class="cal-head"><span>코칭한 날을 탭하세요 (칸 위쪽 = 수업, 아래쪽 = 보강)</span><span id="calHint' + i + '"></span></div><div class="cal-grid" id="cal' + i + '"></div></div>' +
+      '<div class="sel-list" id="sel' + i + '"></div>' +
+      '<div class="row-actions"><span></span><button class="btn ghost" type="button" id="rm' + i + '">이 학생 삭제</button></div>';
+
+    // 학교·학생 이름을 따로 입력받아 "학교(학생)" 형태로 합침
+    if (s.school === undefined) { const m = String(s.group || '').match(/^(.*?)\s*\((.*)\)\s*$/); s.school = m ? m[1].trim() : String(s.group || '').trim(); s.student = m ? m[2].trim() : ''; }
+    const joinGroup = () => { s.group = s.school.trim() + (s.student.trim() ? '(' + s.student.trim() + ')' : ''); };
+    const schoolIn = card.querySelector('#school' + i), studentIn = card.querySelector('#student' + i);
+    schoolIn.value = s.school; studentIn.value = s.student;
+    schoolIn.addEventListener('input', e => { s.school = e.target.value; joinGroup(); save(); renderPreview(); });
+    studentIn.addEventListener('input', e => { s.student = e.target.value; joinGroup(); save(); renderPreview(); });
+
+    const selEl = card.querySelector('#sel' + i), cntEl = card.querySelector('#cnt' + i), hint = card.querySelector('#calHint' + i);
+    function updateSel() {
+      const list = s.dates.slice().sort().map(x => md(fromIso(x)));
+      const mk = s.makeup.slice().sort().map(x => md(fromIso(x)));
+      selEl.innerHTML = (list.length ? '수업: <b>' + list.join(', ') + '</b>' : '수업 없음') + (mk.length ? ' / 보강: <b>' + mk.join(', ') + '</b>' : '');
+      cntEl.textContent = '수업 ' + list.length + '회' + (mk.length ? ' · 보강 ' + mk.length + '회' : '');
+      const wd = weekdayOf(s);
+      hint.textContent = wd ? wd + '요일' : '';
+    }
+    buildCalendar(card.querySelector('#cal' + i), {
+      split: true, selected: s.dates, makeup: s.makeup, colorFor: wdColor, matchDow: -1,
+      onToggle() { updateSel(); renderPreview(); },
+    });
+    updateSel();
+
+    card.querySelector('#rm' + i).addEventListener('click', () => {
+      state.students.splice(i, 1);
+      if (!state.students.length) state.students.push(newStudent());
+      save(); renderStudents(); renderPreview();
+    });
+    return card;
+  }
+
+  /* ---------- 사례회의 카드 ---------- */
+  function renderMeet() {
+    const selEl = $('meetSel'), cntEl = $('meetCnt');
+    function updateSel() {
+      const list = state.meet.slice().sort().map(x => md(fromIso(x)));
+      selEl.innerHTML = list.length ? '참석일: <b>' + list.join(', ') + '</b>' : '선택한 날짜 없음';
+      cntEl.textContent = list.length + '회';
+    }
+    buildCalendar($('meetCal'), {
+      selected: state.meet, colorFor: () => 'var(--meet)',
+      onToggle() { updateSel(); renderPreview(); },
+    });
+    $('meetHint').textContent = '참석하지 않았으면 비워 두세요';
+    updateSel();
+  }
+
+  $('addStudent').addEventListener('click', () => {
+    if (state.students.length >= MAX_STUDENTS) return;
+    state.students.push(newStudent()); save(); renderStudents(); renderPreview();
+  });
+  /* 기록 옮기기: 전체 상태를 코드(문자열)로 — 서버 없이 기기 간 이동 */
+  const XFER_PREFIX = 'KCJ1.';
+  function encodeState() {
+    stashMonth();
+    const json = JSON.stringify({ name: state.name, year: state.year, month: state.month, students: state.students, meet: state.meet, archive: state.archive || {} });
+    const bytes = new TextEncoder().encode(json); let bin = ''; bytes.forEach(b => { bin += String.fromCharCode(b); });
+    return XFER_PREFIX + btoa(bin);
+  }
+  function decodeState(code) {
+    code = String(code || '').trim().replace(/\s+/g, '');
+    if (!code.startsWith(XFER_PREFIX)) throw new Error('기록 코드가 아닙니다');
+    const bin = atob(code.slice(XFER_PREFIX.length)); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const o = JSON.parse(new TextDecoder().decode(bytes));
+    if (!o || !Array.isArray(o.students)) throw new Error('기록 코드 내용이 올바르지 않습니다');
+    return o;
+  }
+  const xferMsg = $('xferMsg');
+  function showXfer(t, isErr) { xferMsg.hidden = false; xferMsg.className = 'msg' + (isErr ? ' err' : ''); xferMsg.textContent = t; }
+  function buildText() {
+    const md = iso => { const d = fromIso(iso); return (d.getMonth() + 1) + '/' + d.getDate(); };
+    const out = ['[코칭일자] ' + state.year + '년 ' + state.month + '월 ' + (state.name || '(이름)').trim()];
+    state.students.filter(s => s.group.trim() && (s.dates.length || s.makeup.length)).forEach(s => {
+      const all = Array.from(new Set(s.dates.concat(s.makeup))).sort();
+      const mk = new Set(s.makeup);
+      out.push(s.group.trim() + ': ' + all.map(x => md(x) + (mk.has(x) ? '*' : '')).join(', '));
+    });
+    if (state.meet.length) out.push(MEET_LABEL + ': ' + state.meet.slice().sort().map(md).join(', '));
+    out.push('(*표시는 보강)');
+    return out.join('\n');
+  }
+  $('kakaoText').addEventListener('click', async () => {
+    if (!(state.name || '').trim()) { showMsg('코칭단 이름을 먼저 적어 주세요.', true); return; }
+    const text = buildText();
+    let copied = false;
+    try { await navigator.clipboard.writeText(text); copied = true; } catch (e) {}
+    if (navigator.share) {
+      try { await navigator.share({ text }); showMsg('보내기 창에서 카카오톡 → 담당 선생님을 고르세요.' + (copied ? ' (글은 복사도 해 두었어요)' : '')); return; }
+      catch (e) { if (e && e.name === 'AbortError') { showMsg(copied ? '보내기를 취소했어요. 글은 복사되어 있으니 카톡에 붙여넣기 해도 됩니다.' : '보내기를 취소했어요.'); return; } }
+    }
+    if (copied) showMsg('글을 복사했습니다. 카톡을 열어 담당 선생님 대화창에 붙여넣기 하세요.\n\n' + text);
+    else { showMsg('복사가 안 되는 기기예요. 아래 글을 길게 눌러 복사하세요.\n\n' + text, true); }
+  });
+  $('xferCopy').addEventListener('click', async () => {
+    const code = encodeState();
+    $('xferBox').value = code;
+    try { await navigator.clipboard.writeText(code); showXfer('기록 코드를 복사했습니다 (' + code.length + '자). 카톡 "나에게 보내기" 등으로 다른 기기에 옮긴 뒤, 그 기기에서 붙여넣고 [불러오기]를 누르세요.'); }
+    catch (e) { $('xferBox').focus(); $('xferBox').select(); showXfer('아래 칸의 코드를 전체 선택해 복사한 뒤 다른 기기로 옮기세요.', true); }
+  });
+  $('xferLoad').addEventListener('click', () => {
+    try {
+      const o = decodeState($('xferBox').value);
+      state.name = o.name || ''; state.year = o.year || state.year; state.month = o.month || state.month;
+      state.students = (o.students.length ? o.students : [newStudent()]).map(s => ({ group: s.group || '', school: s.school, student: s.student, dates: s.dates || [], makeup: s.makeup || [], note: s.note || '' }));
+      state.meet = o.meet || []; state.archive = o.archive || {};
+      $('name').value = state.name; yearSel.value = state.year; monthSel.value = state.month;
+      save(); renderAll(); $('xferBox').value = '';
+      showXfer('불러왔습니다: ' + (state.name || '(이름 없음)') + ' ' + state.month + '월, 학생 ' + state.students.filter(s => s.group).length + '명. 이 기기에서 이어서 입력하면 됩니다.');
+    } catch (e) { showXfer('불러오지 못했습니다: ' + (e.message || '오류'), true); }
+  });
+
+  $('resetAll').addEventListener('click', () => {
+    state.name = ''; state.region = ''; state.students = [newStudent()]; state.meet = []; state.meetNote = '';
+    $('name').value = '';
+    save(); renderAll();
+  });
+
+  /* 수업 날짜들의 요일 (보통 하나, 섞여 있으면 "월,수") */
+  function weekdayOf(s) {
+    const set = new Set(s.dates.map(x => (fromIso(x).getDay() + 6) % 7).filter(i => i < 5));
+    return WD.filter((w, i) => set.has(i)).join(',');
+  }
+
+  /* ---------- 실적 행 구성 (엑셀·미리보기 공용) ---------- */
+  function buildLines() {
+    const lines = [];
+    const order = s => { const w = weekdayOf(s).split(',')[0]; return w ? WD.indexOf(w) : 9; };
+    const students = state.students.filter(s => s.group.trim() || s.dates.length || s.makeup.length);
+    students.sort((a, b) => order(a) - order(b) || ((a.dates[0] || '') < (b.dates[0] || '') ? -1 : 1));
+    const push = (group, weekday, isoDates, note, meet, makeupIso) => {
+      const mkSet = new Set(makeupIso || []);
+      const all = Array.from(new Set(isoDates.concat(makeupIso || []))).sort();
+      const ds = all.map(fromIso);
+      const mk = all.map(x => mkSet.has(x));
+      const chunks = [];
+      for (let k = 0; k < Math.max(1, ds.length); k += DATE_COLS) chunks.push([ds.slice(k, k + DATE_COLS), mk.slice(k, k + DATE_COLS)]);
+      chunks.forEach((c, ci) => lines.push({ group: ci ? '' : group, weekday: ci ? '' : weekday, dates: c[0], mk: c[1], note: ci ? '' : note, meet: !!meet }));
+    };
+    students.forEach(s => push(s.group.trim(), weekdayOf(s), s.dates, s.note.trim(), false, s.makeup));
+    if (state.meet.length) push(MEET_LABEL, '', state.meet, state.meetNote.trim(), true);
+    return lines;
+  }
+  const coachCount = () => state.students.reduce((n, s) => n + s.dates.length + s.makeup.length, 0);
+
+  function renderPreview() {
+    const lines = buildLines();
+    const rows = Math.max(MIN_BLOCK_ROWS, lines.length);
+    const total = lines.reduce((n, ln) => n + ln.dates.length, 0);
+    let html = '<tr><th>코칭단</th><th>학교(학생이름)</th><th colspan="' + DATE_COLS + '">코칭 일자(월/일)</th><th>횟수</th></tr>';
+    for (let r = 0; r < rows; r++) {
+      const ln = lines[r] || { group: '', dates: [], mk: [], meet: false };
+      html += '<tr>';
+      if (r === 0) html += '<td rowspan="' + rows + '">' + esc(state.name) + '</td>';
+      html += '<td class="l' + (ln.meet ? ' mt' : '') + '">' + esc(ln.group) + '</td>';
+      for (let k = 0; k < DATE_COLS; k++) {
+        const cls = ln.dates[k] ? (ln.meet ? ' class="mt"' : (ln.mk && ln.mk[k] ? ' class="mk"' : '')) : '';
+        html += '<td' + cls + '>' + (ln.dates[k] ? md(ln.dates[k]) : '') + '</td>';
+      }
+      if (r === 0) html += '<td rowspan="' + rows + '">' + total + '</td>';
+      html += '</tr>';
+    }
+    $('pv').innerHTML = html;
+    $('statCount').textContent = coachCount() + '회';
+    $('statMeet').textContent = state.meet.length + '회';
+    $('fname').textContent = fileName();
+  }
+  function renderAll() { renderStudents(); renderMeet(); renderPreview(); }
+  function esc(s) { return String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function fileName() {
+    const nm = (state.name || '이름').trim().replace(/[\\/:*?"<>|]/g, '');
+    return state.year + '학년도 학습코칭단 ' + state.month + '월 코칭일자_' + nm + '.xlsx';
+  }
+
+  /* ---------- 엑셀 생성 ---------- */
+  function validate() {
+    const errs = [];
+    if (!state.name.trim()) errs.push('이름을 입력하세요.');
+    const filled = state.students.filter(s => s.group.trim() || s.dates.length || s.makeup.length);
+    if (!filled.length && !state.meet.length) errs.push('학생을 1명 이상 입력하세요.');
+    filled.forEach(s => {
+      if (!s.group.trim()) errs.push('학교가 비어 있는 학생이 있습니다.');
+      if (!s.dates.length && !s.makeup.length) errs.push(s.group.trim() + ': 코칭한 날짜를 선택하세요.');
+    });
+    return errs;
+  }
+
+  async function buildWorkbook(blank) {
+    const wb = new ExcelJS.Workbook();
+    const font = (o) => Object.assign({ name: '맑은 고딕', size: 11 }, o || {});
+    const thin = { style: 'thin', color: { argb: 'FF000000' } };
+    const dbl = { style: 'double', color: { argb: 'FF000000' } };
+    const center = { horizontal: 'center', vertical: 'middle' };
+    const headFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2EFDA' } };
+    const DATE_FMT = 'm/d';
+    // 음영 없이 글자색으로만 구분 — 보강: 파란 글씨, 사례회의: 초록 글씨
+    const mkFont = font({ size: 10, bold: true, color: { argb: 'FF1F4E9C' } });
+    const meetFont = font({ size: 10, bold: true, color: { argb: 'FF2E7D32' } });
+
+    const ws = wb.addWorksheet('코칭일자');
+    ws.getColumn(1).width = 7.375;
+    ws.getColumn(2).width = 24.625;
+    for (let c = 3; c <= 2 + DATE_COLS; c++) ws.getColumn(c).width = 5.625;
+    const K = 3 + DATE_COLS; // 횟수 열
+
+    ws.mergeCells(2, 1, 2, K);
+    ws.getCell(2, 1).value = state.year + '학년도 학습코칭단  코칭일자 확인';
+    ws.getCell(2, 1).font = font({ size: 14, bold: true }); ws.getCell(2, 1).alignment = center;
+    ws.getRow(2).height = 20.25;
+    if (CENTER) ws.getCell(3, K).value = CENTER; ws.getCell(3, K).font = font({ size: 10, bold: true });
+    ws.getCell(3, K).alignment = { horizontal: 'right', vertical: 'middle' };
+    ws.getRow(3).height = 20.25;
+
+    // 머리글 (4행): 연두 바탕, 위 실선 / 아래 이중선
+    ws.getCell(4, 1).value = '코칭단';
+    ws.getCell(4, 2).value = '학교(학생이름)';
+    ws.getCell(4, 3).value = '코칭 일자(월/일)';
+    ws.getCell(4, K).value = '횟수';
+    for (let c = 1; c <= K; c++) {
+      const cell = ws.getCell(4, c);
+      cell.font = font({ size: c === 3 ? 10 : 11, bold: true }); cell.fill = headFill; cell.alignment = center;
+      cell.border = { top: thin, bottom: dbl, left: thin, right: thin };
+    }
+    ws.mergeCells(4, 3, 4, 2 + DATE_COLS);
+    ws.getRow(4).height = 17.25;
+
+    const lines = blank ? [] : buildLines();
+    const rows = Math.max(MIN_BLOCK_ROWS, lines.length);
+    const top = 5, bot = top + rows - 1;
+    for (let r = top; r <= bot; r++) {
+      const ln = lines[r - top];
+      for (let c = 1; c <= K; c++) {
+        const cell = ws.getCell(r, c);
+        cell.font = font({ size: (c >= 3 && c < K) ? 10 : 11 }); cell.alignment = center;
+        cell.border = { left: thin, right: thin, top: thin, bottom: r === bot ? dbl : thin };
+        if (c >= 3 && c < K) cell.numFmt = DATE_FMT;
+      }
+      ws.getRow(r).height = 17.25;
+      if (!ln) continue;
+      ws.getCell(r, 2).value = ln.group;
+      if (ln.meet) ws.getCell(r, 2).font = Object.assign({}, meetFont, { size: 11 });
+      ln.dates.forEach((d, k) => {
+        const cell = ws.getCell(r, 3 + k); cell.value = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); // 시차로 하루 밀림 방지
+        if (ln.meet) cell.font = meetFont; else if (ln.mk && ln.mk[k]) cell.font = mkFont;
+      });
+    }
+    const cnt = lines.reduce((n, ln) => n + ln.dates.length, 0);
+    ws.getCell(top, 1).value = blank ? '' : state.name.trim();
+    const colL = String.fromCharCode(64 + 3), colR = String.fromCharCode(64 + 2 + DATE_COLS);
+    ws.getCell(top, K).value = { formula: 'COUNT(' + colL + top + ':' + colR + bot + ')', result: cnt };
+    ws.mergeCells(top, 1, bot, 1);
+    ws.mergeCells(top, K, bot, K);
+    return wb.xlsx.writeBuffer();
+  }
+
+  const msg = $('msg');
+  function showMsg(text, isErr, list) {
+    msg.hidden = false; msg.className = 'msg' + (isErr ? ' err' : '');
+    msg.innerHTML = esc(text) + (list && list.length ? '<ul>' + list.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '');
+  }
+
+  const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  async function makeFile() {
+    const errs = validate();
+    if (errs.length) { showMsg('아직 입력이 끝나지 않았습니다.', true, errs); return null; }
+    if (!window.ExcelJS) { showMsg('엑셀 생성 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.', true); return null; }
+    const buf = await buildWorkbook();
+    return new File([buf], fileName(), { type: XLSX_MIME });
+  }
+  function downloadFile(file) {
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+  const summary = () => '(코칭 ' + coachCount() + '회, 사례회의 ' + state.meet.length + '회)';
+  $('blankXlsx').addEventListener('click', async () => {
+    if (!window.ExcelJS) { showMsg('엑셀 생성 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.', true); return; }
+    const btn = $('blankXlsx'); btn.disabled = true;
+    try {
+      const buf = await buildWorkbook(true);
+      downloadFile(new File([buf], '코칭일자_양식.xlsx', { type: XLSX_MIME }));
+      showMsg('빈 양식을 저장했습니다: 코칭일자_양식.xlsx  →  엑셀에서 코칭단 이름, 학교(학생이름), 날짜(월/일)를 적어 보내 주세요. 사례회의는 학교(학생이름) 칸에 "사례회의"라고 적으면 됩니다.');
+    } catch (e) { showMsg('양식을 만들지 못했습니다. (' + ((e && e.message) || '오류') + ')', true); }
+    finally { btn.disabled = false; }
+  });
+
+  $('makeXlsx').addEventListener('click', async () => {
+    const btn = $('makeXlsx'); btn.disabled = true; btn.textContent = '파일 만드는 중...';
+    try {
+      const file = await makeFile(); if (!file) return;
+      downloadFile(file);
+      showMsg('엑셀 파일을 저장했습니다: ' + file.name + '  →  이 파일을 담당 선생님께 메일로 보내 주세요. ' + summary() + '  (아이폰: "다운로드" 확인 후 파일 앱 › 다운로드, 안드로이드: 내 파일 › Download)');
+    } catch (e) {
+      showMsg('저장하지 못했습니다. 다시 시도해 주세요. (오류: ' + ((e && e.message) || '알 수 없음') + ')', true);
+    } finally {
+      btn.disabled = false; btn.textContent = '엑셀 파일 저장하기';
+    }
+  });
+
+  renderAll();
+})();
+</script>
+
+</body>
+</html>

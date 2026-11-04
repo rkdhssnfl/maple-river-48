@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>스위치온 4주 플래너</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+</head>
+<body>
+<style>
+  html, body { margin: 0; } [hidden] { display: none !important; }
+  body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); font-size:14px }
+/* 레이아웃: 상단 시작일 설정 → 4주 x 7일 캘린더 → 선택한 날의 식단/체크리스트 패널 */
+:root{
+  --bg:#f7f5ef; --surface:#ffffff; --fg:#1f2a26; --muted:#6b756f; --line:#dedbd1;
+  --accent:#1f7a5c; --accent-soft:#dff0e7; --fast:#b7542a; --fast-soft:#f8e4d8; --ok:#2e8b57;
+  --w1:#e9d5c6; --w2:#d9e6cf; --w3:#cfe0e8; --w4:#e6d9ee;
+  --display:"Gothic A1","Noto Sans KR",system-ui,sans-serif;
+  --body:"Noto Sans KR","Gothic A1",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#171b19; --surface:#20262300; --surface:#222926; --fg:#eef1ed; --muted:#9aa49e; --line:#394340;
+  --accent:#5fc49a; --accent-soft:#1f3a30; --fast:#e89060; --fast-soft:#4a2c1c; --ok:#6fd39a;
+  --w1:#4a3a30; --w2:#2f4330; --w3:#2b3d47; --w4:#3d3048; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#171b19; --surface:#222926; --fg:#eef1ed; --muted:#9aa49e; --line:#394340;
+  --accent:#5fc49a; --accent-soft:#1f3a30; --fast:#e89060; --fast-soft:#4a2c1c; --ok:#6fd39a;
+  --w1:#4a3a30; --w2:#2f4330; --w3:#2b3d47; --w4:#3d3048; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:980px;margin:0 auto;display:grid;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
+h1{font-family:var(--display);font-weight:900;font-size:clamp(26px,4vw,36px);margin:0;letter-spacing:-.02em;text-wrap:balance}
+h1 small{display:block;font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.start{display:flex;align-items:center;gap:8px;font-size:14px}
+input[type=date],input[type=number]{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.stat b{display:block;font-family:var(--display);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.track-wrap{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px 6px;display:grid;gap:4px}
+.track{width:100%;height:auto;max-width:100%;display:block}
+.track-msg{font-size:13px;color:var(--muted);text-align:center}
+@media (prefers-reduced-motion:no-preference){.track .walker{animation:bob .9s ease-in-out infinite}@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}}
+.cal{display:grid;gap:6px}
+.wk{display:grid;grid-template-columns:72px repeat(7,1fr);gap:6px;align-items:stretch}
+.wk-label{display:flex;flex-direction:column;justify-content:center;font-family:var(--display);font-weight:700;font-size:13px;padding:6px;border-radius:8px}
+.wk-label i{font-style:normal;font-weight:500;font-size:11px;color:var(--muted)}
+.day{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px;min-height:84px;cursor:pointer;text-align:left;font:inherit;color:inherit;display:flex;flex-direction:column;gap:2px;position:relative}
+.day:hover{border-color:var(--accent)}
+.day:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.day.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.day.today .n{color:var(--accent)}
+.day .n{font-family:var(--display);font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.day .d{font-size:10px;color:var(--muted)}
+.day .tag{font-size:10px;padding:1px 5px;border-radius:4px;background:var(--accent-soft);color:var(--accent);width:fit-content}
+.day.fast .tag{background:var(--fast-soft);color:var(--fast)}
+.day .kc{font-family:var(--display);font-weight:700;font-size:12px;font-variant-numeric:tabular-nums;color:var(--accent)}
+.day .kc.over{color:var(--fast)}
+@media (max-width:640px){.day .kc{font-size:11px}}
+.day .done{position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:grid;gap:16px}
+.panel h2{font-family:var(--display);font-size:20px;font-weight:700;margin:0;letter-spacing:-.01em}
+.panel h2 small{color:var(--muted);font-weight:500;font-size:13px;margin-left:8px}
+.phase{font-size:13px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:1.2fr 1fr;gap:20px}
+@media (max-width:640px){.cols{grid-template-columns:1fr}.wk{grid-template-columns:48px repeat(7,1fr)}.wk-label{font-size:11px}.day{min-height:56px;padding:4px}.day .d{display:none}}
+h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:700}
+.meals{display:grid;gap:6px}
+.meal{display:grid;grid-template-columns:72px 1fr;gap:8px;padding:8px 10px;border-radius:6px;background:var(--bg);font-size:14px;min-width:0}
+.meal b{font-weight:700}
+.meal.fasting{background:var(--fast-soft)}
+.check{display:grid;gap:4px}
+.check label{display:flex;gap:10px;align-items:center;padding:7px 8px;border-radius:6px;cursor:pointer;font-size:14px}
+.check label:hover{background:var(--bg)}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:14px}
+button.tg{font:inherit;font-size:13px;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+button.tg.on{background:var(--fast-soft);border-color:var(--fast);color:var(--fast)}
+.allow{font-size:13px;color:var(--muted);line-height:1.6}
+.allow b{color:var(--fg)}
+.note{font-size:12px;color:var(--muted)}
+.food{display:grid;gap:8px}
+.food-add{display:grid;grid-template-columns:auto 1fr 80px auto;gap:6px}
+.food-add select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg)}
+@media (max-width:640px){.food-add{grid-template-columns:1fr 80px;}.food-add select{grid-column:span 2}.food-add button{grid-column:span 1}}
+.slots{display:grid;gap:10px}
+.slot{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:4px}
+.slot-h{display:flex;justify-content:space-between;align-items:baseline;font-size:13px}
+.slot-h b{font-family:var(--display);font-weight:700}
+.slot-h span{font-variant-numeric:tabular-nums;color:var(--muted)}
+.slot .food-list{font-size:13px}
+.slot .empty{font-size:12px;color:var(--muted)}
+.food-add button.alt{background:var(--surface);color:var(--accent)}
+.food-add button:disabled{opacity:.55;cursor:default}
+.search-msg{font-size:13px;color:var(--muted);min-height:1.2em}
+.food-add input{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);min-width:0}
+.food-add button{font:inherit;font-size:13px;padding:6px 12px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+.quick{display:flex;flex-wrap:wrap;gap:5px}
+.quick button{font:inherit;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.quick button:hover{border-color:var(--accent)}
+.food-list{display:grid;gap:3px;font-size:14px}
+.food-list div{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:5px 8px;border-radius:6px;background:var(--bg)}
+.food-list .k{font-variant-numeric:tabular-nums;color:var(--muted)}
+.food-list .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 2px}
+.food-total{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);padding-top:8px;font-size:14px}
+.food-total b{font-family:var(--display);font-size:22px;font-variant-numeric:tabular-nums}
+.food-total.over b{color:var(--fast)}
+@media (prefers-reduced-motion:no-preference){.day{transition:border-color .15s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><small>Switch-On Diet · 28 days</small>스위치온 4주 플래너</h1>
+    <div class="start"><label for="start">시작일</label><input type="date" id="start"></div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><b id="s-day">—</b><span>오늘 진행</span></div>
+    <div class="stat"><b id="s-done">0 / 28</b><span>체크리스트 완료일</span></div>
+    <div class="stat"><b id="s-fast">0</b><span>24시간 단식 계획</span></div>
+    <div class="stat"><b id="s-wt">—</b><span>체중 변화</span></div>
+    <div class="stat"><b id="s-kcal">—</b><span>기록일 평균 kcal</span></div>
+  </div>
+
+  <div class="track-wrap">
+    <svg class="track" id="track" viewBox="0 0 800 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="28일 완주 트랙"></svg>
+    <div class="track-msg" id="trackmsg"></div>
+  </div>
+
+  <div class="cal" id="cal"></div>
+
+  <section class="panel" id="panel"></section>
+
+  <details class="panel" id="xferCard" style="padding:12px 16px">
+    <summary style="cursor:pointer;font-size:14px;font-weight:700">다른 기기에서 이어서 하기 (기록 옮기기)</summary>
+    <div class="note" style="margin-top:8px">기록은 이 기기(브라우저)에만 저장됩니다. 휴대폰 ↔ PC처럼 기기를 바꿀 때는 ① 쓰던 기기에서 [내 기록 코드 복사] → 카톡 "나에게 보내기" 등으로 옮김 → ② 새 기기에서 아래 칸에 붙여넣고 [불러오기]. 기기를 바꿀 때만 하면 됩니다.</div>
+    <div class="row" style="margin-top:8px"><button class="tg" id="xferCopy" type="button" style="flex:1">내 기록 코드 복사</button></div>
+    <textarea id="xferBox" placeholder="여기에 기록 코드를 붙여넣기" style="width:100%;margin-top:8px;font:inherit;font-size:12px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);min-height:70px"></textarea>
+    <button class="tg" id="xferLoad" type="button" style="width:100%;margin-top:6px">불러오기 (이 기기의 기록을 코드 내용으로 바꿈)</button>
+    <div class="msg" id="xferMsg" style="margin-top:6px"></div>
+  </details>
+
+  <p class="note">박용우 교수의 스위치온 다이어트 기본 구성을 바탕으로 한 일정표입니다. 3일 쉐이크 단식이 힘들면 바로 4일차로 넘어가도 되고, 지병이 있거나 복용 중인 약이 있다면 시작 전 의사와 상의하세요. 기록은 이 기기 브라우저에만 저장되며, 기기를 바꿀 땐 위의 [기록 옮기기]를 쓰세요.</p>
+</div>
+
+<script>
+const DAYS=["일","월","화","수","목","금","토"];
+const SHAKE="단백질 쉐이크";
+const LOW="저탄수 식사 (단백질 + 채소 + 잡곡밥 ½공기)";
+const NOCARB="무탄수 식사 (단백질 + 채소, 밥·면 없이)";
+const PHASES=[
+ {name:"1주차 · 도입기 (쉐이크 단식)",cls:"w1",test:d=>d<=3,
+  meals:[["아침",SHAKE],["점심",SHAKE],["오후 간식",SHAKE],["저녁",SHAKE]],
+  allow:"<b>허용</b> 탄수화물 20g 이하. 허기가 심하면 두부, 무가당 플레인 요거트, 녹황색 채소. 물 2L 이상, 하루 60분 걷기."},
+ {name:"1주차 · 도입기 (점심 일반식)",cls:"w1",test:d=>d<=7,
+  meals:[["아침",SHAKE],["점심",LOW],["오후 간식",SHAKE],["저녁",SHAKE]],
+  allow:"<b>허용</b> 점심 한 끼만 일반식. 잡곡밥은 반 공기까지, 단백질(살코기·생선·달걀·두부)과 채소를 넉넉히."},
+ {name:"2주차 · 가속기",cls:"w2",test:d=>d<=14,
+  meals:[["아침",SHAKE],["점심",LOW],["오후 간식",SHAKE],["저녁",NOCARB]],
+  allow:"<b>추가</b> 견과류 한 줌, 아보카도, 치즈 소량, 블랙커피. 이번 주 24시간 단식 1회 (저녁 식사 후 다음날 저녁까지)."},
+ {name:"3주차 · 안정기",cls:"w3",test:d=>d<=21,
+  meals:[["아침",SHAKE],["점심",LOW],["오후 간식",SHAKE+" 또는 견과류"],["저녁",NOCARB]],
+  allow:"<b>추가</b> 고구마·단호박 소량, 통곡물. 이번 주 24시간 단식 2회. 정체기가 와도 식단을 그대로 유지."},
+ {name:"4주차 · 유지기",cls:"w4",test:d=>d<=28,
+  meals:[["아침","과일 1개 또는 "+SHAKE],["점심",LOW],["오후 간식","견과류 또는 플레인 요거트"],["저녁",NOCARB]],
+  allow:"<b>추가</b> 과일 하루 1개. 이번 주 24시간 단식 1~2회. 28일 후에는 일반식으로 서서히 돌아가며 주 1~2회 단식을 유지."}
+];
+const CHECKS=["식단대로 먹었다","물 2L 이상 마셨다","14시간 공복을 지켰다","저녁은 취침 4시간 전에 마쳤다","7시간 이상 잤다","운동 (주 4회 목표)","영양제 (유산균·비타민·오메가3)"];
+const FASTMEALS=[["아침","단식 (물·블랙커피·녹차만)"],["점심","단식"],["오후 간식","단식"],["저녁","단식 종료 — "+NOCARB]];
+
+const QUICK=[["단백질 쉐이크",150],["두부 ½모",140],["플레인 요거트 100g",60],["삶은 달걀 1개",75],["닭가슴살 100g",110],["연어구이 100g",200],["소고기 살코기 100g",180],["잡곡밥 ½공기",150],["채소 샐러드",50],["견과류 한 줌",170],["아보카도 ½개",120],["고구마 ½개",80],["사과 1개",95],["블랙커피",5]];
+/* 로컬 칼로리표 (대략값, 1회 분량). 이름 일부만 적어도 찾음 */
+const FOODS=[...QUICK,
+["잡곡밥 1공기",300],["현미밥 1공기",300],["흰쌀밥 1공기",310],["흰쌀밥 ½공기",155],["고구마 1개",160],["단호박 100g",60],["감자 1개",130],["통밀빵 1쪽",80],["오트밀 40g",150],
+["닭가슴살 150g",165],["닭다리살 100g",180],["삶은 닭 100g",150],["돼지고기 수육 100g",250],["돼지고기 수육 150g",375],["삼겹살 100g",330],["돼지 안심 100g",120],["돼지 앞다리살 100g",190],["소고기 안심 100g",150],["소고기 등심 100g",200],["소불고기 100g",200],["소고기 국거리 100g",180],["오리고기 100g",250],["양고기 100g",200],
+["고등어구이 1토막",200],["갈치구이 1토막",150],["삼치구이 1토막",180],["조기구이 1마리",120],["참치캔 1캔(작은)",120],["새우 100g",100],["오징어 100g",90],["문어 100g",80],["조개 100g",70],["굴 100g",80],["연어회 100g",180],["광어회 100g",100],["참치회 100g",130],
+["계란후라이 1개",100],["계란찜 1인분",150],["스크램블에그 2개",200],["삶은 달걀 2개",150],["두부 1모",280],["연두부 1팩",80],["순두부 1팩",100],["두부구이 ½모",170],["낫또 1팩",90],["콩 100g",150],
+["그릭요거트 100g",100],["무가당 요거트 1개",60],["치즈 1장",60],["스트링치즈 1개",80],["우유 200ml",130],["두유 200ml",110],["아몬드 10알",70],["호두 5알",130],["땅콩 한 줌",170],["캐슈넛 한 줌",160],["아보카도 1개",240],
+["상추 쌈 1접시",20],["오이 1개",30],["토마토 1개",30],["방울토마토 10개",30],["브로콜리 100g",35],["시금치나물 1접시",40],["콩나물무침 1접시",50],["버섯볶음 1접시",60],["양배추 100g",25],["파프리카 1개",30],["당근 1개",40],["김치 1접시",20],["나물 1접시",50],["샐러드 (드레싱 포함)",150],
+["미역국 1그릇",80],["된장국 1그릇",80],["된장찌개 1인분",150],["김치찌개 1인분",250],["순두부찌개 1인분",250],["청국장 1인분",200],["계란국 1그릇",90],["북엇국 1그릇",100],["소고기무국 1그릇",120],["콩나물국 1그릇",50],["삼계탕 1인분",900],["설렁탕 1인분",450],["갈비탕 1인분",500],["곰탕 1인분",350],
+["비빔밥 1인분",550],["김밥 1줄",450],["볶음밥 1인분",600],["김치볶음밥 1인분",600],["덮밥 1인분",650],["불고기덮밥 1인분",700],["카레라이스 1인분",650],["떡볶이 1인분",450],["라면 1개",500],["칼국수 1인분",500],["냉면 1인분",550],["잔치국수 1인분",450],["비빔국수 1인분",550],["짜장면 1인분",700],["짬뽕 1인분",700],["우동 1인분",450],["파스타 1인분",650],["피자 1조각",280],["햄버거 1개",550],["치킨 1조각",250],["프라이드치킨 2조각",500],["양념치킨 2조각",560],["돈까스 1인분",700],["제육볶음 1인분",450],["닭갈비 1인분",500],["보쌈 1인분",550],["족발 1인분(소)",600],["샤브샤브 1인분",400],["떡갈비 1개",200],["만두 5개",300],["군만두 5개",350],["순대 1인분",350],["어묵탕 1인분",200],["전 2장",200],
+["바나나 1개",105],["귤 1개",40],["딸기 10개",35],["블루베리 한 줌",40],["포도 한 송이(작은)",100],["배 ½개",90],["키위 1개",50],["참외 1개",60],["수박 1쪽",50],["복숭아 1개",60],["자두 1개",30],["오렌지 1개",60],["감 1개",80],["토마토주스 200ml",40],
+["아메리카노",5],["카페라떼",150],["카푸치노",120],["녹차",0],["보리차",0],["탄산수",0],["제로콜라",0],["콜라 1캔",140],["오렌지주스 200ml",90],["소주 1병",400],["맥주 500ml",200],["막걸리 1병",400],["와인 1잔",120],
+["초콜릿 1개(작은)",100],["쿠키 1개",80],["아이스크림 1개",200],["케이크 1조각",350],["도넛 1개",250],["빵 1개",300],["과자 1봉",450],["떡 1개",100],["사탕 1개",20],["젤리 한 줌",100],["군고구마 1개",160],["옥수수 1개",130],["에너지바 1개",200],["삶은 계란 흰자 2개",35],["닭가슴살 소시지 1개",100]];
+function findFood(q){
+  const n=q.replace(/\s/g,"").toLowerCase();if(n.length<1)return null;
+  let best=null,score=0;
+  for(const [k,v] of FOODS){const kk=k.replace(/\s/g,"").toLowerCase();let s=0;
+    if(kk===n)s=100;else if(kk.startsWith(n))s=80-(kk.length-n.length)*0.5;else if(kk.includes(n))s=60-(kk.length-n.length)*0.5;
+    else{const base=n.replace(/[0-9½]+(g|ml|개|공기|토막|그릇|인분|잔|병|캔|줄|조각|알|장|쪽|팩|접시|마리|봉)?$/,"");if(base.length>=2&&kk.includes(base))s=40-(kk.length-base.length)*0.5}
+    if(s>score){score=s;best=[k,v]}}
+  return score>0?best:null;
+}
+const SLOTS=["아침","점심","오후 간식","저녁"];
+function defaultSlot(){const h=new Date().getHours();return h<10?"아침":h<14?"점심":h<17?"오후 간식":"저녁"}
+let state={start:null,sel:1,fast:{},checks:{},wt:{},food:{}};
+try{const s=localStorage.getItem("switchon-cal-gh");if(s)state=Object.assign(state,JSON.parse(s))}catch(e){}
+function save(){try{localStorage.setItem("switchon-cal-gh",JSON.stringify(state))}catch(e){}}
+const iso=d=>d.toISOString().slice(0,10);
+if(!state.start){const t=new Date();state.start=iso(new Date(t.getFullYear(),t.getMonth(),t.getDate(),12))}
+const startEl=document.getElementById("start");startEl.value=state.start;
+startEl.addEventListener("change",()=>{state.start=startEl.value||state.start;save();render()});
+
+function dateOf(n){const [y,m,d]=state.start.split("-").map(Number);return new Date(y,m-1,d+n-1,12)}
+function phaseOf(n){return PHASES.find(p=>p.test(n))}
+function todayNum(){const t=new Date();const d0=dateOf(1);return Math.floor((new Date(t.getFullYear(),t.getMonth(),t.getDate(),12)-d0)/864e5)+1}
+function dayDone(n){const c=state.checks[n]||[];return c.filter(Boolean).length>=5}
+
+function render(){
+  const cal=document.getElementById("cal");cal.innerHTML="";
+  const tn=todayNum();
+  for(let w=0;w<4;w++){
+    const row=document.createElement("div");row.className="wk";
+    const lab=document.createElement("div");lab.className="wk-label";lab.style.background=`var(--w${w+1})`;
+    lab.innerHTML=`${w+1}주차<i>${["도입기","가속기","안정기","유지기"][w]}</i>`;row.appendChild(lab);
+    for(let i=1;i<=7;i++){
+      const n=w*7+i,d=dateOf(n),ph=phaseOf(n);
+      const b=document.createElement("button");b.className="day"+(n===state.sel?" sel":"")+(n===tn?" today":"")+(state.fast[n]?" fast":"");
+      const tag=state.fast[n]?"24h 단식":n<=3?"쉐이크 4회":n<=7?"쉐이크 3회":n<=21?"쉐이크 2회":"과일 허용";
+      const kc=(state.food[n]||[]).reduce((s,f)=>s+f.kcal,0);
+      b.innerHTML=`<span class="n">${n}일차</span><span class="d">${d.getMonth()+1}/${d.getDate()} ${DAYS[d.getDay()]}</span><span class="tag">${tag}</span><span class="kc${kc>kcalTarget(n)?" over":""}">${kc?kc.toLocaleString()+" kcal":"—"}</span>${dayDone(n)?'<span class="done"></span>':""}`;
+      b.addEventListener("click",()=>{state.sel=n;save();render()});
+      row.appendChild(b);
+    }
+    cal.appendChild(row);
+  }
+  renderPanel();renderStats(tn);renderTrack(tn);
+}
+function renderTrack(tn){
+  const X0=40,X1=740,Y=78,W=X1-X0;
+  const prog=Math.max(0,Math.min(28,tn));const px=X0+W*prog/28;
+  let done=0;for(let n=1;n<=28;n++)if(dayDone(n))done++;
+  const wk=["도입기","가속기","안정기","유지기"];
+  let s=`<rect x="${X0}" y="${Y-8}" width="${W}" height="16" rx="8" fill="var(--line)"/>`;
+  for(let w=0;w<4;w++){const a=X0+W*w/4;s+=`<rect x="${a}" y="${Y-8}" width="${W/4}" height="16" rx="8" fill="var(--w${w+1})"/><text x="${a+W/8}" y="${Y+30}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--body)">${w+1}주차 ${wk[w]}</text>`}
+  if(prog>0)s+=`<rect x="${X0}" y="${Y-8}" width="${px-X0}" height="16" rx="8" fill="var(--accent)" opacity=".85"/>`;
+  for(let n=1;n<=28;n++){const x=X0+W*n/28;if(dayDone(n))s+=`<circle cx="${x-W/56}" cy="${Y}" r="3" fill="#fff" opacity=".9"/>`;if(n%7===0&&n<28)s+=`<line x1="${x}" y1="${Y-12}" x2="${x}" y2="${Y+12}" stroke="var(--surface)" stroke-width="2"/>`}
+  s+=`<g transform="translate(${X1},${Y-8})"><line x1="0" y1="0" x2="0" y2="-40" stroke="var(--fg)" stroke-width="2"/><path d="M0,-40 l26,7 l-26,7z" fill="var(--fast)"/><text x="6" y="-44" font-size="11" fill="var(--fg)" font-family="var(--display)" font-weight="700">완주</text></g>`;
+  s+=`<g class="walker" transform="translate(${px},${Y-14})"><g transform="translate(-14,-30)">
+    <ellipse cx="14" cy="42" rx="12" ry="3" fill="var(--fg)" opacity=".12"/>
+    <path d="M9,26 q-3,10 1,14 M19,26 q3,10 -1,14" stroke="var(--fg)" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <path d="M14,14 c-9,0 -11,8 -10,15 l20,0 c1,-7 -1,-15 -10,-15z" fill="var(--accent)"/>
+    <circle cx="14" cy="9" r="9" fill="#f6d8c3"/>
+    <path d="M5,9 q9,-13 18,0" fill="var(--fg)"/>
+    <circle cx="11" cy="10" r="1.2" fill="var(--fg)"/><circle cx="17" cy="10" r="1.2" fill="var(--fg)"/>
+    <path d="M11,13 q3,2.5 6,0" stroke="var(--fg)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <path d="M4,20 q-6,2 -4,8 M24,20 q6,-4 7,2" stroke="var(--fg)" stroke-width="3" stroke-linecap="round" fill="none"/>
+    </g></g>`;
+  document.getElementById("track").innerHTML=s;
+  const m=document.getElementById("trackmsg");
+  m.textContent=tn<1?`시작까지 ${1-tn}일 남았어요. 출발선에서 준비 중!`:tn>28?`28일 완주! 체크리스트 완료 ${done}일 🎉`:`${tn}일차 · ${28-tn}일 남음 · 체크리스트 완료 ${done}일 (트랙 위 점)`;
+}
+function renderStats(tn){
+  document.getElementById("s-day").textContent=tn<1?`D-${1-tn}`:tn>28?"완주":`${tn}일차`;
+  let done=0;for(let n=1;n<=28;n++)if(dayDone(n))done++;
+  document.getElementById("s-done").textContent=`${done} / 28`;
+  document.getElementById("s-fast").textContent=Object.values(state.fast).filter(Boolean).length+"회";
+  const ws=Object.keys(state.wt).map(Number).filter(n=>state.wt[n]).sort((a,b)=>a-b);
+  const el=document.getElementById("s-wt");
+  if(ws.length>=2){const diff=(state.wt[ws[ws.length-1]]-state.wt[ws[0]]).toFixed(1);el.textContent=(diff>0?"+":"")+diff+" kg"}
+  else el.textContent=ws.length?state.wt[ws[0]]+" kg":"—";
+  const tots=Object.values(state.food||{}).map(l=>l.reduce((s,f)=>s+f.kcal,0)).filter(t=>t>0);
+  document.getElementById("s-kcal").textContent=tots.length?Math.round(tots.reduce((a,b)=>a+b,0)/tots.length).toLocaleString()+" kcal":"—";
+}
+function kcalTarget(n){return n<=3?700:n<=7?1000:1300}
+function renderPanel(){
+  const n=state.sel,d=dateOf(n),ph=phaseOf(n),isFast=!!state.fast[n];
+  const meals=isFast?FASTMEALS:ph.meals;
+  const checks=state.checks[n]||[];
+  const p=document.getElementById("panel");
+  p.innerHTML=`
+   <div>
+    <h2>${n}일차 <small>${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} (${DAYS[d.getDay()]})</small></h2>
+    <div class="phase">${ph.name}${isFast?" · 24시간 단식일":""}</div>
+   </div>
+   <div class="cols">
+    <div>
+     <h3>오늘의 식단</h3>
+     <div class="meals">${meals.map(([k,v])=>`<div class="meal${isFast?" fasting":""}"><b>${k}</b><span>${v}</span></div>`).join("")}</div>
+     <p class="allow" style="margin:12px 0 0">${ph.allow}</p>
+     <div class="row" style="margin-top:14px">
+      ${n>7?`<button class="tg${isFast?" on":""}" id="fastbtn">${isFast?"단식일 해제":"이 날을 24시간 단식일로"}</button>`:`<span class="note">24시간 단식은 2주차부터 설정할 수 있어요.</span>`}
+      <label>체중 <input type="number" step="0.1" id="wt" style="width:90px" value="${state.wt[n]||""}" placeholder="kg"></label>
+     </div>
+    </div>
+    <div>
+     <h3>체크리스트</h3>
+     <div class="check">${CHECKS.map((c,i)=>`<label><input type="checkbox" id="c${i}" data-i="${i}" ${checks[i]?"checked":""}>${c}</label>`).join("")}</div>
+     <p class="note" style="margin:8px 0 0">5개 이상 체크하면 달력에 완료 표시가 켜져요.</p>
+    </div>
+   </div>
+   <div>
+    <h3>먹은 음식 · 칼로리</h3>
+    <div class="food">
+     <div class="food-add">
+      <select id="fslot" aria-label="끼니">${SLOTS.map(s=>`<option value="${s}" ${s===defaultSlot()?"selected":""}>${s}</option>`).join("")}</select>
+      <input type="text" id="fname" placeholder="음식 이름 (예: 돼지고기 수육 150g)">
+      <input type="number" id="fkcal" placeholder="kcal" min="0">
+            <button id="fadd">추가</button>
+     </div>
+     <div class="search-msg" id="fmsg">음식 이름을 적으면 칼로리표(약 200가지)에서 찾아요. 없으면 kcal을 직접 적어요.</div>
+     <div class="quick">${QUICK.map(([k,v],i)=>`<button data-q="${i}">${k} ${v}</button>`).join("")}</div>
+     <div class="slots" id="flist"></div>
+     <div class="food-total" id="ftotal"></div>
+     <p class="note" style="margin:0">칼로리표 값은 대략치예요. 쉐이크는 제품 라벨 기준으로 고쳐 쓰세요.</p>
+    </div>
+   </div>`;
+  const list=state.food[n]||(state.food[n]=[]);
+  list.forEach(f=>{if(!f.slot)f.slot="점심"});
+  const slotEl=document.getElementById("fslot");
+  function drawFood(){
+    const total=list.reduce((s,f)=>s+f.kcal,0),tgt=kcalTarget(n);
+    const planned=isFast?FASTMEALS:ph.meals;
+    document.getElementById("flist").innerHTML=SLOTS.map(s=>{
+      const items=list.map((f,i)=>[f,i]).filter(([f])=>f.slot===s);
+      const sub=items.reduce((a,[f])=>a+f.kcal,0);
+      const plan=(planned.find(([k])=>k===s)||[])[1]||"";
+      return `<div class="slot"><div class="slot-h"><b>${s}</b><span>${sub.toLocaleString()} kcal</span></div>
+        ${plan?`<div class="empty">계획: ${plan}</div>`:""}
+        <div class="food-list">${items.map(([f,i])=>`<div><span>${f.name}</span><span class="k">${f.kcal} kcal</span><button class="x" data-i="${i}" aria-label="삭제">×</button></div>`).join("")||`<span class="empty">기록 없음</span>`}</div></div>`;
+    }).join("");
+    const cell=document.querySelector(".day.sel .kc");if(cell){cell.textContent=total?total.toLocaleString()+" kcal":"—";cell.className="kc"+(total>tgt?" over":"")}
+    const ft=document.getElementById("ftotal");ft.className="food-total"+(total>tgt?" over":"");
+    ft.innerHTML=`<span>하루 합계 <span class="note">· 이 단계 권장 약 ${tgt.toLocaleString()} kcal</span></span><b>${total.toLocaleString()} kcal</b>`;
+    ft.parentElement.querySelectorAll(".x").forEach(x=>x.addEventListener("click",()=>{list.splice(+x.dataset.i,1);save();drawFood();renderStats(todayNum())}));
+  }
+  function addFood(name,kcal){if(!name||!(kcal>=0))return;list.push({name,kcal:Math.round(kcal),slot:slotEl.value});save();drawFood();renderStats(todayNum());
+    document.getElementById("fname").value="";document.getElementById("fkcal").value="";document.getElementById("fmsg").textContent=`${slotEl.value}에 ${name} 추가`;}
+  document.getElementById("fadd").addEventListener("click",()=>{const v=parseFloat(document.getElementById("fkcal").value);
+    addFood(found&&found.kcal===Math.round(v)?found.name:document.getElementById("fname").value.trim(),v)});
+  document.getElementById("fkcal").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("fadd").click()});
+  const msg=document.getElementById("fmsg");
+  const nameEl=document.getElementById("fname"),kcalEl=document.getElementById("fkcal");
+  let ctl=null,timer=null,found=null; // found: {name,kcal} 자동검색 결과
+  function localMatch(name){const n=name.replace(/\s/g,"");return QUICK.find(([k])=>k.replace(/\s/g,"")===n||k.replace(/\s/g,"").startsWith(n)&&n.length>=3)}
+  function lookup(){
+    const name=nameEl.value.trim();found=null;if(name.length<1)return;
+    const q=findFood(name);
+    if(q){found={name:q[0],kcal:q[1]};kcalEl.value=q[1];msg.textContent=`${q[0]} · ${q[1]} kcal — Enter나 추가를 누르면 들어가요 (다르면 kcal을 고쳐 적으세요)`;return}
+    msg.textContent="표에 없는 음식이에요. kcal을 직접 적고 추가 — 적은 이름 그대로 저장돼요.";
+  }
+  nameEl.addEventListener("input",()=>{clearTimeout(timer);found=null;kcalEl.value="";
+    if(nameEl.value.trim().length<1){msg.textContent="음식 이름을 적으면 칼로리표에서 찾아요.";return}
+    timer=setTimeout(lookup,250)});
+  nameEl.addEventListener("keydown",e=>{if(e.key!=="Enter")return;e.preventDefault();clearTimeout(timer);
+    const v=parseFloat(kcalEl.value);
+    if(v>=0)addFood(found&&found.kcal===Math.round(v)?found.name:nameEl.value.trim(),v);else lookup();});
+  p.querySelectorAll(".quick button").forEach(b=>b.addEventListener("click",()=>{const [k,v]=QUICK[+b.dataset.q];addFood(k,v)}));
+  drawFood();
+  const fb=document.getElementById("fastbtn");
+  if(fb)fb.addEventListener("click",()=>{state.fast[n]=!isFast;save();render()});
+  p.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.addEventListener("change",()=>{
+    const arr=state.checks[n]||Array(CHECKS.length).fill(false);arr[+cb.dataset.i]=cb.checked;state.checks[n]=arr;save();render()}));
+  document.getElementById("wt").addEventListener("change",e=>{state.wt[n]=parseFloat(e.target.value)||0;save();renderStats(todayNum())});
+}
+render();
+/* 기록 옮기기 */
+const XP='SWC1.';
+function enc(){const b=new TextEncoder().encode(JSON.stringify(state));let s='';b.forEach(c=>s+=String.fromCharCode(c));return XP+btoa(s)}
+function dec(code){code=String(code||'').trim().replace(/\s+/g,'');if(!code.startsWith(XP))throw new Error('기록 코드가 아닙니다');
+  const bin=atob(code.slice(XP.length));const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+  const o=JSON.parse(new TextDecoder().decode(u));if(!o||!o.start)throw new Error('기록 코드 내용이 올바르지 않습니다');return o}
+const xm=document.getElementById('xferMsg');
+document.getElementById('xferCopy').addEventListener('click',async()=>{const c=enc();document.getElementById('xferBox').value=c;
+  try{await navigator.clipboard.writeText(c);xm.textContent='기록 코드를 복사했습니다 ('+c.length+'자). 다른 기기에서 붙여넣고 [불러오기]를 누르세요.'}
+  catch(e){const b=document.getElementById('xferBox');b.focus();b.select();xm.textContent='아래 칸의 코드를 전체 선택해 복사한 뒤 다른 기기로 옮기세요.'}});
+document.getElementById('xferLoad').addEventListener('click',()=>{try{const o=dec(document.getElementById('xferBox').value);
+  state={start:o.start,sel:o.sel||1,fast:o.fast||{},checks:o.checks||{},wt:o.wt||{},food:o.food||{}};startEl.value=state.start;save();render();document.getElementById('xferBox').value='';
+  let d=0;for(let n=1;n<=28;n++)if(dayDone(n))d++;xm.textContent='불러왔습니다: 시작일 '+state.start+', 완료 '+d+'일. 이 기기에서 이어서 하면 됩니다.'}
+  catch(e){xm.textContent='불러오지 못했습니다: '+(e.message||'오류')}});
+</script>
+</body>
+</html>

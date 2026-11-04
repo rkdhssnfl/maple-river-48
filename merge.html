@@ -82,6 +82,10 @@
       <span class="small">이 파일의 지역·이름·학교(그룹)·요일 명단을 그대로 씁니다. 날짜 칸은 비어 있어도 됩니다.</span>
     </label>
     <div id="tplMsg" hidden></div>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">
+      <button class="btn" id="blankTpl" type="button" style="width:100%">빈 양식 내려받기 (지역·이름·학교 비어 있음)</button>
+      <div class="small" style="margin-top:6px">양식 파일이 없을 때: 이 빈 양식을 내려받아 엑셀에서 지역·이름·학교(그룹)·요일을 채운 뒤 위에 올리면 됩니다. 같은 사람의 학교가 여러 개면 아래 줄에 이어서 적고, 이름 칸은 비워 두면 됩니다.</div>
+    </div>
   </section>
 
   <section class="card">
@@ -436,6 +440,72 @@
     ws.views = [{ state: 'frozen', ySplit: 3 }];
     return wb.xlsx.writeBuffer();
   }
+
+  async function buildBlankTemplate() {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Sheet1', { pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+    const font = o => Object.assign({ name: '맑은 고딕', size: 12 }, o || {});
+    const thin = { style: 'thin', color: { argb: 'FF000000' } };
+    const dbl = { style: 'double', color: { argb: 'FF000000' } };
+    const fill = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
+    const HEAD = fill('FFCFE2F3'), BLUE = fill('FFDAEEF3'), PINK = fill('FFFDE9D9'), PEACH = fill('FFFCE5CD');
+    const center = { horizontal: 'center', vertical: 'middle' };
+    const COLS = 22, BLOCKS = 35, ROWS = 6;
+    const widths = { A: 6, B: 7.125, C: 8, D: 21.25, E: 8, O: 14.625, P: 12.625, Q: 18.125, R: 17.5, S: 18.625, T: 17.875, U: 13.875, V: 26 };
+    for (let c = 1; c <= COLS; c++) { const L = String.fromCharCode(64 + c); ws.getColumn(c).width = widths[L] || 6.375; }
+    ws.mergeCells(1, 1, 1, COLS);
+    ws.getCell(1, 1).value = yearSel.value + '학년도 학습코칭단 ' + monthSel.value + '월 교통비 지급 내역서';
+    ws.getCell(1, 1).font = font({ size: 22, bold: true }); ws.getCell(1, 1).fill = HEAD; ws.getCell(1, 1).alignment = center;
+    ws.getRow(1).height = 27;
+    ws.mergeCells(2, 1, 2, COLS);
+    ws.getCell(2, 1).font = font({ size: 14, bold: true });
+    ws.getCell(2, 1).alignment = { horizontal: 'right', vertical: 'middle' };
+    for (let c = 1; c <= COLS; c++) ws.getCell(2, c).border = { bottom: thin };
+    ws.getRow(2).height = 18.75;
+    const heads = ['순', '지역', '이름', '학교(그룹)', '요일', '코칭 일자(월/일)', '', '', '', '', '', '', '', '', '코칭방문횟수', '코칭교통비', '관내연수참여횟수', '관내연수교통비', '관외연수참여횟수', '관외연수교통비', '합계', '비고'];
+    heads.forEach((h, i) => { const c = ws.getCell(3, i + 1); c.value = h; c.font = font({ bold: true }); c.fill = HEAD; c.alignment = center; c.border = { left: thin, right: thin, top: thin, bottom: dbl }; });
+    ws.mergeCells(3, 6, 3, 14);
+    ws.getRow(3).height = 17.25;
+    let r = 4;
+    for (let b = 0; b < BLOCKS; b++) {
+      const top = r, bot = r + ROWS - 1;
+      for (let rr = top; rr <= bot; rr++) {
+        for (let c = 1; c <= COLS; c++) {
+          const cell = ws.getCell(rr, c);
+          cell.font = font({ size: c >= 15 && c <= 21 ? 14 : 12 }); cell.alignment = center;
+          cell.border = { left: thin, right: thin, bottom: rr === bot ? dbl : thin };
+          if (c >= 6 && c <= 14) cell.numFmt = 'm/d';
+          if (c === 16 || c === 18 || c === 20) { cell.fill = BLUE; cell.numFmt = '#,##0'; }
+          if (c === 21) { cell.fill = PINK; cell.numFmt = '#,##0'; }
+        }
+        ws.getRow(rr).height = 18.75;
+      }
+      ws.getCell(top, 1).value = b + 1;
+      [1, 2, 3, 15, 16, 17, 18, 19, 20, 21].forEach(c => ws.mergeCells(top, c, bot, c));
+      r = bot + 1;
+    }
+    ws.mergeCells(r, 1, r, 14);
+    ws.getCell(r, 1).value = '합계';
+    for (let c = 1; c <= COLS; c++) {
+      const cell = ws.getCell(r, c); cell.font = font({ size: 14 }); cell.alignment = center;
+      cell.border = { left: thin, right: thin, top: thin, bottom: thin };
+      if (c <= 14 || c === 21) cell.fill = PEACH; else if (c <= 20) cell.fill = PINK;
+    }
+    ws.views = [{ state: 'frozen', ySplit: 3 }];
+    return wb.xlsx.writeBuffer();
+  }
+  $('blankTpl').addEventListener('click', async () => {
+    const tm = $('tplMsg');
+    if (!window.ExcelJS) { tm.hidden = false; tm.className = 'msg err'; tm.textContent = '엑셀 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.'; return; }
+    try {
+      const buf = await buildBlankTemplate();
+      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = '교통비_지급내역서_빈양식.xlsx'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      tm.hidden = false; tm.className = 'msg'; tm.textContent = '빈 양식을 저장했습니다: 교통비_지급내역서_빈양식.xlsx — 지역·이름·학교(그룹)·요일을 채워서 1번에 올려 주세요.';
+    } catch (e) { tm.hidden = false; tm.className = 'msg err'; tm.textContent = '빈 양식을 만들지 못했습니다. (' + ((e && e.message) || '오류') + ')'; }
+  });
 
   const msg = $('msg');
   function showMsg(t, isErr) { msg.hidden = false; msg.className = 'msg' + (isErr ? ' err' : ''); msg.textContent = t; }

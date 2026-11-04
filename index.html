@@ -544,10 +544,12 @@
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
   const summary = () => '(코칭 ' + coachCount() + '회, 사례회의 ' + state.meet.length + '회)';
-  const canShareFiles = () => !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.xlsx', { type: XLSX_MIME })] }));
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.userAgentData && navigator.userAgentData.mobile) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+  // 파일 공유창은 휴대폰에서만 시도 (PC 브라우저는 지원이 불안정해 저장 + 메일 프로그램 열기로 처리)
+  const canShareFiles = () => isMobile && !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.xlsx', { type: XLSX_MIME })] }));
   $('sendHint').textContent = canShareFiles()
     ? (TEACHER_EMAIL ? '받는 사람: ' + TEACHER_EMAIL : '메일 앱에서 담당 선생님 주소를 선택해 보내 주세요.')
-    : '이 브라우저는 바로 보내기를 지원하지 않아, 파일을 저장한 뒤 메일 앱이 열립니다. 저장된 파일을 첨부해 주세요.';
+    : 'PC에서는 파일을 저장한 뒤 메일 프로그램이 열립니다. 저장된 파일을 첨부해 보내 주세요. (휴대폰에서는 파일이 첨부된 채로 바로 열립니다)';
 
   // 공유창은 버튼을 누른 직후에만 열 수 있으므로, 파일을 미리 만들어 두었다가 즉시 공유한다
   let cachedFile = null, cachedKey = '', preparing = null;
@@ -595,7 +597,12 @@
           showMsg('보내기 창을 열었습니다. 메일 또는 카톡을 골라 담당 선생님께 보내 주세요. ' + summary());
         } catch (e) {
           if (e && e.name === 'AbortError') showMsg('보내기를 취소했습니다. 다시 누르면 보낼 수 있습니다.', true);
-          else if (e && e.name === 'NotAllowedError') { downloadFile(file); showMsg('이 브라우저에서 공유창을 열 수 없어 파일을 저장했습니다: ' + file.name + '  →  저장된 파일을 메일이나 카톡으로 보내 주세요.', true); }
+          else if (e && e.name === 'NotAllowedError') {
+            downloadFile(file);
+            const subject = file.name.replace(/\.xlsx$/, '');
+            showMsg('이 브라우저에서 공유창을 열 수 없어 파일을 저장했습니다: ' + file.name + '  →  메일 앱이 열리면 저장된 파일을 첨부해 보내 주세요.', true);
+            setTimeout(() => { window.location.href = 'mailto:' + encodeURIComponent(TEACHER_EMAIL) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('코칭일자 파일을 첨부합니다. ' + summary()); }, 600);
+          }
           else throw e;
         }
       } else {

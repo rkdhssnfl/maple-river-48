@@ -110,7 +110,7 @@
 <div class="wrap">
   <a href="home.html" class="homebtn">⌂ 관리 모음</a>
   <h1>코칭일지·교통비·연간출석</h1>
-  <p class="sub">① 왈라에서 내려받은 응답 엑셀(또는 코칭단 파일·카톡 글)을 올리고 ② 코칭일자를 확인하고 ③ 교통비 지급 내역서를 내려받고 ④ 달마다 쌓은 기록으로 연간 일지를 만듭니다. 교통비 양식(명단)은 선택입니다. 지역은 양식 파일의 "지역" 칸을 따르며, 경산 사례회의 → 관내연수, 청도 사례회의 → 관외연수로 계산됩니다. 올린 파일은 이 기기 안에서만 처리되고 어디에도 전송되지 않습니다.</p>
+  <p class="sub">① 왈라에서 내려받은 응답 엑셀(또는 코칭단 파일·카톡 글)을 올리고 ② 코칭일자를 확인하고 ③ 교통비 지급 내역서와 ④ 월간 출석부(월간 일지)를 내려받습니다. 연말에 월간 일지들을 올리면 연간 일지로 통합됩니다. 교통비 양식(명단)은 선택입니다. 지역은 양식 파일의 "지역" 칸을 따르며, 경산 사례회의 → 관내연수, 청도 사례회의 → 관외연수로 계산됩니다. 올린 파일은 이 기기 안에서만 처리되고 어디에도 전송되지 않습니다.</p>
 
   <section class="card">
     <h2><span class="step">1</span>왈라 양식 입력 (코칭일자 제출 올리기)</h2>
@@ -180,18 +180,39 @@
   </section>
 
   <section class="card">
-    <h2><span class="step">4</span>연간 출석·보강 일지</h2>
-    <details id="yearBox" open>
-      <summary style="cursor:pointer;font-weight:700;font-size:14px">저장된 달 보기 <span class="small" id="yearCnt"></span></summary>
-      <div class="small" style="margin:6px 0 4px">달마다 여기서 "이번 달 기록 저장"을 눌러 두면 이 컴퓨터(브라우저)에 쌓이고, 언제든 연간 일지 엑셀로 내려받을 수 있습니다. 3번에서 교통비 내역서를 만들 때도 자동으로 저장됩니다.</div>
-      <div class="row" style="margin-top:6px">
-        <button class="btn" id="yearSave" type="button" disabled>이번 달 기록을 연간 일지에 저장</button>
-        <button class="btn" id="yearMake" type="button" disabled>연간 출석·보강 일지 엑셀 내려받기</button>
-        <button class="btn ghost" id="yearClear" type="button">저장한 연간 기록 지우기</button>
+    <h2><span class="step">4</span>월간 출석부</h2>
+    <div class="small" style="margin:0 0 8px">1번에 올린 이번 달 제출로 만든 출석부입니다. <b>월간 일지</b> 엑셀을 달마다 내려받아 두세요. 연말에 그 파일들을 아래 "연간 일지로 통합"에 한꺼번에 올리면 연간 일지가 됩니다.</div>
+    <div id="mEmpty" class="small">아직 제출이 없습니다.</div>
+      <div class="yr" id="mView" hidden>
+        <div class="ystats">
+          <div><div class="k">코칭단</div><div class="v" id="mSCoach">0명</div></div>
+          <div><div class="k">수업</div><div class="v" id="mSCls">0회</div></div>
+          <div><div class="k">보강</div><div class="v mk" id="mSMk">0회</div></div>
+          <div><div class="k">사례회의</div><div class="v meet" id="mSMeet">0회</div></div>
+        </div>
+        <div class="small">칸 표기: 수업 횟수 / <span class="mk">보강</span> / <span class="meet">사례회의</span>. 이름을 누르면 학생별 일지가, 월 칸을 누르면 그 달 달력이 아래에 펼쳐집니다.</div>
+        <div class="ytbl"><table class="yt" id="mSum"></table></div>
+        <div id="mDetail" hidden>
+          <h4 id="mDetailTitle">학생별 일지</h4>
+          <div class="small">월 제목을 누르면 그 달 달력이 아래에 표시되고, 다시 누르면 닫힙니다.</div>
+          <div class="ytbl"><table class="yt" id="mDetailTbl"></table></div>
+          <div class="cal" id="mCal" hidden>
+            <div class="cal-head"><b id="mCalTitle"></b><span class="small">검정=수업 · <span class="mk">파랑=보강</span> · <span class="meet">초록=사례회의</span></span></div>
+            <div class="cal-grid" id="mCalGrid"></div>
+          </div>
+        </div>
       </div>
-      <div id="yearList" class="small" style="margin-top:8px"></div>
-      <div id="yearMsg" hidden></div>
-      <div class="yr" id="yearView" hidden>
+    <button class="btn primary" id="monthMake" type="button" style="margin-top:10px" disabled>월간 출석·보강 일지 엑셀 내려받기</button>
+    <div id="monthMsg" hidden></div>
+    <details id="yearBox" style="margin-top:14px">
+      <summary style="cursor:pointer;font-weight:700;font-size:14px">연말 · 월간 일지 파일들을 올려 연간 일지로 통합 <span class="small" id="yearCnt"></span></summary>
+      <label class="drop" id="yDrop" style="margin-top:8px">
+        <input type="file" id="yFiles" multiple accept=".xlsx">
+        <b>여기를 눌러 월간 일지 엑셀 선택</b> (3월~2월 파일을 한 번에) 또는 끌어다 놓기<br>
+        <span class="small">이 페이지에서 내려받은 "월간 출석보강 일지" 파일만 읽습니다. 같은 달 파일을 다시 올리면 새 것으로 바뀝니다.</span>
+      </label>
+      <div id="yMsg" hidden></div>
+      <div class="yr" id="yView" hidden>
         <div class="ystats">
           <div><div class="k">코칭단</div><div class="v" id="ySCoach">0명</div></div>
           <div><div class="k">수업</div><div class="v" id="ySCls">0회</div></div>
@@ -210,6 +231,11 @@
           </div>
         </div>
       </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="yearMake" type="button" disabled>연간 출석·보강 일지 엑셀 내려받기</button>
+        <button class="btn ghost" id="yearClear" type="button">올린 월간 일지 모두 지우기</button>
+      </div>
+      <div id="yearMsg" hidden></div>
     </details>
   </section>
 </div>
@@ -497,7 +523,7 @@
   function renderCoaches(blocks) {
     const subs = blocks.filter(b => b.sub).map(b => b.sub);
     $('coachCnt').textContent = subs.length ? '(' + subs.length + '명)' : '';
-    $('coachAll').disabled = !subs.length; CUR_SUBS = subs; renderYear();
+    $('coachAll').disabled = !subs.length; CUR_SUBS = subs; renderMonth();
     const list = $('coachList');
     if (!subs.length) { list.innerHTML = '<div class="small">아직 제출한 사람이 없습니다.</div>'; return; }
     list.innerHTML = subs.map((p, i) => {
@@ -784,79 +810,69 @@
     finally { btn.disabled = false; }
   });
 
-  /* ---------- 연간 출석·보강 일지 (달마다 저장해 두었다가 합침) ---------- */
+  /* ---------- 월간 출석부 / 연간 일지 ---------- */
   const MONTHS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2];
-  const YKEY = 'merge-year-v1';
   const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   const fromIso = t => { const [a, b, c] = t.split('-').map(Number); return new Date(a, b - 1, c); };
-  function yLoad() { try { return JSON.parse(localStorage.getItem(YKEY) || '{}'); } catch (e) { return {}; } }
-  function ySave(o) { try { localStorage.setItem(YKEY, JSON.stringify(o)); } catch (e) {} }
-  function yearStoreMonth() {
-    if (!CUR_SUBS.length) return 0;
-    const all = yLoad(); const yk = String(yearSel.value), mk = String(monthSel.value);
-    all[yk] = all[yk] || {}; all[yk][mk] = all[yk][mk] || {};
-    CUR_SUBS.forEach(p => { all[yk][mk][p.name] = { groups: p.rows.map(r => ({ group: r.group, dates: r.dates.map((d, i) => ({ d: iso(d), mk: !!(r.mk && r.mk[i]) })) })), meet: p.meet.map(iso) }; });
-    ySave(all); renderYear(); return CUR_SUBS.length;
+  // 공통 자료 구조: coaches[name] = { name, months: {m: {cls, mk, meet, meetDates}}, students: {group: {group, months: {m: {cls:[Date], mk:[Date]}}}} }
+  function addRecord(coaches, name, m, group, d, kind) {
+    const c = coaches[name] || (coaches[name] = { name, months: {}, students: {} });
+    const mm = c.months[m] || (c.months[m] = { cls: 0, mk: 0, meet: 0, meetDates: [] });
+    if (kind === 'meet') { mm.meet++; mm.meetDates.push(d); return; }
+    const st = c.students[group] || (c.students[group] = { group, months: {} });
+    const sm = st.months[m] || (st.months[m] = { cls: [], mk: [] });
+    if (kind === 'mk') { sm.mk.push(d); mm.mk++; } else { sm.cls.push(d); mm.cls++; }
   }
-  function buildYear() {
-    const all = yLoad(); const yk = String(yearSel.value); const months = all[yk] || {};
-    const coaches = {};
-    Object.keys(months).forEach(mk => {
-      const m = Number(mk);
-      Object.keys(months[mk]).forEach(name => {
-        const p = months[mk][name];
-        const c = coaches[name] || (coaches[name] = { name, months: {}, students: {} });
-        const mm = c.months[m] = { cls: 0, mk: 0, meet: p.meet.length, meetDates: p.meet.map(fromIso).sort((a, b) => a - b) };
-        p.groups.forEach(g => {
-          const st = c.students[g.group] || (c.students[g.group] = { group: g.group, months: {} });
-          const sm = st.months[m] = { cls: [], mk: [] };
-          g.dates.slice().sort((a, b) => a.d < b.d ? -1 : 1).forEach(x => { const d = fromIso(x.d); if (x.mk) { sm.mk.push(d); mm.mk++; } else { sm.cls.push(d); mm.cls++; } });
-        });
-      });
+  const finish = coaches => { Object.values(coaches).forEach(c => { Object.values(c.months).forEach(x => x.meetDates.sort((a, b) => a - b)); Object.values(c.students).forEach(st => Object.values(st.months).forEach(x => { x.cls.sort((a, b) => a - b); x.mk.sort((a, b) => a - b); })); }); return Object.values(coaches).sort((a, b) => a.name.localeCompare(b.name, 'ko')); };
+  function buildMonth() {
+    const coaches = {}; const m = Number(monthSel.value);
+    CUR_SUBS.forEach(p => {
+      p.rows.forEach(r => r.dates.forEach((d, i) => addRecord(coaches, p.name, m, r.group, d, (r.mk && r.mk[i]) ? 'mk' : 'cls')));
+      p.meet.forEach(d => addRecord(coaches, p.name, m, '', d, 'meet'));
+      if (!coaches[p.name]) coaches[p.name] = { name: p.name, months: {}, students: {} };
     });
-    return Object.values(coaches).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+    return finish(coaches);
   }
-  function renderYear() {
-    const all = yLoad(); const yk = String(yearSel.value); const months = all[yk] || {};
-    const keys = Object.keys(months).map(Number).sort((a, b) => MONTHS.indexOf(a) - MONTHS.indexOf(b));
-    $('yearCnt').textContent = keys.length ? '(' + yk + '학년도 ' + keys.length + '개월 저장됨)' : '';
-    $('yearList').innerHTML = keys.length ? '저장된 달: ' + keys.map(m => m + '월 ' + Object.keys(months[m]).length + '명').join(' · ') : '아직 저장된 달이 없습니다.';
-    $('yearMake').disabled = !keys.length; $('yearSave').disabled = !CUR_SUBS.length;
-    renderYearView();
+  const YFILES = new Map(); // month -> rows [{name, group, kind, iso}]
+  function buildYear() {
+    const coaches = {};
+    YFILES.forEach(rows => rows.forEach(r => addRecord(coaches, r.name, r.m, r.group, fromIso(r.iso), r.kind)));
+    return finish(coaches);
   }
-  let ySel = '', ySelMonth = null;
-  function renderYearView() {
-    const coaches = buildYear();
-    $('yearView').hidden = !coaches.length;
+  const SEL = { m: { name: '', month: null }, y: { name: '', month: null } };
+  function renderView(p, coaches) {
+    $(p + 'View').hidden = !coaches.length;
     if (!coaches.length) return;
     let cls = 0, mk = 0, meet = 0;
-    coaches.forEach(c => Object.values(c.months).forEach(m => { cls += m.cls; mk += m.mk; meet += m.meet; }));
-    $('ySCoach').textContent = coaches.length + '명'; $('ySCls').textContent = cls + '회'; $('ySMk').textContent = mk + '회'; $('ySMeet').textContent = meet + '회';
-    let html = '<tr><th>이름</th>' + MONTHS.map(m => '<th>' + m + '월</th>').join('') + '<th>수업 합계</th><th>보강 합계</th><th>사례회의</th></tr>';
+    coaches.forEach(c => Object.values(c.months).forEach(x => { cls += x.cls; mk += x.mk; meet += x.meet; }));
+    $(p + 'SCoach').textContent = coaches.length + '명'; $(p + 'SCls').textContent = cls + '회'; $(p + 'SMk').textContent = mk + '회'; $(p + 'SMeet').textContent = meet + '회';
+    const months = p === 'm' ? [Number(monthSel.value)] : MONTHS;
+    const sel = SEL[p];
+    let html = '<tr><th>이름</th>' + months.map(m => '<th>' + m + '월</th>').join('') + '<th>수업 합계</th><th>보강 합계</th><th>사례회의</th></tr>';
     coaches.forEach(c => {
       let tc = 0, tm = 0, tt = 0;
       html += '<tr><td class="l"><a href="#" data-n="' + esc(c.name) + '" style="color:var(--accent);font-weight:700;text-decoration:none">' + esc(c.name) + '</a></td>';
-      MONTHS.forEach(m => { const x = c.months[m]; if (!x) { html += '<td class="small">-</td>'; return; } tc += x.cls; tm += x.mk; tt += x.meet; html += '<td class="mcell' + (ySel === c.name && ySelMonth === m ? ' on' : '') + '" data-n="' + esc(c.name) + '" data-m="' + m + '" title="누르면 달력 보기">' + x.cls + (x.mk ? ' / <span class="mk">' + x.mk + '</span>' : '') + (x.meet ? ' / <span class="meet">' + x.meet + '</span>' : '') + '</td>'; });
+      months.forEach(m => { const x = c.months[m]; if (!x) { html += '<td class="small">-</td>'; return; } tc += x.cls; tm += x.mk; tt += x.meet; html += '<td class="mcell' + (sel.name === c.name && sel.month === m ? ' on' : '') + '" data-n="' + esc(c.name) + '" data-m="' + m + '" title="누르면 달력 보기">' + x.cls + (x.mk ? ' / <span class="mk">' + x.mk + '</span>' : '') + (x.meet ? ' / <span class="meet">' + x.meet + '</span>' : '') + '</td>'; });
       html += '<td class="sum">' + tc + '</td><td class="sum mk">' + tm + '</td><td class="sum meet">' + tt + '</td></tr>';
     });
-    $('ySum').innerHTML = html;
-    $('ySum').querySelectorAll('a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); ySel = a.dataset.n; renderYearDetail(coaches); $('yDetail').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
-    $('ySum').querySelectorAll('td.mcell').forEach(td => td.addEventListener('click', () => {
+    $(p + 'Sum').innerHTML = html;
+    $(p + 'Sum').querySelectorAll('a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); sel.name = a.dataset.n; renderDetail(p, coaches); $(p + 'Detail').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+    $(p + 'Sum').querySelectorAll('td.mcell').forEach(td => td.addEventListener('click', () => {
       const n = td.dataset.n, m = Number(td.dataset.m);
-      if (ySel === n && ySelMonth === m) ySelMonth = null; else { ySel = n; ySelMonth = m; }
-      renderYearView();
-      if (ySelMonth) $('yCal').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (sel.name === n && sel.month === m) sel.month = null; else { sel.name = n; sel.month = m; }
+      renderView(p, coaches);
+      if (sel.month) $(p + 'Cal').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }));
-    renderYearDetail(coaches);
+    renderDetail(p, coaches);
   }
-  function renderYearDetail(coaches) {
-    const c = coaches.find(x => x.name === ySel);
-    $('yDetail').hidden = !c;
+  function renderDetail(p, coaches) {
+    const sel = SEL[p]; const c = coaches.find(x => x.name === sel.name);
+    $(p + 'Detail').hidden = !c;
     if (!c) return;
-    $('yDetailTitle').textContent = c.name + ' 학생별 일지';
+    $(p + 'DetailTitle').textContent = c.name + ' 학생별 일지';
     const months = MONTHS.filter(m => c.months[m]);
-    if (ySelMonth && !months.includes(ySelMonth)) ySelMonth = null;
-    let html = '<tr><th>학교(학생)</th>' + months.map(m => '<th class="mo' + (m === ySelMonth ? ' on' : '') + '" data-m="' + m + '">' + m + '월</th>').join('') + '<th>수업</th><th>보강</th></tr>';
+    if (sel.month && !months.includes(sel.month)) sel.month = null;
+    let html = '<tr><th>학교(학생)</th>' + months.map(m => '<th class="mo' + (m === sel.month ? ' on' : '') + '" data-m="' + m + '">' + m + '월</th>').join('') + '<th>수업</th><th>보강</th></tr>';
     Object.values(c.students).forEach(st => {
       let tc = 0, tm = 0;
       html += '<tr><td class="l">' + esc(st.group) + '</td>';
@@ -864,13 +880,13 @@
       html += '<td class="sum">' + tc + '</td><td class="sum mk">' + tm + '</td></tr>';
     });
     html += '<tr><td class="l meet">사례회의</td>' + months.map(m => '<td class="l meet">' + (c.months[m].meetDates.map(md).join(', ') || '') + '</td>').join('') + '<td></td><td class="sum meet">' + months.reduce((n, m) => n + c.months[m].meet, 0) + '</td></tr>';
-    $('yDetailTbl').innerHTML = html;
-    $('yDetailTbl').querySelectorAll('th.mo').forEach(th => th.addEventListener('click', () => { const m = Number(th.dataset.m); ySelMonth = (ySelMonth === m) ? null : m; renderYearDetail(coaches); }));
-    renderYearCal(c);
+    $(p + 'DetailTbl').innerHTML = html;
+    $(p + 'DetailTbl').querySelectorAll('th.mo').forEach(th => th.addEventListener('click', () => { const m = Number(th.dataset.m); sel.month = (sel.month === m) ? null : m; renderDetail(p, coaches); }));
+    renderCal(p, c);
   }
-  function renderYearCal(c) {
-    const m = ySelMonth;
-    $('yCal').hidden = !m;
+  function renderCal(p, c) {
+    const m = SEL[p].month;
+    $(p + 'Cal').hidden = !m;
     if (!m) return;
     const year = Number(yearSel.value) + (m <= 2 ? 1 : 0);
     const byDay = {};
@@ -879,10 +895,9 @@
     (c.months[m] ? c.months[m].meetDates : []).forEach(d => { if (d.getMonth() + 1 === m) add(d, MEET_LABEL, 'meet'); });
     const extra = [];
     Object.values(c.students).forEach(st => { const x = st.months[m]; if (!x) return; x.cls.concat(x.mk).forEach(d => { if (d.getMonth() + 1 !== m) extra.push(md(d) + ' ' + st.group); }); });
-    $('yCalTitle').textContent = c.name + ' — ' + year + '년 ' + m + '월' + (extra.length ? '  (이 달 기록에 포함된 다른 달 날짜: ' + extra.join(', ') + ')' : '');
+    let title = c.name + ' — ' + year + '년 ' + m + '월' + (extra.length ? '  (이 달 기록에 포함된 다른 달 날짜: ' + extra.join(', ') + ')' : '');
     const first = new Date(year, m - 1, 1), last = new Date(year, m, 0);
     const lead = (first.getDay() + 6) % 7;
-    // 주말은 빼고 월~금 5칸으로 (주말 날짜에 기록이 있으면 제목 옆에 따로 적음)
     const wkend = [];
     let html = ['월', '화', '수', '목', '금'].map(d => '<div class="dow">' + d + '</div>').join('');
     for (let i = 0; i < (lead < 5 ? lead : 0); i++) html += '<div class="day empty"></div>';
@@ -892,11 +907,107 @@
       if (dow >= 5) { if (items.length) wkend.push(m + '/' + d + ' ' + items.map(it => it.text).join(', ')); continue; }
       html += '<div class="day' + (items.length ? ' has' : '') + '"><span class="n">' + d + '</span>' + items.map(it => '<span class="e ' + it.cls + '">' + esc(it.text) + '</span>').join('') + '</div>';
     }
-    $('yCalGrid').innerHTML = html;
-    if (wkend.length) $('yCalTitle').textContent += '  (주말 기록: ' + wkend.join('; ') + ')';
+    $(p + 'CalGrid').innerHTML = html;
+    if (wkend.length) title += '  (주말 기록: ' + wkend.join('; ') + ')';
+    $(p + 'CalTitle').textContent = title;
   }
-  $('yearSave').addEventListener('click', () => { const n = yearStoreMonth(); const ym = $('yearMsg'); ym.hidden = false; ym.className = 'msg'; ym.textContent = monthSel.value + '월 ' + n + '명의 기록을 연간 일지에 저장했습니다.'; });
-  $('yearClear').addEventListener('click', () => { if (!confirm('이 컴퓨터에 저장된 연간 기록을 모두 지울까요?')) return; const all = yLoad(); delete all[String(yearSel.value)]; ySave(all); renderYear(); });
+  function renderMonth() {
+    const coaches = buildMonth();
+    $('mEmpty').hidden = !!coaches.length; $('monthMake').disabled = !coaches.length;
+    renderView('m', coaches);
+  }
+  function renderYear() {
+    const coaches = buildYear();
+    const keys = Array.from(YFILES.keys()).sort((a, b) => MONTHS.indexOf(a) - MONTHS.indexOf(b));
+    $('yearCnt').textContent = keys.length ? '(' + keys.map(m => m + '월').join('·') + ' 올림)' : '';
+    $('yearMake').disabled = !coaches.length;
+    renderView('y', coaches);
+  }
+  /* 월간 일지 엑셀: 읽기 좋은 시트 + 연간 통합용 "데이터" 시트 */
+  async function buildMonthWorkbook() {
+    const coaches = buildMonth(); const m = Number(monthSel.value);
+    const wb = new ExcelJS.Workbook();
+    const font = o => Object.assign({ name: '맑은 고딕', size: 10 }, o || {});
+    const thin = { style: 'thin', color: { argb: 'FF000000' } }; const border = { top: thin, left: thin, bottom: thin, right: thin };
+    const center = { horizontal: 'center', vertical: 'middle', wrapText: true }, left = { horizontal: 'left', vertical: 'middle', wrapText: true };
+    const head = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9EAD3' } }, sumFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } };
+    const MK = 'FF1F4E9C', MEET = 'FF2E7D32';
+    const hcell = (ws, r, c, v) => { const cell = ws.getCell(r, c); cell.value = v; cell.font = font({ bold: true }); cell.fill = head; cell.alignment = center; cell.border = border; };
+    const dcell = (ws, r, c, v, opt) => { const cell = ws.getCell(r, c); cell.value = v; cell.font = font(opt && opt.font); cell.alignment = (opt && opt.left) ? left : center; cell.border = border; if (opt && opt.fill) cell.fill = opt.fill; return cell; };
+    const ws = wb.addWorksheet('월간 출석부');
+    [10, 22, 44, 34, 7, 7].forEach((w, i) => ws.getColumn(1 + i).width = w);
+    ws.mergeCells(1, 1, 1, 6); ws.getCell(1, 1).value = yearSel.value + '학년도 학습코칭단 ' + m + '월 출석·보강 일지'; ws.getCell(1, 1).font = font({ size: 14, bold: true }); ws.getCell(1, 1).alignment = center; ws.getRow(1).height = 26;
+    ['이름', '학교(학생)', '수업 일자', '보강 일자', '수업', '보강'].forEach((h, i) => hcell(ws, 2, 1 + i, h));
+    let r = 3;
+    coaches.forEach(c => {
+      const top = r; let tc = 0, tm = 0;
+      Object.values(c.students).forEach(st => { const x = st.months[m]; if (!x) return; dcell(ws, r, 1, c.name); dcell(ws, r, 2, st.group, { left: true }); dcell(ws, r, 3, x.cls.map(md).join(', '), { left: true }); dcell(ws, r, 4, x.mk.map(md).join(', '), { left: true, font: { color: { argb: MK }, bold: !!x.mk.length } }); dcell(ws, r, 5, x.cls.length); dcell(ws, r, 6, x.mk.length, { font: { color: { argb: MK } } }); tc += x.cls.length; tm += x.mk.length; r++; });
+      const mm = c.months[m];
+      if (mm && mm.meet) { dcell(ws, r, 1, c.name); dcell(ws, r, 2, MEET_LABEL, { left: true, font: { color: { argb: MEET }, bold: true } }); dcell(ws, r, 3, mm.meetDates.map(md).join(', '), { left: true, font: { color: { argb: MEET } } }); dcell(ws, r, 4, ''); dcell(ws, r, 5, mm.meet, { font: { color: { argb: MEET } } }); dcell(ws, r, 6, ''); r++; }
+      dcell(ws, r, 1, c.name, { font: { bold: true }, fill: sumFill }); dcell(ws, r, 2, '합계', { left: true, font: { bold: true }, fill: sumFill }); dcell(ws, r, 3, '', { fill: sumFill }); dcell(ws, r, 4, '', { fill: sumFill }); dcell(ws, r, 5, tc, { font: { bold: true }, fill: sumFill }); dcell(ws, r, 6, tm, { font: { bold: true, color: { argb: MK } }, fill: sumFill }); r++;
+      if (r - top > 1) ws.mergeCells(top, 1, r - 1, 1);
+    });
+    ws.views = [{ state: 'frozen', ySplit: 2 }];
+    // 데이터 시트 (연간 통합용)
+    const wd = wb.addWorksheet('데이터');
+    [8, 6, 10, 22, 8, 12].forEach((w, i) => wd.getColumn(1 + i).width = w);
+    ['학년도', '월', '이름', '학교(학생)', '종류', '날짜'].forEach((h, i) => hcell(wd, 1, 1 + i, h));
+    let rr = 2;
+    coaches.forEach(c => {
+      Object.values(c.students).forEach(st => { const x = st.months[m]; if (!x) return; x.cls.forEach(d => { [yearSel.value, m, c.name, st.group, '수업', iso(d)].forEach((v, i) => wd.getCell(rr, 1 + i).value = v); rr++; }); x.mk.forEach(d => { [yearSel.value, m, c.name, st.group, '보강', iso(d)].forEach((v, i) => wd.getCell(rr, 1 + i).value = v); rr++; }); });
+      (c.months[m] ? c.months[m].meetDates : []).forEach(d => { [yearSel.value, m, c.name, '', '사례회의', iso(d)].forEach((v, i) => wd.getCell(rr, 1 + i).value = v); rr++; });
+    });
+    return wb.xlsx.writeBuffer();
+  }
+  const monthFileName = () => yearSel.value + '학년도 학습코칭단 ' + monthSel.value + '월 출석보강 일지.xlsx';
+  $('monthMake').addEventListener('click', async () => {
+    const mm = $('monthMsg'); mm.hidden = false; mm.className = 'msg';
+    if (!window.ExcelJS) { mm.className = 'msg err'; mm.textContent = '엑셀 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.'; return; }
+    const btn = $('monthMake'); btn.disabled = true; mm.textContent = '만드는 중...';
+    try {
+      const buf = await buildMonthWorkbook();
+      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = monthFileName(); document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      mm.textContent = '저장했습니다: ' + monthFileName() + ' — 연말까지 모아 두세요.';
+    } catch (e) { mm.className = 'msg err'; mm.textContent = '만들지 못했습니다. (' + ((e && e.message) || '오류') + ')'; }
+    finally { btn.disabled = false; }
+  });
+  /* 월간 일지 파일 읽기 ("데이터" 시트) */
+  async function parseMonthlyFile(file) {
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+    const ws = wb.getWorksheet('데이터');
+    if (!ws) throw new Error('월간 일지 파일이 아닙니다 ("데이터" 시트 없음)');
+    const rows = []; let yr = null;
+    for (let r = 2; r <= ws.rowCount; r++) {
+      const y = ws.getCell(r, 1).value, m = Number(ws.getCell(r, 2).value), name = String(ws.getCell(r, 3).text || '').trim(), group = String(ws.getCell(r, 4).text || '').trim(), kind = String(ws.getCell(r, 5).text || '').trim(), dv = ws.getCell(r, 6).value;
+      if (!name || !m) continue;
+      const isoV = dv instanceof Date ? iso(new Date(dv.getUTCFullYear(), dv.getUTCMonth(), dv.getUTCDate())) : String(dv || '').trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(isoV)) continue;
+      if (y && !yr) yr = Number(y);
+      rows.push({ m, name, group, kind: kind === '보강' ? 'mk' : kind === '사례회의' ? 'meet' : 'cls', iso: isoV });
+    }
+    if (!rows.length) throw new Error('기록이 없습니다');
+    return { month: rows[0].m, year: yr, rows };
+  }
+  const yDrop = $('yDrop'), yIn = $('yFiles');
+  ['dragenter', 'dragover'].forEach(ev => yDrop.addEventListener(ev, e => { e.preventDefault(); yDrop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => yDrop.addEventListener(ev, e => { e.preventDefault(); yDrop.classList.remove('over'); }));
+  yDrop.addEventListener('drop', e => handleYearFiles(e.dataTransfer.files));
+  yIn.addEventListener('change', e => { handleYearFiles(e.target.files); yIn.value = ''; });
+  async function handleYearFiles(list) {
+    const ym = $('yMsg'); ym.hidden = false; ym.className = 'msg'; ym.textContent = '읽는 중...';
+    const oks = [], errs = [];
+    for (const f of Array.from(list)) {
+      if (!/\.xlsx$/i.test(f.name)) { errs.push(f.name + ': xlsx 파일이 아닙니다'); continue; }
+      try { const p = await parseMonthlyFile(f); YFILES.set(p.month, p.rows); oks.push(p.month + '월'); if (p.year) yearSel.value = p.year; }
+      catch (e) { errs.push(f.name + ': ' + (e.message || '읽기 실패')); }
+    }
+    ym.className = 'msg' + (errs.length ? ' err' : '');
+    ym.innerHTML = (oks.length ? oks.length + '개 읽음: ' + esc(oks.join(', ')) : '읽은 파일 없음') + (errs.length ? '<ul>' + errs.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '');
+    renderYear();
+  }
+  $('yearClear').addEventListener('click', () => { YFILES.clear(); $('yMsg').hidden = true; renderYear(); });
   $('yearMake').addEventListener('click', async () => {
     const ym = $('yearMsg'); ym.hidden = false; ym.className = 'msg';
     if (!window.ExcelJS) { ym.className = 'msg err'; ym.textContent = '엑셀 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.'; return; }
@@ -1008,8 +1119,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = fileName(); document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60000);
-      const nSaved = yearStoreMonth();
-      showMsg('저장했습니다: ' + fileName() + (nSaved ? '  (이번 달 ' + nSaved + '명 기록을 연간 일지에도 저장했습니다)' : ''));
+      showMsg('저장했습니다: ' + fileName());
     } catch (e) {
       showMsg('저장하지 못했습니다. (' + ((e && e.message) || '알 수 없는 오류') + ')', true);
     } finally { btn.disabled = !files.size; btn.textContent = '교통비 지급 내역서 엑셀 만들기'; }

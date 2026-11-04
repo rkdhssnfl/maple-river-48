@@ -50,6 +50,16 @@
   .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; width: 100%; font-size: 16px; padding: 14px; }
   .btn.ghost { color: var(--muted); font-size: 13px; padding: 6px 10px; }
   .btn:disabled { opacity: .5; cursor: default; }
+  .coach { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+  .coach h3 { margin: 0 0 6px; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .coach h3 .cnt { font-size: 12px; color: var(--muted); font-weight: 400; }
+  .coach .pvw { overflow-x: auto; }
+  table.pv { border-collapse: collapse; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  table.pv th, table.pv td { border: 1px solid var(--line); padding: 3px 7px; text-align: center; }
+  table.pv th { background: var(--accent-soft); font-weight: 500; }
+  table.pv td.l { text-align: left; }
+  table.pv td.mt { color: #2e7d32; font-weight: 700; }
+  table.pv td.mk { color: #1e88e5; font-weight: 700; }
   input:focus, select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .stats { display: flex; gap: 18px; flex-wrap: wrap; margin: 8px 0; font-variant-numeric: tabular-nums; }
   .stats div .k { font-size: 11px; color: var(--muted); } .stats div .v { font-size: 20px; font-weight: 700; }
@@ -126,6 +136,12 @@
     </div>
     <div class="tbl"><table id="tbl"></table></div>
     <div id="notes"></div>
+    <details id="coachBox" style="margin-top:12px" open>
+      <summary style="cursor:pointer;font-weight:700;font-size:14px">코칭단별 코칭일자 미리보기 · 파일 만들기 <span class="small" id="coachCnt"></span></summary>
+      <div class="small" style="margin:6px 0 4px">제출한 사람마다 코칭일자 확인 표입니다. 파란 글씨=보강, 초록=사례회의. 왈라·카톡 글로 낸 사람은 여기서 "코칭일자 파일"을 받아 두면 연간 일지에 쓸 수 있습니다.</div>
+      <div id="coachList"></div>
+      <div id="coachMsg" hidden></div>
+    </details>
   </section>
 
   <section class="card">
@@ -416,6 +432,38 @@
     $('make').disabled = !files.size; updateEachBtn();
     if (!MASTER.length) $('notes').innerHTML = '<div class="msg">1번 양식(명단)이 없어서 올린 파일의 이름·지역 순서대로 내역서를 만듭니다. 명단 순서·요일대로 맞추려면 1번에 교통비 양식을 올려 주세요.</div>';
     $('fname').textContent = fileName();
+    renderCoaches(blocks);
+  }
+  function renderCoaches(blocks) {
+    const subs = blocks.filter(b => b.sub).map(b => b.sub);
+    $('coachCnt').textContent = subs.length ? '(' + subs.length + '명)' : '';
+    const list = $('coachList');
+    if (!subs.length) { list.innerHTML = '<div class="small">아직 제출한 사람이 없습니다.</div>'; return; }
+    list.innerHTML = subs.map((p, i) => {
+      const lines = coachLines(p);
+      const total = lines.reduce((n, ln) => n + ln.dates.length, 0);
+      let t = '<tr><th>학교(학생이름)</th><th colspan="' + DATE_COLS8 + '">코칭 일자(월/일)</th></tr>';
+      lines.forEach(ln => {
+        t += '<tr><td class="l' + (ln.meet ? ' mt' : '') + '">' + esc(ln.group) + '</td>';
+        for (let k = 0; k < DATE_COLS8; k++) { const d = ln.dates[k]; t += '<td class="' + (d ? (ln.meet ? 'mt' : (ln.mk[k] ? 'mk' : '')) : '') + '">' + (d ? md(d) : '') + '</td>'; }
+        t += '</tr>';
+      });
+      const src = p.src === 'walla' ? '왈라 응답' : p.src === 'text' ? '카톡 글' : '엑셀 파일';
+      return '<div class="coach"><h3>' + esc(p.name) + (p.region ? ' <span class="cnt">' + esc(p.region) + '</span>' : '') + ' <span class="cnt">' + total + '회 · ' + src + (p.src ? '' : ' (' + esc(p.fileName) + ')') + '</span>' +
+        '<button class="btn ghost" data-coach="' + i + '" type="button" style="margin-left:auto">코칭일자 파일 내려받기</button></h3><div class="pvw"><table class="pv">' + t + '</table></div></div>';
+    }).join('');
+    list.querySelectorAll('button[data-coach]').forEach(b => b.addEventListener('click', async () => {
+      const p = subs[Number(b.dataset.coach)]; const cm = $('coachMsg'); cm.hidden = false; cm.className = 'msg';
+      if (!window.ExcelJS) { cm.className = 'msg err'; cm.textContent = '엑셀 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.'; return; }
+      try {
+        const buf = await buildCoachWorkbook(p);
+        const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = coachFileName(p); document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        cm.textContent = '저장했습니다: ' + coachFileName(p);
+      } catch (e) { cm.className = 'msg err'; cm.textContent = '만들지 못했습니다. (' + ((e && e.message) || '오류') + ')'; }
+    }));
   }
 
   /* ---------- 교통비 지급 내역서 엑셀 ---------- */

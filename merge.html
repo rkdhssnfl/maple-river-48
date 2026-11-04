@@ -141,6 +141,8 @@
       <summary style="cursor:pointer;font-weight:700;font-size:14px">코칭단별 코칭일자 미리보기 · 파일 만들기 <span class="small" id="coachCnt"></span></summary>
       <div class="small" style="margin:6px 0 4px">제출한 사람마다 코칭일자 확인 표입니다. 파란 글씨=보강, 초록=사례회의. 왈라·카톡 글로 낸 사람은 여기서 "코칭일자 파일"을 받아 두면 연간 일지에 쓸 수 있습니다.</div>
       <div id="coachList"></div>
+      <button class="btn" id="coachAll" type="button" style="width:100%;margin-top:10px" disabled>모든 사람 코칭일자 파일 한꺼번에 내려받기</button>
+      <div class="small" style="margin-top:4px">브라우저가 "여러 파일 다운로드 허용"을 물으면 허용해 주세요.</div>
       <div id="coachMsg" hidden></div>
     </details>
   </section>
@@ -431,9 +433,11 @@
     $('fname').textContent = fileName();
     renderCoaches(blocks);
   }
+  let CUR_SUBS = [];
   function renderCoaches(blocks) {
     const subs = blocks.filter(b => b.sub).map(b => b.sub);
     $('coachCnt').textContent = subs.length ? '(' + subs.length + '명)' : '';
+    $('coachAll').disabled = !subs.length; CUR_SUBS = subs;
     const list = $('coachList');
     if (!subs.length) { list.innerHTML = '<div class="small">아직 제출한 사람이 없습니다.</div>'; return; }
     list.innerHTML = subs.map((p, i) => {
@@ -462,6 +466,24 @@
       } catch (e) { cm.className = 'msg err'; cm.textContent = '만들지 못했습니다. (' + ((e && e.message) || '오류') + ')'; }
     }));
   }
+
+  $('coachAll').addEventListener('click', async () => {
+    const cm = $('coachMsg'); cm.hidden = false; cm.className = 'msg';
+    if (!window.ExcelJS) { cm.className = 'msg err'; cm.textContent = '엑셀 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.'; return; }
+    const btn = $('coachAll'); btn.disabled = true; cm.textContent = '만드는 중...';
+    try {
+      for (const p of CUR_SUBS) {
+        const buf = await buildCoachWorkbook(p);
+        const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = coachFileName(p); document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        await new Promise(r => setTimeout(r, 400));
+      }
+      cm.textContent = CUR_SUBS.length + '개 파일을 저장했습니다 (다운로드 폴더): ' + CUR_SUBS.map(p => p.name).join(', ');
+    } catch (e) { cm.className = 'msg err'; cm.textContent = '만들지 못했습니다. (' + ((e && e.message) || '오류') + ')'; }
+    finally { btn.disabled = !CUR_SUBS.length; }
+  });
 
   /* ---------- 교통비 지급 내역서 엑셀 ---------- */
   async function buildWorkbook() {

@@ -109,7 +109,7 @@
   .btn:disabled { opacity: .5; cursor: default; }
   .sel-list { font-size: 12px; color: var(--muted); margin-top: 6px; min-height: 1.4em; }
   .sel-list b { color: var(--fg); }
-  .msg { margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--fg); }
+  .msg { margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--fg); white-space: pre-wrap; }
   .msg.err { background: transparent; border: 1px solid var(--warn); color: var(--warn); }
   .msg ul { margin: 4px 0 0; padding-left: 18px; }
   .preview { overflow-x: auto; margin-top: 10px; }
@@ -172,6 +172,8 @@
     <p class="foot">파일 이름: <span id="fname"></span></p>
     <a class="btn primary" id="wallaSubmit" href="https://walla.my/v/JCVUXo3ZR92bs2yEiujD" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:#1f4e9c;border-color:#1f4e9c">폰으로 제출하기 (저장한 파일 첨부)</a>
     <p class="foot">① 위 초록 버튼으로 엑셀 파일을 저장 → ② 파란 버튼을 눌러 열리는 제출 화면에서 이름을 적고 <b>파일 첨부</b>로 방금 저장한 파일을 올려 제출하면 끝. 컴퓨터에서는 저장한 파일을 메일로 보내도 됩니다. 입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
+    <button class="btn" id="kakaoText" type="button" style="width:100%;margin-top:10px;background:#fee500;border-color:#e5cf00;color:#1d1d1d;font-weight:700">카톡으로 보내기 (글로 보내기)</button>
+    <p class="foot">파일 첨부가 어려우면 이 버튼을 눌러요. 입력한 날짜가 글로 만들어져 복사되고, 보내기 창이 뜨면 <b>카카오톡 → 담당 선생님</b>을 고르면 됩니다. 창이 안 뜨면 카톡을 열어 붙여넣기 하세요.</p>
     <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
       <button class="btn" id="blankXlsx" type="button" style="width:100%">빈 양식 내려받기 (엑셀에 직접 작성할 때)</button>
       <div class="foot" style="margin-top:6px">달력 입력이 어려우면 이 양식을 내려받아 엑셀에서 직접 적어 보내도 됩니다. 결과는 같은 모양입니다.</div>
@@ -419,6 +421,30 @@
   }
   const xferMsg = $('xferMsg');
   function showXfer(t, isErr) { xferMsg.hidden = false; xferMsg.className = 'msg' + (isErr ? ' err' : ''); xferMsg.textContent = t; }
+  function buildText() {
+    const md = iso => { const d = fromIso(iso); return (d.getMonth() + 1) + '/' + d.getDate(); };
+    const out = ['[코칭일자] ' + state.year + '년 ' + state.month + '월 ' + (state.name || '(이름)').trim()];
+    state.students.filter(s => s.group.trim() && (s.dates.length || s.makeup.length)).forEach(s => {
+      const all = Array.from(new Set(s.dates.concat(s.makeup))).sort();
+      const mk = new Set(s.makeup);
+      out.push(s.group.trim() + ': ' + all.map(x => md(x) + (mk.has(x) ? '*' : '')).join(', '));
+    });
+    if (state.meet.length) out.push(MEET_LABEL + ': ' + state.meet.slice().sort().map(md).join(', '));
+    out.push('(*표시는 보강)');
+    return out.join('\n');
+  }
+  $('kakaoText').addEventListener('click', async () => {
+    if (!(state.name || '').trim()) { showMsg('코칭단 이름을 먼저 적어 주세요.', true); return; }
+    const text = buildText();
+    let copied = false;
+    try { await navigator.clipboard.writeText(text); copied = true; } catch (e) {}
+    if (navigator.share) {
+      try { await navigator.share({ text }); showMsg('보내기 창에서 카카오톡 → 담당 선생님을 고르세요.' + (copied ? ' (글은 복사도 해 두었어요)' : '')); return; }
+      catch (e) { if (e && e.name === 'AbortError') { showMsg(copied ? '보내기를 취소했어요. 글은 복사되어 있으니 카톡에 붙여넣기 해도 됩니다.' : '보내기를 취소했어요.'); return; } }
+    }
+    if (copied) showMsg('글을 복사했습니다. 카톡을 열어 담당 선생님 대화창에 붙여넣기 하세요.\n\n' + text);
+    else { showMsg('복사가 안 되는 기기예요. 아래 글을 길게 눌러 복사하세요.\n\n' + text, true); }
+  });
   $('xferCopy').addEventListener('click', async () => {
     const code = encodeState();
     $('xferBox').value = code;

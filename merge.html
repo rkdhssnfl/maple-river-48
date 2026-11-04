@@ -148,6 +148,17 @@
       <div class="small" style="margin-top:4px">제출한 사람 전체(30명 이상도)의 코칭일자 파일이 압축 파일 하나로 내려받아집니다. 압축을 풀면 사람마다 엑셀 파일이 하나씩 있습니다.</div>
       <div id="coachMsg" hidden></div>
     </details>
+    <details id="yearBox" style="margin-top:12px" open>
+      <summary style="cursor:pointer;font-weight:700;font-size:14px">연간 출석·보강 일지 <span class="small" id="yearCnt"></span></summary>
+      <div class="small" style="margin:6px 0 4px">달마다 여기서 "이번 달 기록 저장"을 눌러 두면 이 컴퓨터(브라우저)에 쌓이고, 언제든 연간 일지 엑셀로 내려받을 수 있습니다. 5번에서 교통비 내역서를 만들 때도 자동으로 저장됩니다.</div>
+      <div class="row" style="margin-top:6px">
+        <button class="btn" id="yearSave" type="button" disabled>이번 달 기록을 연간 일지에 저장</button>
+        <button class="btn" id="yearMake" type="button" disabled>연간 출석·보강 일지 엑셀 내려받기</button>
+        <button class="btn ghost" id="yearClear" type="button">저장한 연간 기록 지우기</button>
+      </div>
+      <div id="yearList" class="small" style="margin-top:8px"></div>
+      <div id="yearMsg" hidden></div>
+    </details>
   </section>
 
   <section class="card">
@@ -261,10 +272,11 @@
       if (a && !name) name = a;
       const group = String(ws.getCell(r, 2).text || '').trim();
       const dates = [];
-      for (let c = 3; c <= 2 + 8; c++) { const d = toDate(ws.getCell(r, c).value); if (d) dates.push(d); }
+      const mk = [];
+      for (let c = 3; c <= 2 + 8; c++) { const cell = ws.getCell(r, c); const d = toDate(cell.value); if (d) { dates.push(d); const col = cell.font && cell.font.color && cell.font.color.argb ? String(cell.font.color.argb).toUpperCase() : ''; mk.push(col.endsWith('1F4E9C') || col.endsWith('1E5FA8')); } }
       if (!group && !dates.length) { if (r > hdr + MIN_BLOCK_ROWS) break; else continue; }
       if (norm(group) === MEET_LABEL) meet.push(...dates);
-      else rows.push({ group, dates });
+      else rows.push({ group, dates, mk });
     }
     if (!name) throw new Error('코칭단 이름이 비어 있습니다');
     return { name, fileName: file.name, rows, meet };
@@ -442,7 +454,7 @@
   function renderCoaches(blocks) {
     const subs = blocks.filter(b => b.sub).map(b => b.sub);
     $('coachCnt').textContent = subs.length ? '(' + subs.length + '명)' : '';
-    $('coachAll').disabled = !subs.length; CUR_SUBS = subs;
+    $('coachAll').disabled = !subs.length; CUR_SUBS = subs; renderYear();
     const list = $('coachList');
     if (!subs.length) { list.innerHTML = '<div class="small">아직 제출한 사람이 없습니다.</div>'; return; }
     list.innerHTML = subs.map((p, i) => {
@@ -729,6 +741,146 @@
     finally { btn.disabled = false; }
   });
 
+  /* ---------- 연간 출석·보강 일지 (달마다 저장해 두었다가 합침) ---------- */
+  const MONTHS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2];
+  const YKEY = 'merge-year-v1';
+  const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const fromIso = t => { const [a, b, c] = t.split('-').map(Number); return new Date(a, b - 1, c); };
+  function yLoad() { try { return JSON.parse(localStorage.getItem(YKEY) || '{}'); } catch (e) { return {}; } }
+  function ySave(o) { try { localStorage.setItem(YKEY, JSON.stringify(o)); } catch (e) {} }
+  function yearStoreMonth() {
+    if (!CUR_SUBS.length) return 0;
+    const all = yLoad(); const yk = String(yearSel.value), mk = String(monthSel.value);
+    all[yk] = all[yk] || {}; all[yk][mk] = all[yk][mk] || {};
+    CUR_SUBS.forEach(p => { all[yk][mk][p.name] = { groups: p.rows.map(r => ({ group: r.group, dates: r.dates.map((d, i) => ({ d: iso(d), mk: !!(r.mk && r.mk[i]) })) })), meet: p.meet.map(iso) }; });
+    ySave(all); renderYear(); return CUR_SUBS.length;
+  }
+  function buildYear() {
+    const all = yLoad(); const yk = String(yearSel.value); const months = all[yk] || {};
+    const coaches = {};
+    Object.keys(months).forEach(mk => {
+      const m = Number(mk);
+      Object.keys(months[mk]).forEach(name => {
+        const p = months[mk][name];
+        const c = coaches[name] || (coaches[name] = { name, months: {}, students: {} });
+        const mm = c.months[m] = { cls: 0, mk: 0, meet: p.meet.length, meetDates: p.meet.map(fromIso).sort((a, b) => a - b) };
+        p.groups.forEach(g => {
+          const st = c.students[g.group] || (c.students[g.group] = { group: g.group, months: {} });
+          const sm = st.months[m] = { cls: [], mk: [] };
+          g.dates.slice().sort((a, b) => a.d < b.d ? -1 : 1).forEach(x => { const d = fromIso(x.d); if (x.mk) { sm.mk.push(d); mm.mk++; } else { sm.cls.push(d); mm.cls++; } });
+        });
+      });
+    });
+    return Object.values(coaches).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  }
+  function renderYear() {
+    const all = yLoad(); const yk = String(yearSel.value); const months = all[yk] || {};
+    const keys = Object.keys(months).map(Number).sort((a, b) => MONTHS.indexOf(a) - MONTHS.indexOf(b));
+    $('yearCnt').textContent = keys.length ? '(' + yk + '학년도 ' + keys.length + '개월 저장됨)' : '';
+    $('yearList').innerHTML = keys.length ? '저장된 달: ' + keys.map(m => m + '월 ' + Object.keys(months[m]).length + '명').join(' · ') : '아직 저장된 달이 없습니다.';
+    $('yearMake').disabled = !keys.length; $('yearSave').disabled = !CUR_SUBS.length;
+  }
+  $('yearSave').addEventListener('click', () => { const n = yearStoreMonth(); const ym = $('yearMsg'); ym.hidden = false; ym.className = 'msg'; ym.textContent = monthSel.value + '월 ' + n + '명의 기록을 연간 일지에 저장했습니다.'; });
+  $('yearClear').addEventListener('click', () => { if (!confirm('이 컴퓨터에 저장된 연간 기록을 모두 지울까요?')) return; const all = yLoad(); delete all[String(yearSel.value)]; ySave(all); renderYear(); });
+  $('yearMake').addEventListener('click', async () => {
+    const ym = $('yearMsg'); ym.hidden = false; ym.className = 'msg';
+    if (!window.ExcelJS) { ym.className = 'msg err'; ym.textContent = '엑셀 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.'; return; }
+    const btn = $('yearMake'); btn.disabled = true; ym.textContent = '만드는 중...';
+    try {
+      const buf = await buildYearWorkbook();
+      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const name = yearSel.value + '학년도 학습코칭단 연간 출석보강 일지.xlsx';
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      ym.textContent = '저장했습니다: ' + name;
+    } catch (e) { ym.className = 'msg err'; ym.textContent = '만들지 못했습니다. (' + ((e && e.message) || '오류') + ')'; }
+    finally { btn.disabled = false; }
+  });
+  async function buildYearWorkbook() {
+    const coaches = buildYear();
+    const yl = yearSel.value + '학년도';
+    const wb = new ExcelJS.Workbook();
+    const font = o => Object.assign({ name: '맑은 고딕', size: 10 }, o || {});
+    const thin = { style: 'thin', color: { argb: 'FF000000' } };
+    const border = { top: thin, left: thin, bottom: thin, right: thin };
+    const center = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    const left = { horizontal: 'left', vertical: 'middle', wrapText: true };
+    const head = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9EAD3' } };
+    const sumFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } };
+    const MK = 'FF1F4E9C', MEET = 'FF2E7D32';
+    const hcell = (ws, r, c, v) => { const cell = ws.getCell(r, c); cell.value = v; cell.font = font({ bold: true }); cell.fill = head; cell.alignment = center; cell.border = border; };
+    const dcell = (ws, r, c, v, opt) => { const cell = ws.getCell(r, c); cell.value = v; cell.font = font(opt && opt.font); cell.alignment = (opt && opt.left) ? left : center; cell.border = border; if (opt && opt.fill) cell.fill = opt.fill; return cell; };
+
+    // ① 연간 집계
+    const w1 = wb.addWorksheet('연간 집계');
+    w1.getColumn(1).width = 10; for (let i = 0; i < 12; i++) w1.getColumn(2 + i).width = 11; [10, 10, 10].forEach((w, i) => w1.getColumn(14 + i).width = w);
+    w1.mergeCells(1, 1, 1, 16); w1.getCell(1, 1).value = yl + ' 학습코칭단 연간 출석·보강 집계'; w1.getCell(1, 1).font = font({ size: 14, bold: true }); w1.getCell(1, 1).alignment = center; w1.getRow(1).height = 26;
+    w1.mergeCells(2, 1, 2, 16); w1.getCell(2, 1).value = '칸 표기: 수업 / 보강 / 사례회의 (횟수)'; w1.getCell(2, 1).font = font({ size: 9, color: { argb: 'FF666666' } }); w1.getCell(2, 1).alignment = { horizontal: 'right' };
+    hcell(w1, 3, 1, '이름'); MONTHS.forEach((m, i) => hcell(w1, 3, 2 + i, m + '월')); hcell(w1, 3, 14, '수업 합계'); hcell(w1, 3, 15, '보강 합계'); hcell(w1, 3, 16, '사례회의');
+    coaches.forEach((c, i) => {
+      const r = 4 + i; let tc = 0, tm = 0, tt = 0;
+      dcell(w1, r, 1, c.name);
+      MONTHS.forEach((m, j) => { const x = c.months[m]; if (!x) { dcell(w1, r, 2 + j, '-', { font: { color: { argb: 'FF999999' } } }); return; } tc += x.cls; tm += x.mk; tt += x.meet; dcell(w1, r, 2 + j, x.cls + ' / ' + x.mk + ' / ' + x.meet); });
+      dcell(w1, r, 14, tc, { font: { bold: true }, fill: sumFill }); dcell(w1, r, 15, tm, { font: { bold: true, color: { argb: MK } }, fill: sumFill }); dcell(w1, r, 16, tt, { font: { bold: true, color: { argb: MEET } }, fill: sumFill });
+    });
+    w1.views = [{ state: 'frozen', xSplit: 1, ySplit: 3 }];
+
+    // ② 학생별 일지
+    const w2 = wb.addWorksheet('학생별 일지');
+    [10, 20, 6, 40, 30, 7, 7].forEach((w, i) => w2.getColumn(1 + i).width = w);
+    ['이름', '학교(학생)', '월', '수업 일자', '보강 일자', '수업', '보강'].forEach((h, i) => hcell(w2, 1, 1 + i, h));
+    let r2 = 2;
+    coaches.forEach(c => {
+      Object.values(c.students).forEach(s => {
+        MONTHS.filter(m => s.months[m]).forEach(m => {
+          const x = s.months[m];
+          dcell(w2, r2, 1, c.name); dcell(w2, r2, 2, s.group, { left: true }); dcell(w2, r2, 3, m + '월');
+          dcell(w2, r2, 4, x.cls.map(md).join(', '), { left: true }); dcell(w2, r2, 5, x.mk.map(md).join(', '), { left: true, font: { color: { argb: MK }, bold: !!x.mk.length } });
+          dcell(w2, r2, 6, x.cls.length); dcell(w2, r2, 7, x.mk.length, { font: { color: { argb: MK } } });
+          r2++;
+        });
+      });
+      MONTHS.filter(m => c.months[m] && c.months[m].meet).forEach(m => {
+        dcell(w2, r2, 1, c.name); dcell(w2, r2, 2, MEET_LABEL, { left: true, font: { color: { argb: MEET }, bold: true } }); dcell(w2, r2, 3, m + '월');
+        dcell(w2, r2, 4, c.months[m].meetDates.map(md).join(', '), { left: true, font: { color: { argb: MEET } } }); dcell(w2, r2, 5, ''); dcell(w2, r2, 6, c.months[m].meet, { font: { color: { argb: MEET } } }); dcell(w2, r2, 7, '');
+        r2++;
+      });
+    });
+    w2.views = [{ state: 'frozen', ySplit: 1 }]; w2.autoFilter = 'A1:G1';
+
+    // ③ 코칭단별 시트
+    const used = new Set();
+    coaches.forEach(c => {
+      let title = c.name.replace(/[\\/*?:\[\]]/g, '').slice(0, 28) || '코칭단'; let k = 2; while (used.has(title) || ['연간 집계', '학생별 일지'].includes(title)) title = c.name + k++; used.add(title);
+      const ws = wb.addWorksheet(title);
+      const months = MONTHS.filter(m => c.months[m]);
+      ws.getColumn(1).width = 20; months.forEach((m, i) => ws.getColumn(2 + i).width = 24); ws.getColumn(2 + months.length).width = 7; ws.getColumn(3 + months.length).width = 7;
+      ws.mergeCells(1, 1, 1, 3 + months.length); ws.getCell(1, 1).value = yl + ' 학습코칭단 출석·보강 일지 — ' + c.name; ws.getCell(1, 1).font = font({ size: 13, bold: true }); ws.getCell(1, 1).alignment = center; ws.getRow(1).height = 24;
+      hcell(ws, 2, 1, '학교(학생)'); months.forEach((m, i) => hcell(ws, 2, 2 + i, m + '월')); hcell(ws, 2, 2 + months.length, '수업'); hcell(ws, 2, 3 + months.length, '보강');
+      let r = 3;
+      Object.values(c.students).forEach(s => {
+        let tc = 0, tm = 0;
+        dcell(ws, r, 1, s.group, { left: true });
+        months.forEach((m, i) => {
+          const x = s.months[m];
+          if (!x) { dcell(ws, r, 2 + i, '-', { font: { color: { argb: 'FF999999' } } }); return; }
+          tc += x.cls.length; tm += x.mk.length;
+          const cell = ws.getCell(r, 2 + i);
+          const parts = [{ text: x.cls.map(md).join(', '), font: font() }];
+          if (x.mk.length) parts.push({ text: (x.cls.length ? '  ' : '') + '보강 ' + x.mk.map(md).join(', '), font: font({ color: { argb: MK }, bold: true }) });
+          cell.value = { richText: parts }; cell.alignment = left; cell.border = border;
+        });
+        dcell(ws, r, 2 + months.length, tc, { font: { bold: true }, fill: sumFill }); dcell(ws, r, 3 + months.length, tm, { font: { bold: true, color: { argb: MK } }, fill: sumFill });
+        ws.getRow(r).height = 30; r++;
+      });
+      dcell(ws, r, 1, MEET_LABEL, { left: true, font: { color: { argb: MEET }, bold: true } });
+      months.forEach((m, i) => dcell(ws, r, 2 + i, c.months[m].meetDates.map(md).join(', '), { left: true, font: { color: { argb: MEET } } }));
+      dcell(ws, r, 2 + months.length, ''); dcell(ws, r, 3 + months.length, months.reduce((n, m) => n + c.months[m].meet, 0), { font: { bold: true, color: { argb: MEET } }, fill: sumFill });
+      ws.views = [{ state: 'frozen', xSplit: 1, ySplit: 2 }];
+    });
+    return wb.xlsx.writeBuffer();
+  }
+
   const msg = $('msg');
   function showMsg(t, isErr) { msg.hidden = false; msg.className = 'msg' + (isErr ? ' err' : ''); msg.textContent = t; }
 
@@ -741,7 +893,8 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = fileName(); document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60000);
-      showMsg('저장했습니다: ' + fileName());
+      const nSaved = yearStoreMonth();
+      showMsg('저장했습니다: ' + fileName() + (nSaved ? '  (이번 달 ' + nSaved + '명 기록을 연간 일지에도 저장했습니다)' : ''));
     } catch (e) {
       showMsg('저장하지 못했습니다. (' + ((e && e.message) || '알 수 없는 오류') + ')', true);
     } finally { btn.disabled = !files.size; btn.textContent = '교통비 지급 내역서 엑셀 만들기'; }

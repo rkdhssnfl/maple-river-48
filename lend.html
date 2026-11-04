@@ -65,6 +65,15 @@
   select, input[type=text], input[type=date] { font: inherit; font-size: 15px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--input); color: var(--fg); }
   .pill { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--fg); }
   details summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+  /* 번호 칩: 누르면 복사되고 '입력 완료' 색으로 바뀜 */
+  .nums { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+  .numchip { font: inherit; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: .05em; padding: 4px 8px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+  .numchip.lend { border-color: var(--warn); color: var(--warn); }
+  .numchip.ret { border-color: var(--ok); color: var(--ok); }
+  .numchip.done { background: var(--line); border-color: var(--line); color: var(--muted); text-decoration: line-through; }
+  .numchip.flash { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); text-decoration: none; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .15s; pointer-events: none; z-index: 20; }
+  .toast.show { opacity: 1; }
 </style>
 
 <div class="wrap">
@@ -89,7 +98,17 @@
   </section>
 
   <section class="card">
-    <h2><span class="step">3</span>미반납 현황 <span class="pill" id="asOf"></span></h2>
+    <h2><span class="step">3</span>전체 기록 <span class="small">(최근 순 · 제출 1건 = 1줄 · 번호를 누르면 복사되고 입력 완료 표시)</span></h2>
+    <div class="row" style="margin-bottom:8px">
+      <label class="f">이름<select id="fName"><option value="">전체</option></select></label>
+      <label class="f">구분<select id="fType"><option value="">전체</option><option>대출</option><option>반납</option></select></label>
+      <label class="f">관리번호<input type="text" id="fNum" placeholder="4자리" style="width:90px"></label>
+    </div>
+    <table id="allTbl"></table>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">4</span>미반납 현황 <span class="pill" id="asOf"></span></h2>
     <div class="stats">
       <div class="warn"><div class="k">미반납 물품</div><div class="v" id="stOpen">0</div></div>
       <div><div class="k">대출 기록</div><div class="v" id="stLend">0</div></div>
@@ -98,16 +117,6 @@
     </div>
     <table id="openTbl"></table>
     <div id="openNote" class="small" style="margin-top:6px"></div>
-  </section>
-
-  <section class="card">
-    <h2><span class="step">4</span>전체 기록 <span class="small">(최근 순 · 제출 1건 = 1줄)</span></h2>
-    <div class="row" style="margin-bottom:8px">
-      <label class="f">이름<select id="fName"><option value="">전체</option></select></label>
-      <label class="f">구분<select id="fType"><option value="">전체</option><option>대출</option><option>반납</option></select></label>
-      <label class="f">관리번호<input type="text" id="fNum" placeholder="4자리" style="width:90px"></label>
-    </div>
-    <table id="allTbl"></table>
   </section>
 
   <section class="card">
@@ -350,12 +359,31 @@
     const list = order.map(k => groups[k]).reverse().filter(g => (!fn || g.name === fn) && (!ft || (ft === '대출' ? g.lend.length : g.ret.length)) && (!fnum || g.lend.concat(g.ret).some(n => n.includes(fnum))));
     let html = '<colgroup><col style="width:22%"><col style="width:16%"><col style="width:24%"><col style="width:24%"><col></colgroup><tr><th>일시</th><th>이름</th><th class="lend">대출</th><th class="ret">반납</th><th>비고</th></tr>';
     list.slice(0, 300).forEach(g => {
-      const show = arr => arr.map(n => (fnum && n.includes(fnum)) ? '<b>' + esc(n) + '</b>' : esc(n)).join(', ');
-      html += '<tr><td>' + esc(fmtDT(g.at)) + '</td><td>' + esc(g.name) + '</td><td class="lend">' + (ft === '반납' ? '' : show(g.lend)) + '</td><td class="ret">' + (ft === '대출' ? '' : show(g.ret)) + '</td><td class="l' + (g.bad ? ' bad' : '') + '">' + (g.bad ? '이상 ' : '') + esc(g.note.join(', ')) + '</td></tr>';
+      const key = (type, n) => g.name + '|' + (g.at ? g.at.getTime() : 0) + '|' + type + '|' + n;
+      const show = (arr, type) => '<div class="nums">' + arr.map(n => '<button type="button" class="numchip ' + (type === '대출' ? 'lend' : 'ret') + (done.has(key(type, n)) ? ' done' : '') + (fnum && n.includes(fnum) ? ' hit' : '') + '" data-k="' + esc(key(type, n)) + '" data-n="' + esc(n) + '" title="누르면 복사">' + esc(n) + '</button>').join('') + '</div>';
+      html += '<tr><td>' + esc(fmtDT(g.at)) + '</td><td>' + esc(g.name) + '</td><td>' + (ft === '반납' ? '' : show(g.lend, '대출')) + '</td><td>' + (ft === '대출' ? '' : show(g.ret, '반납')) + '</td><td class="l' + (g.bad ? ' bad' : '') + '">' + (g.bad ? '이상 ' : '') + esc(g.note.join(', ')) + '</td></tr>';
     });
     if (!list.length) html += '<tr><td colspan="5" class="small">기록 없음</td></tr>';
     if (list.length > 300) html += '<tr><td colspan="5" class="small">… 외 ' + (list.length - 300) + '건 (엑셀에서 전체 확인)</td></tr>';
     $('allTbl').innerHTML = html;
+    $('allTbl').querySelectorAll('.numchip').forEach(b => b.addEventListener('click', async () => {
+      const n = b.dataset.n, k = b.dataset.k;
+      try { await navigator.clipboard.writeText(n); } catch (e) { /* 복사 실패 시에도 표시는 바꿈 */ }
+      if (done.has(k)) done.delete(k); else done.add(k);
+      saveDone();
+      b.classList.toggle('done', done.has(k));
+      b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 350);
+      toast(done.has(k) ? n + ' 복사됨 · 입력 완료 표시' : n + ' 복사됨 · 완료 표시 해제');
+    }));
+  }
+  // 입력 완료 표시는 이 기기 브라우저에 저장
+  const done = new Set();
+  try { JSON.parse(localStorage.getItem('lend-done') || '[]').forEach(k => done.add(k)); } catch (e) {}
+  function saveDone() { try { localStorage.setItem('lend-done', JSON.stringify(Array.from(done))); } catch (e) {} }
+  let toastEl = null, toastTimer = null;
+  function toast(t) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'toast'; document.body.appendChild(toastEl); }
+    toastEl.textContent = t; toastEl.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1200);
   }
   ['fName', 'fType'].forEach(id => $(id).addEventListener('change', renderAll));
   $('fNum').addEventListener('input', renderAll);

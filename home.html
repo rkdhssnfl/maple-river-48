@@ -4,33 +4,41 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>학습코칭단 관리 모음</title>
+<title>센터 관리</title>
 <style>
   :root { --bg:#f3f5f2; --fg:#1d2a24; --muted:#65736c; --line:#d6ddd8; --green:#1f6f5c; --blue:#1f4e9c; --brown:#8a5a1f; --surface:#fff; }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--fg); font-family:-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif; }
-  main { max-width:560px; margin:0 auto; padding:24px 16px 48px; }
-  h1 { font-size:22px; margin:0 0 4px; }
-  .sub { color:var(--muted); font-size:14px; margin:0 0 20px; }
-  h2 { font-size:14px; color:var(--muted); font-weight:700; margin:22px 0 8px; letter-spacing:.5px; }
+  main { max-width:960px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:26px; margin:0 0 4px; text-align:center; }
+  .sub { color:var(--muted); font-size:14px; margin:0 0 24px; text-align:center; }
+  h2 { font-size:15px; font-weight:700; margin:0 0 10px; padding:8px 12px; border-radius:10px; background:var(--surface); border:1px solid var(--line); text-align:center; }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+  .col:first-child h2 { border-color:var(--green); color:var(--green); }
+  .col:last-child h2 { border-color:var(--blue); color:var(--blue); }
+  @media (max-width:640px) { .cols { grid-template-columns:1fr; } }
   a.card { display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:10px; text-decoration:none; color:var(--fg); }
   a.card:active { background:#eef2ef; }
   .dot { width:12px; height:12px; border-radius:50%; flex:none; }
   .t { font-size:17px; font-weight:700; }
   .d { font-size:13px; color:var(--muted); margin-top:2px; }
   .arrow { margin-left:auto; color:var(--muted); font-size:18px; }
-  .foot { font-size:12px; color:var(--muted); margin-top:28px; line-height:1.6; }
+  .foot { font-size:12px; color:var(--muted); margin-top:28px; line-height:1.6; text-align:center; }
 </style>
 </head>
 <body>
 <main>
-  <h1>학습코칭단 관리 모음</h1>
+  <h1>센터 관리</h1>
   <p class="sub">자주 쓰는 페이지를 한곳에 모았습니다. 이 페이지를 즐겨찾기(홈 화면)에 추가해 두세요.</p>
 
+  <div class="cols">
+    <div class="col">
   <h2>코칭단이 쓰는 페이지</h2>
   <a class="card" href="https://rkdhssnfl.github.io/maple-river-48/"><span class="dot" style="background:var(--green)"></span><span><div class="t">코칭일자 제출 · 파일</div><div class="d">폰·컴퓨터로 엑셀 파일을 저장해 제출하는 페이지</div></span><span class="arrow">›</span></a>
   <a class="card" href="https://rkdhssnfl.github.io/maple-river-48/kakao.html"><span class="dot" style="background:#e5cf00"></span><span><div class="t">코칭일자 제출 · 카톡</div><div class="d">달력에 넣은 날짜를 글로 만들어 카톡으로 보내는 페이지</div></span><span class="arrow">›</span></a>
 
+    </div>
+    <div class="col">
   <h2>선생님이 쓰는 페이지</h2>
   <a class="card" href="https://rkdhssnfl.github.io/maple-river-48/text2file.html"><span class="dot" style="background:#e5cf00"></span><span><div class="t">카톡 글 → 코칭일자 파일</div><div class="d">카톡으로 받은 글을 붙여 넣어 코칭단별 코칭일자 엑셀 파일 만들기</div></span><span class="arrow">›</span></a>
   <a class="card" href="https://rkdhssnfl.github.io/maple-river-48/merge.html"><span class="dot" style="background:var(--green)"></span><span><div class="t">교통비 수합</div><div class="d">코칭단 엑셀 파일을 올리면 교통비 지급 내역서로 합침</div></span><span class="arrow">›</span></a>
@@ -38,6 +46,8 @@
   <a class="card" href="https://rkdhssnfl.github.io/maple-river-48/lend.html"><span class="dot" style="background:var(--brown)"></span><span><div class="t">교구·교재 대출 관리</div><div class="d">왈라 응답 파일을 올려 미반납·대장 확인</div></span><span class="arrow">›</span></a>
   <a class="card" href="https://walla.my/"><span class="dot" style="background:var(--blue)"></span><span><div class="t">왈라 홈페이지</div><div class="d">양식 응답 확인·엑셀 내려받기 (로그인)</div></span><span class="arrow">›</span></a>
 
+    </div>
+  </div>
   <p class="foot"></p>
 </main>
 </body>

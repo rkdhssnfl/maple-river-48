@@ -137,7 +137,7 @@
 </header>
 
 <div class="wrap">
-  <p class="intro">매일 수업 후 그날 날짜를 탭해 두면 한 달 동안 이 휴대폰에 누적됩니다. 월말에 엑셀로 저장해 보내 주세요.<br>① 이름·연도·월 → ② 학생별로 학교와 학생 이름 입력 → ③ 달력에서 코칭한 날의 <b>위쪽(수업)</b>을 탭, 보강한 날은 <b>아래쪽(보강)</b>을 탭 → ④ 사례회의 참석일 선택 → ⑤ 맨 아래 <b>엑셀 파일 저장하기</b>를 눌러 저장한 뒤 담당 선생님께 메일로 보내 주세요.</p>
+  <p class="intro">매일 수업 후 그날 날짜를 탭해 두면 한 달 동안 이 휴대폰에 누적됩니다. 월말에 엑셀로 저장해 보내 주세요.<br>① 이름·연도·월 → ② 학생별로 학교와 학생 이름 입력 → ③ 달력에서 코칭한 날의 <b>위쪽(수업)</b>을 탭, 보강한 날은 <b>아래쪽(보강)</b>을 탭 → ④ 사례회의 참석일 선택 → ⑤ 맨 아래 <b>엑셀 파일 저장하기</b>를 눌러 저장 → ⑥ <b>폰으로 제출하기</b>를 눌러 저장한 파일을 첨부해 제출 (컴퓨터는 메일로 보내도 됩니다).</p>
 
   <section class="card">
     <h2>코칭단</h2>
@@ -169,7 +169,9 @@
     <div class="preview"><table class="pv" id="pv"></table></div>
     <button class="btn primary" id="makeXlsx" type="button" style="margin-top:12px">엑셀 파일 저장하기</button>
     <div id="msg" hidden></div>
-    <p class="foot">파일 이름: <span id="fname"></span><br>저장된 엑셀 파일을 담당 선생님께 메일로 보내 주세요. 입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
+    <p class="foot">파일 이름: <span id="fname"></span></p>
+    <a class="btn primary" id="wallaSubmit" href="https://walla.my/v/JCVUXo3ZR92bs2yEiujD" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:#1f4e9c;border-color:#1f4e9c">폰으로 제출하기 (저장한 파일 첨부)</a>
+    <p class="foot">① 위 초록 버튼으로 엑셀 파일을 저장 → ② 파란 버튼을 눌러 열리는 제출 화면에서 이름을 적고 <b>파일 첨부</b>로 방금 저장한 파일을 올려 제출하면 끝. 컴퓨터에서는 저장한 파일을 메일로 보내도 됩니다. 입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
     <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
       <button class="btn" id="blankXlsx" type="button" style="width:100%">빈 양식 내려받기 (엑셀에 직접 작성할 때)</button>
       <div class="foot" style="margin-top:6px">달력 입력이 어려우면 이 양식을 내려받아 엑셀에서 직접 적어 보내도 됩니다. 결과는 같은 모양입니다.</div>

@@ -56,7 +56,7 @@
   th { background: var(--accent-soft); font-weight: 500; }
   td.l { text-align: left; }
   td.bad { color: var(--err); font-weight: 700; }
-  td.lend { color: var(--warn); font-weight: 700; } td.ret { color: var(--ok); font-weight: 700; }
+  td.lend, th.lend { color: var(--warn); font-weight: 700; } td.ret, th.ret { color: var(--ok); font-weight: 700; }
   .msg { margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); }
   .msg.err { background: transparent; border: 1px solid var(--err); color: var(--err); }
   .msg ul { margin: 4px 0 0; padding-left: 18px; }
@@ -101,7 +101,7 @@
   </section>
 
   <section class="card">
-    <h2><span class="step">4</span>전체 기록 <span class="small">(최근 순)</span></h2>
+    <h2><span class="step">4</span>전체 기록 <span class="small">(최근 순 · 제출 1건 = 1줄)</span></h2>
     <div class="row" style="margin-bottom:8px">
       <label class="f">이름<select id="fName"><option value="">전체</option></select></label>
       <label class="f">구분<select id="fType"><option value="">전체</option><option>대출</option><option>반납</option></select></label>
@@ -337,11 +337,24 @@
   }
   function renderAll() {
     const fn = $('fName').value, ft = $('fType').value, fnum = $('fNum').value.trim();
-    const list = sorted().reverse().filter(r => (!fn || r.name === fn) && (!ft || r.type === ft) && (!fnum || r.num.includes(fnum)));
-    let html = '<colgroup><col style="width:26%"><col style="width:12%"><col style="width:18%"><col style="width:16%"><col style="width:12%"><col></colgroup><tr><th>일시</th><th>구분</th><th>이름</th><th>관리번호</th><th>상태</th><th>비고</th></tr>';
-    list.slice(0, 300).forEach(r => { html += '<tr><td>' + esc(fmtDT(r.at)) + '</td><td class="' + (r.type === '대출' ? 'lend' : 'ret') + '">' + r.type + '</td><td>' + esc(r.name) + '</td><td>' + esc(r.num) + '</td><td' + (r.status === '이상' ? ' class="bad"' : '') + '>' + esc(r.status) + '</td><td class="l">' + esc(r.note) + '</td></tr>'; });
-    if (!list.length) html += '<tr><td colspan="6" class="small">기록 없음</td></tr>';
-    if (list.length > 300) html += '<tr><td colspan="6" class="small">… 외 ' + (list.length - 300) + '건 (엑셀에서 전체 확인)</td></tr>';
+    // 같은 사람이 같은 시각에 보낸 기록을 한 줄로: 대출 번호들 | 반납 번호들
+    const groups = {}; const order = [];
+    sorted().forEach(r => {
+      const k = r.name + '|' + (r.at ? r.at.getTime() : 0) + '|' + r.src;
+      if (!groups[k]) { groups[k] = { name: r.name, at: r.at, lend: [], ret: [], bad: false, note: [] }; order.push(k); }
+      const g = groups[k];
+      (r.type === '대출' ? g.lend : g.ret).push(r.num);
+      if (r.status === '이상') g.bad = true;
+      if (r.note && !g.note.includes(r.note)) g.note.push(r.note);
+    });
+    const list = order.map(k => groups[k]).reverse().filter(g => (!fn || g.name === fn) && (!ft || (ft === '대출' ? g.lend.length : g.ret.length)) && (!fnum || g.lend.concat(g.ret).some(n => n.includes(fnum))));
+    let html = '<colgroup><col style="width:22%"><col style="width:16%"><col style="width:24%"><col style="width:24%"><col></colgroup><tr><th>일시</th><th>이름</th><th class="lend">대출</th><th class="ret">반납</th><th>비고</th></tr>';
+    list.slice(0, 300).forEach(g => {
+      const show = arr => arr.map(n => (fnum && n.includes(fnum)) ? '<b>' + esc(n) + '</b>' : esc(n)).join(', ');
+      html += '<tr><td>' + esc(fmtDT(g.at)) + '</td><td>' + esc(g.name) + '</td><td class="lend">' + (ft === '반납' ? '' : show(g.lend)) + '</td><td class="ret">' + (ft === '대출' ? '' : show(g.ret)) + '</td><td class="l' + (g.bad ? ' bad' : '') + '">' + (g.bad ? '이상 ' : '') + esc(g.note.join(', ')) + '</td></tr>';
+    });
+    if (!list.length) html += '<tr><td colspan="5" class="small">기록 없음</td></tr>';
+    if (list.length > 300) html += '<tr><td colspan="5" class="small">… 외 ' + (list.length - 300) + '건 (엑셀에서 전체 확인)</td></tr>';
     $('allTbl').innerHTML = html;
   }
   ['fName', 'fType'].forEach(id => $(id).addEventListener('change', renderAll));

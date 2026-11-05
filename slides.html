@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>사용 안내 슬라이드</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#16221d;color:#fff;font-family:-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif}
+body{display:flex;flex-direction:column}
+.bar{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#0f1a15;font-size:14px}
+.bar a{color:#9fd9c7;text-decoration:none;font-weight:700}.bar .sp{flex:1}.bar .n{color:#cfe}
+.stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;padding:6px;touch-action:pan-y}
+.stage img{max-width:100%;max-height:100%;border-radius:6px;background:#fff;user-select:none;-webkit-user-drag:none}
+.nav{display:flex;gap:10px;padding:10px 12px 14px;background:#0f1a15}
+.nav button{flex:1;padding:14px;font-size:17px;font-weight:700;border:0;border-radius:12px;background:#1f6f5c;color:#fff}
+.nav button:disabled{background:#2c3a34;color:#7a8a83}
+.hint{font-size:12px;color:#8fa89e;text-align:center;padding:0 0 6px}
+</style></head><body>
+<div class="bar"><a href="./">← 제출 페이지</a><span class="sp"></span><span class="n" id="n"></span><a href="guide.pptx" download="코칭단_제출안내.pptx">PPT 받기</a></div>
+<div class="stage" id="st"><img id="im" alt="안내 슬라이드"></div>
+<div class="hint">좌우로 밀거나 아래 버튼으로 넘겨요 · 휴대폰을 가로로 돌리면 더 크게 보여요</div>
+<div class="nav"><button id="pv">‹ 이전</button><button id="nx">다음 ›</button></div>
+<script>
+var T=24,i=1;try{var h=parseInt(location.hash.slice(1));if(h>=1&&h<=T)i=h}catch(e){}
+var im=document.getElementById('im'),n=document.getElementById('n'),pv=document.getElementById('pv'),nx=document.getElementById('nx');
+function show(k){i=Math.max(1,Math.min(T,k));im.src='slides/s'+String(i).padStart(2,'0')+'.jpg';n.textContent=i+' / '+T;pv.disabled=i==1;nx.disabled=i==T;try{history.replaceState(null,'','#'+i)}catch(e){}
+ if(i<T){new Image().src='slides/s'+String(i+1).padStart(2,'0')+'.jpg'}}
+pv.onclick=function(){show(i-1)};nx.onclick=function(){show(i+1)};
+document.addEventListener('keydown',function(e){if(e.key=='ArrowRight')show(i+1);if(e.key=='ArrowLeft')show(i-1)});
+var x0=null;var st=document.getElementById('st');
+st.addEventListener('touchstart',function(e){x0=e.touches[0].clientX},{passive:true});
+st.addEventListener('touchend',function(e){if(x0==null)return;var d=e.changedTouches[0].clientX-x0;if(Math.abs(d)>50)show(d<0?i+1:i-1);x0=null});
+im.addEventListener('click',function(e){var r=im.getBoundingClientRect();show(e.clientX-r.left>r.width/2?i+1:i-1)});
+show(i);
+</script></body></html>

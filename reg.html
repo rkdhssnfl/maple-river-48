@@ -223,9 +223,11 @@
       const etc = ROSTER.filter(r => r.region !== '경산' && r.region !== '청도'); if (etc.length) blocks.push({ dateStr: dstr(s0), place: s0.place, cols: 6, rows: etc.map(r => [r.region, '학습코칭단', r.name, '', '']), head: ['순', '소속', '직책', '성명', '서명', '비고'] });
       if (vip.length) blocks.push({ dateStr: dstr(s0), place: s0.place, cols: 6, rows: vip.map(a => [a[0], a[1], a[2], '', '']), head: ['순', '소속', '직책', '성명', '서명', '비고'] });
     } else {
+      const level = sc => /초등|초교|초$|초\(/.test(sc) ? 0 : /중학|중$|중\(|고등|고$/.test(sc) ? 1 : 2;
+      const mkRows = ppl => t === 'teacher' ? ppl.map(r => [r.region, r.school, '교사', r.name, '', '']) : ppl.map(r => [r.school, r.name, '', '']);
+      const HEAD = t === 'teacher' ? ['순', '지역', '소속', '직책', '성명', '서명', '비고'] : ['순', '소속', '성명', '서명', '비고'];
       ss.forEach(s => { const rg = normRegion(s.region); const ppl = XLS.filter(r => r.region === rg); if (!ppl.length) return;
-        if (t === 'teacher') blocks.push({ dateStr: dstr(s), place: s.place, cols: 7, rows: ppl.map(r => [rg, r.school, '교사', r.name, '', '']), head: ['순', '지역', '소속', '직책', '성명', '서명', '비고'] });
-        else blocks.push({ dateStr: dstr(s), place: s.place, cols: 5, rows: ppl.map(r => [r.school, r.name, '', '']), head: ['순', '소속', '성명', '서명', '비고'] }); });
+        [0, 1, 2].forEach(lv => { const grp = ppl.filter(r => level(r.school) === lv); if (grp.length) blocks.push({ dateStr: dstr(s), place: s.place, cols: t === 'teacher' ? 7 : 5, rows: mkRows(grp), head: HEAD, note: rg + ' ' + ['초등학교', '중학교', '기타'][lv] }); }); });
       const other = XLS.filter(r => !ss.some(s => normRegion(s.region) === r.region)); if (other.length && ss[0]) blocks.push({ dateStr: dstr(ss[0]), place: ss[0].place, cols: t === 'teacher' ? 7 : 5, rows: other.map(r => t === 'teacher' ? [r.region, r.school, '교사', r.name, '', ''] : [r.school, r.name, '', '']), head: t === 'teacher' ? ['순', '지역', '소속', '직책', '성명', '서명', '비고'] : ['순', '소속', '성명', '서명', '비고'] });
       if (t === 'teacher' && vip.length && ss[0]) blocks.push({ dateStr: dstr(ss[0]), place: ss[0].place, cols: 6, rows: vip.map(a => [a[0], a[1], a[2], '', '']), head: ['순', '소속', '직책', '성명', '서명', '비고'] });
     }

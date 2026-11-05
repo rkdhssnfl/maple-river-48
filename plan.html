@@ -144,16 +144,20 @@
   </section>
 
   <section class="card">
-    <h2><span class="step">8</span>적용하고 파일 만들기</h2>
+    <h2><span class="step">8</span>적용 · 파일 내려받기</h2>
     <div class="row" style="margin-bottom:10px">
-      <button class="btn primary" id="applyBtn" type="button" style="font-size:17px;padding:14px 20px">적용 → 운영 계획·보도자료 파일 만들기</button>
-      <button class="btn" id="planBtn" type="button">운영 계획만 받기</button>
-      <button class="btn" id="pressBtn" type="button">보도자료만 받기</button>
+      <button class="btn primary" id="applyBtn" type="button" style="font-size:17px;padding:14px 20px">적용 (미리보기 갱신)</button>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <span class="small">내려받기:</span>
+      <button class="btn" id="bothBtn" type="button">운영 계획 + 보도자료</button>
+      <button class="btn" id="planBtn" type="button">운영 계획만</button>
+      <button class="btn" id="pressBtn" type="button">보도자료만</button>
       <button class="btn" id="copyBtn" type="button">보이는 글 복사</button>
       <button class="btn" id="printBtn" type="button">인쇄 / PDF</button>
     </div>
     <div id="msg" hidden></div>
-    <div class="small" style="margin:6px 0 4px">한글에서 바로 열리는 파일(.docx) 2개가 내려받아집니다. 한글에서 열어 「다른 이름으로 저장 → 한글 문서(*.hwp)」로 저장하세요.</div>
+    <div class="small" style="margin:6px 0 4px">적용을 누르면 아래 미리보기만 새로 만들어집니다. 파일이 필요할 때 내려받기 버튼을 누르세요(한글에서 바로 열리는 .docx → 한글에서 「다른 이름으로 저장 → *.hwp」).</div>
     <div class="tabs"><button class="btn on" type="button" data-v="plan">운영 계획 미리보기</button><button class="btn" type="button" data-v="press">보도자료 미리보기</button></div>
   </div>
   <div class="doc" id="docPlan"></div>
@@ -569,9 +573,10 @@
     const names = [];
     if (which !== 'press') names.push(await buildDocx(p.blocks, p.fileName));
     if (which !== 'plan') { await new Promise(r => setTimeout(r, 600)); names.push(await buildDocx(r.blocks, r.fileName)); }
-    showMsg('적용했습니다. 저장한 파일: ' + names.join(' / ') + ' — 한글에서 열어 「다른 이름으로 저장 → *.hwp」로 저장하세요.');
+    showMsg('저장한 파일: ' + names.join(' / ') + ' — 한글에서 열어 「다른 이름으로 저장 → *.hwp」로 저장하세요.');
   }
-  $('applyBtn').onclick = () => make('both'); $('planBtn').onclick = () => make('plan'); $('pressBtn').onclick = () => make('press');
+  $('applyBtn').onclick = () => { renderAll(); showMsg('적용했습니다. 아래 미리보기를 확인하세요.'); };
+  $('bothBtn').onclick = () => make('both'); $('planBtn').onclick = () => make('plan'); $('pressBtn').onclick = () => make('press');
   $('printBtn').onclick = () => window.print();
   $('copyBtn').onclick = async () => {
     const el = $('docPlan').hidden ? $('docPress') : $('docPlan'); const out = [];

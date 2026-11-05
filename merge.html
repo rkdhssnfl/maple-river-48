@@ -81,8 +81,8 @@
   .coach h3 { margin: 0 0 6px; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .coach h3 .cnt { font-size: 12px; color: var(--muted); font-weight: 400; }
   .coach .pvw { overflow-x: auto; }
-  table.pv { border-collapse: collapse; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; width: auto; table-layout: auto; }
-  table.pv th, table.pv td { border: 1px solid var(--line); padding: 3px 7px; text-align: center; overflow-wrap: normal; white-space: nowrap; }
+  table.pv { border-collapse: collapse; font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; width: 100%; min-width: 100%; table-layout: auto; }
+  table.pv th, table.pv td { border: 1px solid var(--line); padding: 6px 8px; text-align: center; overflow-wrap: normal; white-space: nowrap; }
   table.pv td.l, table.pv th:first-child { min-width: 120px; }
   table.pv th { background: var(--accent-soft); font-weight: 500; }
   table.pv td.l { text-align: left; }
@@ -94,9 +94,10 @@
   .stats .ok .v { color: var(--ok); } .stats .warn .v { color: var(--warn); }
   .tbl { overflow-x: hidden; width: 100%; }
   #tbl { width: 100% !important; min-width: 100%; table-layout: fixed; }
-  table { border-collapse: collapse; font-size: 12px; width: 100%; table-layout: fixed; font-variant-numeric: tabular-nums; }
+  table { border-collapse: collapse; font-size: 14px; width: 100%; table-layout: fixed; font-variant-numeric: tabular-nums; }
   th, td { border: 1px solid var(--line); padding: 4px 3px; text-align: center; overflow-wrap: anywhere; vertical-align: middle; }
-  @media (max-width: 480px) { table { font-size: 11px; } th, td { padding: 3px 2px; } }
+  @media (max-width: 480px) { table { font-size: 13px; } th, td { padding: 5px 2px; } }
+  #tbl th:nth-child(1) { width: 7%; } #tbl th:nth-child(2) { width: 11%; } #tbl th:nth-child(3) { width: 15%; } #tbl th:nth-child(4) { width: 13%; } #tbl th:nth-child(5) { width: 10%; } #tbl th:nth-child(6), #tbl th:nth-child(7) { width: 14%; } #tbl th:nth-child(8) { width: 16%; }
   th { background: var(--accent-soft); font-weight: 500; }
   td.l { text-align: left; }
   td.ok { color: var(--ok); font-weight: 700; } td.warn { color: var(--warn); font-weight: 700; } td.err { color: var(--err); }

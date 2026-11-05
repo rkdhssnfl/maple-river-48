@@ -237,7 +237,10 @@ window.HWPX = (() => {
       });
       const chunks = []; const rowsAll = b.rows.map((r, i) => [String(i + 1)].concat(r));
       chunks.push(rowsAll.slice(0, PAGE1)); for (let i = PAGE1; i < rowsAll.length; i += PAGEN) chunks.push(rowsAll.slice(i, i + PAGEN));
-      chunks.forEach(ch => { const tp = T.tableP.cloneNode(true); const tbl = tblOf(tp); const tplRow = rows(tbl)[1]; fillTable(tbl, 1, tplRow, ch.map(r => r.concat(['', '']).slice(0, T.cols))); sec.appendChild(tp); });
+      chunks.forEach(ch => { const tp = T.tableP.cloneNode(true); const tbl = tblOf(tp); const rs0 = rows(tbl); const tplRow = rs0[1]; const lastBf = rs0[2] ? cells(rs0[2]).map(c => c.getAttribute('borderFillIDRef')) : null;
+        fillTable(tbl, 1, tplRow, ch.map(r => r.concat(['', '']).slice(0, T.cols)));
+        if (lastBf) { const rs = rows(tbl); cells(rs[rs.length - 1]).forEach((c, i) => { if (lastBf[i]) c.setAttribute('borderFillIDRef', lastBf[i]); }); } // 마지막 줄 아래 굵은 선
+        sec.appendChild(tp); });
       const blank = T.head[1] ? T.head[1].cloneNode(true) : null; if (blank) { setP(blank, ''); sec.appendChild(blank); }
     });
     // 복제된 표의 id·zOrder를 고유하게

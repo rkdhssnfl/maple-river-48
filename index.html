@@ -55,6 +55,8 @@
   @media (min-width: 900px) {
     .wrap, .top-inner { max-width: 1180px; }
     .wrap { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: 24px; align-items: start; }
+    .colL { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); max-height: calc(100vh - 88px); overflow-y: auto; padding-right: 4px; }
+    .colL > :last-child { margin-bottom: 14px; }
     .colR { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); max-height: calc(100vh - 88px); overflow-y: auto; padding-right: 4px; }
     .colR > .card:first-child { margin-top: 0; }
   }

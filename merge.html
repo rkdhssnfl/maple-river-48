@@ -111,7 +111,7 @@
 <div class="wrap">
   <a href="home.html" class="homebtn">⌂ 관리 모음</a>
   <h1>코칭일지·교통비·월간출석</h1>
-  <p class="sub">① 왈라에서 내려받은 응답 엑셀(또는 코칭단 파일·카톡 글)을 올리고 ② 코칭일자를 확인하고 ③ 교통비 지급 내역서와 ④ 월간 출석부(월간 일지)를 내려받습니다. 연말에 월간 일지들을 올리면 연간 일지로 통합됩니다. 교통비 양식(명단)은 선택입니다. 지역은 양식 파일의 "지역" 칸을 따르며, 경산 사례회의 → 관내연수, 청도 사례회의 → 관외연수로 계산됩니다. 올린 파일은 이 기기 안에서만 처리되고 어디에도 전송되지 않습니다.</p>
+  <p class="sub">① 왈라에서 내려받은 응답 엑셀(또는 코칭단 파일·카톡 글)을 올리고 ② 코칭일자를 확인하고 ③ 교통비 지급 내역서를 내려받고 ④ 학습서비스 일지 첨부를 모아 받고 ⑤ 월간 출석부(월간 일지)를 내려받습니다. 연말에 월간 일지들을 올리면 연간 일지로 통합됩니다. 교통비 양식(명단)은 선택입니다. 지역은 양식 파일의 "지역" 칸을 따르며, 경산 사례회의 → 관내연수, 청도 사례회의 → 관외연수로 계산됩니다. 올린 파일은 이 기기 안에서만 처리되고 어디에도 전송되지 않습니다.</p>
 
   <section class="card">
     <h2><span class="step">1</span>왈라 양식 입력 (코칭일자 제출 올리기)</h2>
@@ -181,7 +181,27 @@
   </section>
 
   <section class="card">
-    <h2><span class="step">4</span>월간 출석부</h2>
+    <h2><span class="step">4</span>학습서비스 일지 <span class="small" id="jState"></span></h2>
+    <label class="drop" id="jDrop">
+      <input type="file" id="jFile" accept=".xlsx">
+      <b>여기를 눌러 일지 양식 응답 엑셀 선택</b> 또는 끌어다 놓기<br>
+      <span class="small">왈라 "학습서비스 일지 제출" 양식에서 내려받은 응답 엑셀(응답시간·지역·이름·첨부)입니다. 같은 사람이 여러 번 냈으면 가장 나중 것만 씁니다.</span>
+    </label>
+    <div id="jMsg" hidden></div>
+    <div class="stats" style="margin-top:10px">
+      <div class="ok"><div class="k">제출</div><div class="v" id="jSub">0</div></div>
+      <div class="warn"><div class="k">미제출</div><div class="v" id="jMiss">0</div></div>
+    </div>
+    <div class="row" style="margin:6px 0 10px">
+      <button class="btn" id="jAll" type="button" disabled>첨부한 일지 모두 한꺼번에 내려받기</button>
+      <span class="small">브라우저가 "여러 파일 다운로드 허용"을 물으면 허용해 주세요. 파일은 다운로드 폴더에 들어갑니다.</span>
+    </div>
+    <div class="tbl"><table id="jTbl"></table></div>
+    <div class="small" style="margin-top:6px">명단은 3번 교통비 양식(명단)이 있으면 그 명단, 없으면 1번에 제출한 사람 + 일지를 낸 사람으로 잡습니다.</div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">5</span>월간 출석부</h2>
     <div class="small" style="margin:0 0 8px">1번에 올린 이번 달 제출로 만든 출석부입니다. <b>월간 일지</b> 엑셀을 달마다 내려받아 두세요. 연말에 그 파일들을 아래 "연간 일지로 통합"에 한꺼번에 올리면 연간 일지가 됩니다.</div>
     <div id="mEmpty" class="small">아직 제출이 없습니다.</div>
       <div class="yr" id="mView" hidden>
@@ -579,7 +599,7 @@
   function renderCoaches(blocks) {
     const subs = blocks.filter(b => b.sub).map(b => b.sub);
     $('coachCnt').textContent = subs.length ? '(' + subs.length + '명)' : '';
-    $('coachAll').disabled = !subs.length; CUR_SUBS = subs; renderMonth();
+    $('coachAll').disabled = !subs.length; CUR_SUBS = subs; renderMonth(); renderJournal();
     const list = $('coachList');
     if (!subs.length) { list.innerHTML = '<div class="small">아직 제출한 사람이 없습니다.</div>'; return; }
     list.innerHTML = subs.map((p, i) => {
@@ -864,6 +884,90 @@
       em.textContent = targets.length + '개 파일을 저장했습니다: ' + targets.map(coachFileName).join(', ');
     } catch (e) { em.className = 'msg err'; em.textContent = '만들지 못했습니다. (' + ((e && e.message) || '오류') + ')'; }
     finally { btn.disabled = false; }
+  });
+
+  /* ---------- 학습서비스 일지 (왈라 첨부 파일 수합) ---------- */
+  const JOURNAL = new Map(); // norm(name) -> {name, region, link, time, tRaw, fname}
+  async function parseJournal(file) {
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+    const ws = wb.worksheets[0]; if (!ws) throw new Error('시트가 없습니다');
+    let hdr = 0, col = null;
+    for (let r = 1; r <= 5; r++) {
+      const cells = []; for (let c = 1; c <= 12; c++) cells.push(norm(ws.getCell(r, c).text));
+      const ti = cells.indexOf('응답시간'), ni = cells.findIndex(x => x === '이름' || x === '코칭단이름' || x === '코칭단');
+      if (ti >= 0 && ni >= 0) { hdr = r; col = { time: ti + 1, name: ni + 1, region: cells.indexOf('지역') + 1 }; break; }
+    }
+    if (!hdr) throw new Error('왈라 응답 엑셀(응답시간·이름 머리글)이 아닙니다');
+    let n = 0;
+    for (let r = hdr + 1; r <= ws.rowCount; r++) {
+      const name = String(ws.getCell(r, col.name).text || '').trim(); if (!name) continue;
+      let link = '';
+      for (let c = 1; c <= 12; c++) { if (c === col.time || c === col.name || c === col.region) continue; const v = String(ws.getCell(r, c).text || '').trim(); if (/^https?:\/\//.test(v)) { link = v; break; } }
+      const tRaw = String(ws.getCell(r, col.time).text || '');
+      const tm = tRaw.match(/(\d{4})[.\-\/]\s*(\d{1,2})[.\-\/]\s*(\d{1,2})\D+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+      const t = tm ? new Date(+tm[1], +tm[2] - 1, +tm[3], +tm[4], +tm[5], +(tm[6] || 0)).getTime() : r;
+      const rec = { name, region: col.region ? String(ws.getCell(r, col.region).text || '').trim() : '', link, time: t, tRaw, fname: link ? decodeURIComponent(link.split('/').pop().split('?')[0]).replace(/^[0-9a-f]{8}-/, '') : '' };
+      const prev = JOURNAL.get(norm(name));
+      if (!prev || prev.time <= t) { JOURNAL.set(norm(name), rec); n++; }
+    }
+    if (!n) throw new Error('응답이 없습니다');
+    return n;
+  }
+  const jDrop = $('jDrop'), jIn = $('jFile');
+  ['dragenter', 'dragover'].forEach(ev => jDrop.addEventListener(ev, e => { e.preventDefault(); jDrop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => jDrop.addEventListener(ev, e => { e.preventDefault(); jDrop.classList.remove('over'); }));
+  jDrop.addEventListener('drop', e => handleJournal(e.dataTransfer.files[0]));
+  jIn.addEventListener('change', e => { handleJournal(e.target.files[0]); jIn.value = ''; });
+  async function handleJournal(file) {
+    if (!file) return;
+    const jm = $('jMsg'); jm.hidden = false; jm.className = 'msg'; jm.textContent = '읽는 중...';
+    try { const n = await parseJournal(file); jm.textContent = file.name + ' — ' + JOURNAL.size + '명 읽음'; }
+    catch (e) { jm.className = 'msg err'; jm.textContent = file.name + ': ' + (e.message || '읽기 실패'); }
+    renderJournal();
+  }
+  function journalRows() {
+    // 명단: 3번 양식이 있으면 그 명단, 없으면 1번 제출자 + 일지 제출자
+    let roster;
+    if (MASTER.length) roster = MASTER.map(c => ({ name: c.name, region: c.region }));
+    else {
+      const m = new Map();
+      Array.from(files.values()).forEach(p => m.set(norm(p.name), { name: p.name, region: p.region || '' }));
+      JOURNAL.forEach(j => { if (!m.has(norm(j.name))) m.set(norm(j.name), { name: j.name, region: j.region }); });
+      const rk = r => r === '경산' ? 0 : r === '청도' ? 1 : 2;
+      roster = Array.from(m.values()).sort((a, b) => rk(a.region) - rk(b.region) || a.name.localeCompare(b.name, 'ko'));
+    }
+    const used = new Set();
+    const rows = roster.map(c => {
+      const n = norm(c.name);
+      let j = JOURNAL.get(n) || Array.from(JOURNAL.values()).find(x => !used.has(norm(x.name)) && (norm(x.name).includes(n) || n.includes(norm(x.name)))) || null;
+      if (j) used.add(norm(j.name));
+      return { name: c.name, region: c.region || (j && j.region) || '', j };
+    });
+    JOURNAL.forEach(j => { if (!used.has(norm(j.name))) rows.push({ name: j.name, region: j.region, j, unknown: true }); });
+    return rows;
+  }
+  function dlLink(link) { const a = document.createElement('a'); a.href = link; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); }
+  function renderJournal() {
+    const rows = journalRows();
+    const sub = rows.filter(r => r.j && r.j.link);
+    $('jSub').textContent = sub.length; $('jMiss').textContent = rows.length - sub.length;
+    $('jState').textContent = JOURNAL.size ? '(' + JOURNAL.size + '명 읽음)' : '';
+    $('jAll').disabled = !sub.length;
+    let html = '<tr><th>순</th><th>지역</th><th>이름</th><th>제출</th><th>제출 시각</th><th>파일</th><th>받기</th></tr>';
+    if (!rows.length) html += '<tr><td colspan="7" class="small">일지 응답 엑셀을 올리면 표가 표시됩니다.</td></tr>';
+    rows.forEach((r, i) => {
+      html += '<tr><td>' + (i + 1) + '</td><td>' + esc(r.region) + '</td><td>' + esc(r.name) + (r.unknown ? ' <span class="small">(명단 없음)</span>' : '') + '</td>' +
+        '<td class="' + (r.j && r.j.link ? 'ok">제출' : 'warn">미제출') + '</td>' +
+        '<td class="small">' + (r.j ? esc(r.j.tRaw) : '') + '</td><td class="l small">' + (r.j ? esc(r.j.fname) : '') + '</td>' +
+        '<td>' + (r.j && r.j.link ? '<button class="btn ghost" data-j="' + esc(norm(r.j.name)) + '" type="button">받기</button>' : '') + '</td></tr>';
+    });
+    $('jTbl').innerHTML = html;
+    $('jTbl').querySelectorAll('button[data-j]').forEach(b => b.addEventListener('click', () => { const j = JOURNAL.get(b.dataset.j); if (j) dlLink(j.link); }));
+  }
+  $('jAll').addEventListener('click', () => {
+    const sub = journalRows().filter(r => r.j && r.j.link);
+    sub.forEach((r, i) => setTimeout(() => dlLink(r.j.link), i * 500));
+    const b = $('jAll'); b.textContent = '내려받는 중… (' + sub.length + '개)'; setTimeout(() => { b.textContent = '첨부한 일지 모두 한꺼번에 내려받기'; }, sub.length * 500 + 1500);
   });
 
   /* ---------- 월간 출석부 / 연간 일지 ---------- */

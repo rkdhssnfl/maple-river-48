@@ -225,7 +225,14 @@ window.HWPX = (() => {
     const isTitle = p => { const t = tblOf(p); return t && t.getAttribute('colCnt') === '4' && rows(t).length === 3; };
     const starts = []; ps.forEach((p, i) => { if (isTitle(p)) starts.push(i); });
     const tpls = starts.map((s, k) => { const blk = ps.slice(s, k + 1 < starts.length ? starts[k + 1] : ps.length); const ti = blk.findIndex(p => tblOf(p) && !isTitle(p)); const tbl = tblOf(blk[ti]); return { head: blk.slice(0, ti), tableP: blk[ti], cols: +tbl.getAttribute('colCnt'), secRun: q(ps[0], 'hp:run')[0] }; });
-    const pick = cols => tpls.find(t => t.cols === cols) || tpls[0];
+    // 필요한 열 수의 표가 양식에 없으면(예: 학부모 등록부의 내빈 표) 소속 열 옆에 '직책' 열을 하나 만들어 씀
+    function derive(base, cols) {
+      const tp = base.tableP.cloneNode(true); const tbl = tblOf(tp);
+      rows(tbl).forEach((tr, ri) => { const cs = cells(tr); const src = cs[1]; const c = src.cloneNode(true); const sz = attr(src, 'hp:cellSz'), w = +sz.getAttribute('width'); sz.setAttribute('width', Math.round(w * 0.55)); attr(c, 'hp:cellSz').setAttribute('width', w - Math.round(w * 0.55)); tr.insertBefore(c, src.nextSibling); cells(tr).forEach((x, i) => attr(x, 'hp:cellAddr').setAttribute('colAddr', String(i))); if (ri === 0) setCell(c, '직책'); });
+      tbl.setAttribute('colCnt', String(cols));
+      return { head: base.head, tableP: tp, cols };
+    }
+    const pick = cols => tpls.find(t => t.cols === cols) || (tpls.some(t => t.cols === cols - 1) ? derive(tpls.find(t => t.cols === cols - 1), cols) : tpls[0]);
     const secRun = q(ps[0], 'hp:run')[0].cloneNode(true); // 구역 설정은 첫 문단에만
     ps.forEach(removeP);
     const PAGE1 = 14, PAGEN = 20;

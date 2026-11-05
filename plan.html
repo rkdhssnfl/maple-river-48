@@ -179,13 +179,13 @@
       <button class="btn" id="printBtn" type="button">인쇄 / PDF</button>
     </div>
     <div id="msg" hidden></div>
-    <div class="small" style="margin:6px 0 4px">한글 파일(.hwpx)은 보내주신 예시 양식 파일에 내용만 바꿔 넣은 것이라 서식이 똑같습니다. 한글에서 바로 열리고, 필요하면 「다른 이름으로 저장 → *.hwp」로 바꾸면 됩니다.</div>
+    <div class="small" style="margin:6px 0 4px"><b>미리보기의 글은 클릭해서 바로 고칠 수 있고, 고친 그대로 파일에 들어갑니다.</b> (왼쪽 칸을 바꾸고 "적용"을 누르면 미리보기가 왼쪽 값으로 다시 만들어져 고친 내용은 사라집니다.) 한글 파일(.hwpx)은 예시 양식 파일에 내용만 바꿔 넣은 것이라 서식이 똑같습니다.</div>
     <div class="grid" style="margin-top:6px"><label class="f">보도자료 총 쪽수<input type="number" id="pages" value="2"></label></div>
     <div class="tabs"><button class="btn on" type="button" data-v="plan">운영 계획 미리보기</button><button class="btn" type="button" data-v="press">보도자료 미리보기</button></div>
   </div>
   <div class="docs"><div class="scale" id="scale">
-    <div class="doc" id="docPlan"></div>
-    <div class="doc" id="docPress" hidden></div>
+    <div class="doc" id="docPlan" contenteditable="plaintext-only" spellcheck="false"></div>
+    <div class="doc" id="docPress" hidden contenteditable="plaintext-only" spellcheck="false"></div>
   </div></div>
 </div>
 
@@ -363,7 +363,7 @@
   function topicOf(th) { const m = TOPICS.filter(t => t.re.test(th)); return m.length ? m : [GENERIC]; }
   function pool(key, th) { let a = []; topicOf(th).forEach(t => a = a.concat(t[key] || [])); return a.map(x => x.replace(/\{주제\}/g, th)); }
   const audWord = { coach: '학습코칭단', teacher: '교사', parent: '학부모' };
-  const fixAud = (s, t) => t === 'parent' ? s.replace(/자녀\(학생\)/g, '자녀').replace(/학생 맞춤형/g, '자녀 맞춤형').replace(/학생(의|이|을|과|에게)/g, '자녀$1') : s.replace(/자녀\(학생\)/g, '학생');
+  const fixAud = (s, t) => t === 'parent' ? s.replace(/자녀\(학생\)/g, '자녀').replace(/학생 맞춤형/g, '자녀 맞춤형').replace(/학생이/g, '자녀가').replace(/학생(의|을|과|에게)/g, '자녀$1') : s.replace(/자녀\(학생\)/g, '학생');
   const fresh = (key, fn) => { let v = fn(), i = 0; while (v === LAST[key] && i++ < 5) v = fn(); LAST[key] = v; return v; };
   const nounJosa = (tpl, n) => tpl.replace(/\{n\}([가-힣]?)/g, (m, j) => { const b = bat(n); return n + ({ '가': b ? '이' : '가', '를': b ? '을' : '를', '와': b ? '과' : '와', '는': b ? '은' : '는', '로': (b && n.slice(-1) !== '를') ? '으로' : '로' }[j] || j); });
   function makeSub(th) { const ts = topicOf(th); const n = pick(ts.flatMap(t => t.nouns)); return (type() === 'coach' && Math.random() < 0.5 ? th : nounJosa(pick(SUB_T), n)).replace('아이의 아이의', '아이의'); }
@@ -565,23 +565,37 @@
   // ---------- HTML 렌더 ----------
   function renderHTML(B, el) {
     let h = ''; let nt = 0;
-    const bars = (l, r) => '<div class="tbar"><i style="background:' + l + '"></i><i style="background:' + r + '"></i></div>';
-    B.forEach(b => {
-      if (b.k === 'title') { if (nt === 0) h += bars('#000', '#006ddb'); h += '<div class="' + (nt === 0 ? 'ttl1' : 'ttl2') + '">' + esc(b.text) + '</div>'; nt++; if (nt === 2 || b.last) h += bars('#ea0000', '#000'); }
-      else if (b.k === 'center') h += '<div class="' + (b.org ? 'org' : b.sub ? 'psub' : 'c' + (b.bold ? ' b' : '')) + '">' + (b.org ? '<img src="tpl/center_logo.png" alt="" style="height:11pt;vertical-align:-2pt;margin-right:2pt">' : '') + esc(b.text) + '</div>';
-      else if (b.k === 'pressHead') h += '<table class="phead"><tr><td class="logo" rowspan="4"><img src="tpl/press_logo.jpg" alt=""></td><td class="bodo" rowspan="4"><div class="ph1">보도자료</div><div class="ph2">' + esc(b.date) + '</div></td><td colspan="2" class="slo"><img src="tpl/press_slogan.png" alt=""></td></tr><tr><td class="k">기 관 명</td><td class="v b">경상북도경산교육지원청</td></tr><tr><td class="k">자료문의</td><td class="v">담당자 ' + esc(b.officer) + '<br>(☎' + esc(b.tel) + ')</td></tr><tr><td colspan="2" class="v pg">￭총 ' + esc(b.pages) + '쪽  ￭사진: ' + esc(b.photos) + '매(16:00 제공)</td></tr></table>';
-      else if (b.k === 'ptitle') h += '<div class="ptbox"><div class="pttl">' + esc(b.text) + '</div>' + (b.sub ? '<div class="psub">' + esc(b.sub) + '</div>' : '') + '</div>';
-      else if (b.k === 'h') h += '<div class="h2">' + esc(b.text) + '</div>';
-      else if (b.k === 'p') h += '<p class="' + (b.in === 1 ? 'in' : b.in === 2 ? 'in2' : b.body ? 'pbody' : '') + '">' + esc(b.text) + '</p>';
-      else if (b.k === 'blank') h += '<p>&nbsp;</p>';
-      else if (b.k === 'banner') h += '<div class="banner">' + b.lines.map((l, i) => '<div class="l' + i + '">' + esc(l) + '</div>').join('') + '</div>';
+    const bars = (l, r) => '<div class="tbar" contenteditable="false"><i style="background:' + l + '"></i><i style="background:' + r + '"></i></div>';
+    const D = i => ' data-i="' + i + '"';
+    B.forEach((b, i) => {
+      if (b.k === 'title') { if (nt === 0) h += bars('#000', '#006ddb'); h += '<div class="' + (nt === 0 ? 'ttl1' : 'ttl2') + '"' + D(i) + '>' + esc(b.text) + '</div>'; nt++; if (nt === 2 || b.last) h += bars('#ea0000', '#000'); }
+      else if (b.k === 'center') h += '<div class="' + (b.org ? 'org' : b.sub ? 'psub' : 'c' + (b.bold ? ' b' : '')) + '">' + (b.org ? '<img src="tpl/center_logo.png" alt="" style="height:11pt;vertical-align:-2pt;margin-right:2pt">' : '') + '<span' + D(i) + '>' + esc(b.text) + '</span></div>';
+      else if (b.k === 'pressHead') h += '<table class="phead" contenteditable="false"><tr><td class="logo" rowspan="4"><img src="tpl/press_logo.jpg" alt=""></td><td class="bodo" rowspan="4"><div class="ph1">보도자료</div><div class="ph2"' + D(i) + ' data-f="date" contenteditable="plaintext-only">' + esc(b.date) + '</div></td><td colspan="2" class="slo"><img src="tpl/press_slogan.png" alt=""></td></tr><tr><td class="k">기 관 명</td><td class="v b">경상북도경산교육지원청</td></tr><tr><td class="k">자료문의</td><td class="v">담당자 <span' + D(i) + ' data-f="officer" contenteditable="plaintext-only">' + esc(b.officer) + '</span><br>(☎<span' + D(i) + ' data-f="tel" contenteditable="plaintext-only">' + esc(b.tel) + '</span>)</td></tr><tr><td colspan="2" class="v pg">￭총 <span' + D(i) + ' data-f="pages" contenteditable="plaintext-only">' + esc(b.pages) + '</span>쪽  ￭사진: <span' + D(i) + ' data-f="photos" contenteditable="plaintext-only">' + esc(b.photos) + '</span>매(16:00 제공)</td></tr></table>';
+      else if (b.k === 'ptitle') h += '<div class="ptbox"><div class="pttl"' + D(i) + ' data-f="text">' + esc(b.text) + '</div>' + (b.sub != null ? '<div class="psub"' + D(i) + ' data-f="sub">' + esc(b.sub) + '</div>' : '') + '</div>';
+      else if (b.k === 'h') h += '<div class="h2"' + D(i) + '>' + esc(b.text) + '</div>';
+      else if (b.k === 'p') h += '<p class="' + (b.in === 1 ? 'in' : b.in === 2 ? 'in2' : b.body ? 'pbody' : '') + '"' + D(i) + '>' + esc(b.text) + '</p>';
+      else if (b.k === 'blank') h += '<p contenteditable="false">&nbsp;</p>';
+      else if (b.k === 'banner') h += '<div class="banner"' + D(i) + '>' + b.lines.map((l, k) => '<div class="l' + k + '" data-l="' + k + '">' + esc(l) + '</div>').join('') + '</div>';
       else if (b.k === 'table') {
-        h += '<table' + (b.press ? ' class="plain press"' : b.plain ? ' class="plain"' : '') + (b.narrow ? ' style="width:45%;margin-left:3.2em"' : '') + '>';
-        b.rows.forEach((r, ri) => { h += '<tr>' + r.map(c => { if (c.skip || c.vm) return ''; const tag = (ri === 0 && !b.plain && !c.noHead) || c.head ? 'th' : 'td'; return '<' + tag + (c.span ? ' colspan="' + c.span + '"' : '') + (c.rows ? ' rowspan="' + c.rows + '"' : '') + (c.w ? ' style="width:' + c.w + '%"' : '') + ' class="' + (c.left ? 'l ' : '') + (c.pressHead ? 'ph ' : '') + (c.bold ? 'b' : '') + '">' + (c.pressHead ? '<span class="ph1">' + esc(c.t.split('\n')[0]) + '</span>\n<span class="ph2">' + esc(c.t.split('\n')[1] || '') + '</span>' : (c.big ? '<span class="big b">' : '') + esc(c.t) + (c.big ? '</span>' : '')) + '</' + tag + '>'; }).join('') + '</tr>'; });
+        h += '<table' + (b.press ? ' class="plain press"' : b.plain ? ' class="plain"' : '') + (b.narrow ? ' style="width:45%;margin-left:3.2em"' : '') + D(i) + '>';
+        b.rows.forEach((r, ri) => { h += '<tr>' + r.map((c, ci) => { if (c.skip || c.vm) return ''; const tag = (ri === 0 && !b.plain && !c.noHead) || c.head ? 'th' : 'td'; return '<' + tag + ' data-r="' + ri + '" data-c="' + ci + '"' + (c.span ? ' colspan="' + c.span + '"' : '') + (c.rows ? ' rowspan="' + c.rows + '"' : '') + (c.w ? ' style="width:' + c.w + '%"' : '') + ' class="' + (c.left ? 'l ' : '') + (c.bold ? 'b' : '') + '">' + (c.big ? '<span class="big b">' : '') + esc(c.t) + (c.big ? '</span>' : '') + '</' + tag + '>'; }).join('') + '</tr>'; });
         h += '</table>';
       }
     });
     el.innerHTML = h; fitPreview();
+  }
+  // 미리보기에서 고친 글을 블록으로 다시 읽음
+  function readBack(el, B) {
+    const out = JSON.parse(JSON.stringify(B)); const tx = n => (n.innerText != null ? n.innerText : n.textContent).replace(/ /g, ' ').replace(/\n+$/, '');
+    el.querySelectorAll('[data-i]').forEach(n => {
+      const b = out[+n.dataset.i]; if (!b) return;
+      if (b.k === 'pressHead') b[n.dataset.f] = tx(n).trim();
+      else if (b.k === 'ptitle') b[n.dataset.f] = tx(n).trim();
+      else if (b.k === 'banner') n.querySelectorAll('[data-l]').forEach(d => b.lines[+d.dataset.l] = tx(d).trim());
+      else if (b.k === 'table') n.querySelectorAll('[data-r]').forEach(td => { const c = b.rows[+td.dataset.r] && b.rows[+td.dataset.r][+td.dataset.c]; if (c) c.t = tx(td).trim(); });
+      else b.text = tx(n).trim();
+    });
+    return out;
   }
   function fitPreview() {
     const sc = $('scale'), box = sc.parentNode; const w = box.clientWidth; if (!w) return;
@@ -655,9 +669,11 @@
 
   // ---------- 버튼 ----------
   const showMsg = (t, err) => { const m = $('msg'); m.hidden = false; m.className = 'msg'; m.style.color = err ? 'var(--err)' : ''; m.textContent = t; };
-  function renderAll() { const p = planBlocks(), r = pressBlocks(); renderHTML(p.blocks, $('docPlan')); renderHTML(r.blocks, $('docPress')); return { p, r }; }
+  let LASTB = null;
+  function renderAll() { const p = planBlocks(), r = pressBlocks(); renderHTML(p.blocks, $('docPlan')); renderHTML(r.blocks, $('docPress')); LASTB = { p, r }; return LASTB; }
+  const current = () => { if (!LASTB) renderAll(); return { p: { blocks: readBack($('docPlan'), LASTB.p.blocks), fileName: LASTB.p.fileName }, r: { blocks: readBack($('docPress'), LASTB.r.blocks), fileName: LASTB.r.fileName } }; };
   async function make(which) {
-    const { p, r } = renderAll();
+    const { p, r } = current();
     if (!window.JSZip) { showMsg('파일 압축 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요. (미리보기는 갱신했습니다)', true); return; }
     const names = [];
     if (which !== 'press') names.push(await buildDocx(p.blocks, p.fileName));
@@ -671,8 +687,7 @@
     if (!window.JSZip || !window.HWPX) { showMsg('파일 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.', true); return; }
     try {
       if (!TPL[tplName]) { const r = await fetch('tpl/' + tplName + '.hwpx?v=1'); if (!r.ok) throw new Error('양식 파일을 찾을 수 없습니다'); TPL[tplName] = await r.arrayBuffer(); }
-      if (!$('p1').dataset.edited) $('p1').value = computeP1(); renderAll();
-      const m = planModel(); const blob = await HWPX.build(TPL[tplName], m);
+      const m = planModel(); const cur = current(); const blob = await HWPX.build(TPL[tplName], cur.p.blocks, { after: m.after });
       const name = m.year + '학년도 ' + m.name + ' 운영 계획.hwpx';
       const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
       showMsg('저장한 파일: ' + name + ' — 한글에서 열어 확인하세요.');
@@ -682,9 +697,10 @@
     if (!window.JSZip || !window.HWPX) { showMsg('파일 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.', true); return; }
     try {
       if (!TPL.press) { const r = await fetch('tpl/press.hwpx?v=1'); if (!r.ok) throw new Error('양식 파일을 찾을 수 없습니다'); TPL.press = await r.arrayBuffer(); }
-      if (!$('p1').dataset.edited) $('p1').value = computeP1(); renderAll();
-      const t = type(), N = TYPE_NAME[t];
-      const m = { dateStr: fmtD($('pressDate').value), officer: $('officer').value, officerTel: $('officerTel').value, pages: $('pages').value || 2, photos: $('photos').value, title: $('pTitle').value, sub: '-' + ORG + ' ' + (t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value) + ' 개최-', paras: [$('p1').value, $('p2').value, $('p3').value] };
+      const t = type(), N = TYPE_NAME[t]; const Bp = current().r.blocks;
+      const hd = Bp.find(b => b.k === 'pressHead') || {}, pt = Bp.find(b => b.k === 'ptitle') || {};
+      const paras = []; Bp.filter(b => b.k === 'p').forEach(b => { const tx = b.text.trim(); if (/^□/.test(tx) || !paras.length) paras.push(tx.replace(/^□\s*/, '')); else paras[paras.length - 1] += '\n' + tx; });
+      const m = { dateStr: hd.date || fmtD($('pressDate').value), officer: hd.officer || $('officer').value, officerTel: hd.tel || $('officerTel').value, pages: hd.pages || $('pages').value || 2, photos: hd.photos || $('photos').value, title: (pt.text || '').replace(/^“\s*|\s*”$/g, '') || $('pTitle').value, sub: pt.sub || '-' + ORG + ' ' + (t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value) + ' 개최-', paras };
       const blob = await HWPX.buildPress(TPL.press, m);
       const name = fmtD($('pressDate').value).replace(/[.\s]/g, '').replace(/\(.\)/, '') + ' 보도자료 ' + ORG + ' ' + N + ' 연수.hwpx';
       const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
@@ -698,7 +714,7 @@
     el.childNodes.forEach(n => { if (n.nodeName === 'TABLE') { n.querySelectorAll('tr').forEach(tr => out.push(Array.from(tr.children).map(c => c.innerText.replace(/\n/g, ' / ')).join('\t'))); out.push(''); } else out.push(n.innerText); });
     try { await navigator.clipboard.writeText(out.join('\n')); showMsg('복사했습니다. 한글에서 Ctrl+V로 붙여 넣으세요.'); } catch (e) { showMsg('복사가 안 됩니다. 아래 글을 직접 블록 지정해 복사하세요.', true); }
   };
-  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); $('docPlan').hidden = b.dataset.v !== 'plan'; $('docPress').hidden = b.dataset.v !== 'press'; renderAll(); fitPreview(); });
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); $('docPlan').hidden = b.dataset.v !== 'plan'; $('docPress').hidden = b.dataset.v !== 'press'; fitPreview(); });
 
   applyType(); renderAll();
 })();

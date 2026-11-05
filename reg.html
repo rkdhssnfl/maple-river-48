@@ -7,7 +7,7 @@
 <title>연수 등록부 만들기</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
-<script src="plan-hwpx.js?v=3"></script>
+<script src="plan-hwpx.js?v=4"></script>
 <style>
   html, body { margin: 0; } [hidden] { display: none !important; }
   :root { --bg:#f4f5f7; --surface:#fff; --fg:#1c2430; --muted:#66707d; --line:#d9dee5; --accent:#1d5fa6; --accent-fg:#fff; --accent-soft:#e3edf8; --input:#fffbe6; --err:#c62828; }
@@ -130,7 +130,7 @@
   const VIP = {
     coach: '경산교육지원청 | 교육장 |\n경산교육지원청 | 교육지원과장 |\n청도교육지원청 | 교육지원과장 |\n경산교육지원청 | 장학사 |\n청도교육지원청 | 장학사 |\n청도초등학교 | 기초학력 전담교사 |\n경산교육지원청 | 학습상담교사 |\n경산교육지원청 | 학습상담사 |',
     teacher: '청도교육지원청 | 교육지원과장 |\n청도교육지원청 | 장학사 |\n경산교육지원청 | 장학사 |\n청도교육지원청 | 기초학력전담교사 |\n경산교육지원청 | 학습상담교사 |\n경산교육지원청 | 학습상담사 |',
-    parent: ''
+    parent: '청도교육지원청 | 교육장 |\n경산교육지원청 | 교육장 |\n경산교육지원청 | 교육지원과장 |\n청도교육지원청 | 교육지원과장 |\n경산교육지원청 | 장학사 |\n청도교육지원청 | 장학사 |\n경산교육지원청 | 학습상담교사 |\n경산교육지원청 | 학습상담사 |'
   };
 
 
@@ -152,7 +152,7 @@
     $('sessions').innerHTML = '';
     if (t === 'coach') $('sessions').appendChild(sessRow({ date: today, start: '', place: '경산교육지원청 학생교육지원관 201호' }, 0, false));
     else { $('sessions').appendChild(sessRow({ region: '청도', date: today, start: t === 'teacher' ? '14:00' : '10:00', place: '청도교육지원청 대회의실' }, 0, true)); $('sessions').appendChild(sessRow({ region: '경산', date: addDays(today, 14), start: t === 'teacher' ? '14:00' : '10:00', place: '경산교육지원청 2강당' }, 1, true)); }
-    $('coachCard').hidden = t !== 'coach'; $('xlsCard').hidden = t === 'coach'; $('vipCard').hidden = t === 'parent';
+    $('coachCard').hidden = t !== 'coach'; $('xlsCard').hidden = t === 'coach'; $('vipCard').hidden = false;
     $('vip').value = VIP[t];
     render();
   }
@@ -230,7 +230,7 @@
       ss.forEach(s => { const rg = normRegion(s.region); const ppl = XLS.filter(r => r.region === rg); if (!ppl.length) return;
         [0, 1, 2].forEach(lv => { const grp = ppl.filter(r => level(r.school) === lv); if (grp.length) blocks.push({ dateStr: dstr(s), place: s.place, cols: t === 'teacher' ? 7 : 5, rows: mkRows(grp), head: HEAD, note: rg + ' ' + ['초등학교', '중학교', '기타'][lv] }); }); });
       const other = XLS.filter(r => !ss.some(s => normRegion(s.region) === r.region)); if (other.length && ss[0]) blocks.push({ dateStr: dstr(ss[0]), place: ss[0].place, cols: t === 'teacher' ? 7 : 5, rows: other.map(r => t === 'teacher' ? [r.region, r.school, '교사', r.name, '', ''] : [r.school, r.name, '', '']), head: t === 'teacher' ? ['순', '지역', '소속', '직책', '성명', '서명', '비고'] : ['순', '소속', '성명', '서명', '비고'] });
-      if (t === 'teacher' && vip.length && ss[0]) blocks.push({ dateStr: dstr(ss[0]), place: ss[0].place, cols: 6, rows: vip.map(a => [a[0], a[1], a[2], '', '']), head: ['순', '소속', '직책', '성명', '서명', '비고'] });
+      if (vip.length && ss[0]) blocks.push({ dateStr: dstr(ss[0]), place: ss[0].place, cols: 6, rows: vip.map(a => [a[0], a[1], a[2], '', '']), head: ['순', '소속', '직책', '성명', '서명', '비고'] });
     }
     return { title: $('title').value.trim(), blocks };
   }

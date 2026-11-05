@@ -57,12 +57,17 @@
   .doc table.plain { border-top-width: 0.12mm; border-left-width: 0.12mm; } .doc table.plain td { border-width: 0.12mm; }
   .doc .banner { border: 0.12mm solid #000; padding: 10pt 8pt; text-align: center; margin: 3pt 0 6pt; font-family: "맑은 고딕","Malgun Gothic",sans-serif; font-weight: 700; }
   .doc .banner .l0 { font-size: 12pt; } .doc .banner .l1 { font-size: 20pt; margin: 6pt 0 8pt; } .doc .banner .l2 { font-size: 15pt; margin-bottom: 6pt; } .doc .banner .l3 { font-size: 12pt; }
-  .doc table.press { border: 0.12mm solid #000; } .doc table.press td { font-family: "HY각헤드라인M","맑은 고딕",sans-serif; font-size: 12pt; }
-  .doc .ph1 { font-family: "신명조","휴먼명조",serif; font-size: 28pt; line-height: 1.3; } .doc .ph2 { font-family: "HY각헤드라인M","맑은 고딕",sans-serif; font-size: 14pt; font-weight: 700; }
-  .doc .ptbox { border: 0.12mm solid #000; padding: 6pt 4pt; margin: 4pt 0; }
+  .doc table.phead { border: 0.4mm solid #000; width: 100%; margin: 0 0 10pt; font-family: "HY각헤드라인M","맑은 고딕",sans-serif; font-size: 12pt; }
+  .doc table.phead td { border: 0.1mm solid #000; padding: 2pt 4pt; text-align: center; vertical-align: middle; }
+  .doc table.phead td.logo { width: 24%; padding: 4pt; } .doc table.phead td.logo img { width: 26mm; height: 26mm; object-fit: contain; display: block; margin: 0 auto; }
+  .doc table.phead td.bodo { width: 30%; } .doc table.phead td.slo { padding: 2pt; } .doc table.phead td.slo img { width: 100%; max-height: 10mm; object-fit: contain; display: block; }
+  .doc table.phead td.k { width: 12%; } .doc table.phead td.v.b { font-weight: 700; } .doc table.phead td.pg { font-size: 11pt; text-align: left; padding-left: 8pt; }
+  .doc .ph1 { font-family: "신명조","HY신명조","휴먼명조",serif; font-size: 28pt; line-height: 1.25; letter-spacing: 1pt; } .doc .ph2 { font-family: "HY각헤드라인M","맑은 고딕",sans-serif; font-size: 14pt; font-weight: 700; }
+  .doc .ptbox { background: #e4e4e4; border-top: 0.15mm solid #000; border-bottom: 0.15mm solid #000; padding: 4pt 4pt; margin: 4pt 0 14pt; }
   .doc .pttl { font-family: "HY헤드라인M","HY울릉도M","맑은 고딕",sans-serif; font-size: 20pt; font-weight: 700; text-align: center; line-height: 1.4; }
   .doc .psub { font-family: "HY울릉도M","휴먼명조",serif; text-align: center; font-size: 15pt; line-height: 1.4; }
-  .doc .pbody { margin: 0 0 12pt; text-align: justify; font-size: 15pt; line-height: 1.6; }
+  .doc .pbody { margin: 0 0 14pt; text-align: justify; font-size: 15pt; line-height: 1.6; }
+  .doc table.press { border: 0.12mm solid #000; } .doc table.press td { font-family: "HY각헤드라인M","맑은 고딕",sans-serif; font-size: 12pt; }
   .doc .big { font-size: 20pt; }
   @media print { body { background: #fff; } .noprint { display: none !important; } .wrap { display: block; padding: 0; } .docs { position: static; max-height: none; overflow: visible; } .docs .scale { transform: none !important; height: auto !important; } .doc { box-shadow: none; } }
 </style>
@@ -548,12 +553,8 @@
     const t = type(), N = TYPE_NAME[t];
     const sub = '-' + ORG + ' ' + (t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value) + ' 개최-';
     const B = [
-      { k: 'table', plain: true, press: true, rows: [
-        [{ t: '', w: 18, rows: 4 }, { t: '보도자료\n' + fmtD($('pressDate').value), w: 26, rows: 4, pressHead: true }, { t: '', w: 56, span: 2 }],
-        [{ t: '', vm: true, w: 18 }, { t: '', vm: true, w: 26 }, { t: '기 관 명', w: 12 }, { t: '경상북도경산교육지원청', w: 44, bold: true }],
-        [{ t: '', vm: true, w: 18 }, { t: '', vm: true, w: 26 }, { t: '자료문의', w: 12 }, { t: '담당자 ' + $('officer').value + '\n(☎' + $('officerTel').value + ')', w: 44 }],
-        [{ t: '', vm: true, w: 18 }, { t: '', vm: true, w: 26 }, { t: '   ￭총 ' + ($('pages').value || 2) + '쪽    ￭사진: ' + $('photos').value + '매(16:00 제공)', w: 56, span: 2, left: true }]] },
-      { k: 'blank' },
+      { k: 'pressHead', date: fmtD($('pressDate').value), officer: $('officer').value, tel: $('officerTel').value, pages: $('pages').value || 2, photos: $('photos').value,
+        rows: [[{ t: '보도자료\n' + fmtD($('pressDate').value), w: 30 }, { t: '기 관 명', w: 14 }, { t: '경상북도경산교육지원청', w: 56 }], [{ t: '', w: 30, vm: true }, { t: '자료문의', w: 14 }, { t: '담당자 ' + $('officer').value + '\n(☎' + $('officerTel').value + ')', w: 56 }], [{ t: '', w: 30, vm: true }, { t: '￭총 ' + ($('pages').value || 2) + '쪽   ￭사진: ' + $('photos').value + '매(16:00 제공)', w: 70, span: 2 }]] },
       { k: 'ptitle', text: '“ ' + $('pTitle').value + ' ”', sub },
       { k: 'blank' }
     ];
@@ -567,7 +568,8 @@
     const bars = (l, r) => '<div class="tbar"><i style="background:' + l + '"></i><i style="background:' + r + '"></i></div>';
     B.forEach(b => {
       if (b.k === 'title') { if (nt === 0) h += bars('#000', '#006ddb'); h += '<div class="' + (nt === 0 ? 'ttl1' : 'ttl2') + '">' + esc(b.text) + '</div>'; nt++; if (nt === 2 || b.last) h += bars('#ea0000', '#000'); }
-      else if (b.k === 'center') h += '<div class="' + (b.org ? 'org' : b.sub ? 'psub' : 'c' + (b.bold ? ' b' : '')) + '">' + esc(b.text) + '</div>';
+      else if (b.k === 'center') h += '<div class="' + (b.org ? 'org' : b.sub ? 'psub' : 'c' + (b.bold ? ' b' : '')) + '">' + (b.org ? '<img src="tpl/center_logo.png" alt="" style="height:11pt;vertical-align:-2pt;margin-right:2pt">' : '') + esc(b.text) + '</div>';
+      else if (b.k === 'pressHead') h += '<table class="phead"><tr><td class="logo" rowspan="4"><img src="tpl/press_logo.jpg" alt=""></td><td class="bodo" rowspan="4"><div class="ph1">보도자료</div><div class="ph2">' + esc(b.date) + '</div></td><td colspan="2" class="slo"><img src="tpl/press_slogan.png" alt=""></td></tr><tr><td class="k">기 관 명</td><td class="v b">경상북도경산교육지원청</td></tr><tr><td class="k">자료문의</td><td class="v">담당자 ' + esc(b.officer) + '<br>(☎' + esc(b.tel) + ')</td></tr><tr><td colspan="2" class="v pg">￭총 ' + esc(b.pages) + '쪽  ￭사진: ' + esc(b.photos) + '매(16:00 제공)</td></tr></table>';
       else if (b.k === 'ptitle') h += '<div class="ptbox"><div class="pttl">' + esc(b.text) + '</div>' + (b.sub ? '<div class="psub">' + esc(b.sub) + '</div>' : '') + '</div>';
       else if (b.k === 'h') h += '<div class="h2">' + esc(b.text) + '</div>';
       else if (b.k === 'p') h += '<p class="' + (b.in === 1 ? 'in' : b.in === 2 ? 'in2' : b.body ? 'pbody' : '') + '">' + esc(b.text) + '</p>';
@@ -622,6 +624,7 @@
       else if (b.k === 'h') body += wP(b.text, { size: 26, bold: true, before: 240, after: 80 });
       else if (b.k === 'p') body += wP(b.text, { after: b.after || 60, indent: b.in ? 360 * b.in : 0 });
       else if (b.k === 'blank') body += wP('');
+      else if (b.k === 'pressHead') body += wTable([[{ t: '보도자료\n' + b.date, w: 30, rows: 3, big: true }, { t: '기 관 명', w: 14 }, { t: '경상북도경산교육지원청', w: 56 }], [{ t: '', w: 30, vm: true }, { t: '자료문의', w: 14 }, { t: '담당자 ' + b.officer + '\n(☎' + b.tel + ')', w: 56 }], [{ t: '', w: 30, vm: true }, { t: '￭총 ' + b.pages + '쪽   ￭사진: ' + b.photos + '매(16:00 제공)', w: 70, span: 2 }]], { plain: true });
       else if (b.k === 'banner') body += wTable([[{ t: b.lines.join('\n'), w: 100, noHead: true }]], { thick: true, plain: true, bannerLines: true });
       else if (b.k === 'table') body += wTable(b.rows, { plain: b.plain, pct: b.narrow ? 50 : 100, indent: b.narrow ? 720 : 0 });
     });

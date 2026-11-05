@@ -32,6 +32,10 @@
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .small { font-size: 12px; color: var(--muted); }
   .msg { margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; min-height:30px; }
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; border:1px solid var(--line); background:var(--surface); font-size:13px; cursor:pointer; }
+  .chip.sel { background:var(--accent); color:#fff; border-color:var(--accent); } .chip.sel b { font-weight:400; opacity:.8; }
+  .chip.sug:hover { background:var(--accent-soft); }
   .types { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
   .types label { flex:1; min-width:140px; text-align:center; padding:12px; border:2px solid var(--line); border-radius:12px; cursor:pointer; font-weight:700; background:var(--surface); }
   .types input { display:none; } .types label.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
@@ -106,16 +110,12 @@
   </section>
 
   <section class="card" id="actCard">
-    <h2><span class="step">3</span>연수 내용 (코칭단 연수)</h2>
-    <div class="small" style="margin-bottom:6px">이번 연수에 들어가는 활동 (고르면 목적·기대 효과·일정이 맞춰집니다)</div>
-    <div class="row" id="acts">
-      <label><input type="checkbox" name="act" value="case" checked> 교구 활용 사례 발표</label>
-      <label><input type="checkbox" name="act" value="material" checked> 학습코칭 자료 소개</label>
-      <label><input type="checkbox" name="act" value="emotion"> 정서 지원 활동</label>
-      <label><input type="checkbox" name="act" value="lecture"> 외부 강사 특강</label>
-      <label><input type="checkbox" name="act" value="group"> 영역별 소모임 협의</label>
-      <label><input type="checkbox" name="act" value="lend"> 교구 대여</label>
-    </div>
+    <h2><span class="step">3</span>연수 내용 <span class="small">(주제에 맞는 연관 단어 — 누르면 내용·목적·기대 효과·일정에 들어갑니다)</span></h2>
+    <div class="small" style="margin-bottom:4px">고른 단어</div>
+    <div class="chips" id="selKw"></div>
+    <div class="row" style="margin:6px 0 10px"><input type="text" id="kwIn" placeholder="직접 단어 입력 후 Enter (예: 받아쓰기, 그림책, 멘토링)" style="flex:1"><button class="btn sm" type="button" id="kwAdd">추가</button></div>
+    <div class="small" style="margin-bottom:4px">주제 연관 단어 (누르면 추가)</div>
+    <div class="chips" id="sugKw"></div>
   </section>
 
   <section class="card">
@@ -269,13 +269,12 @@
     $('sessions').innerHTML = ''; P.sessions.forEach((s, i) => $('sessions').appendChild(sessRow(s, i)));
     $('targetNote').value = P.note || '';
     $('bud').innerHTML = ''; P.budget.forEach(r => $('bud').appendChild(budRow(r)));
-    $('actCard').hidden = t !== 'coach'; $('adminCard').hidden = t === 'coach'; $('monthWrap').hidden = t !== 'coach'; $('noteWrap').hidden = t === 'coach';
+    SEL = t === 'coach' ? KW.교구.slice(0, 2).map(k => Object.assign({}, k)) : []; renderKw(); $('adminCard').hidden = t === 'coach'; $('monthWrap').hidden = t !== 'coach'; $('noteWrap').hidden = t === 'coach';
     $('dueCd').value = addDays(today, -7); $('dueGs').value = today;
     regenText(); regenPress();
   }
   document.querySelectorAll('input[name=type]').forEach(r => r.addEventListener('change', applyType));
   ['theme', 'title'].forEach(id => $(id).addEventListener('change', () => { regenText(); regenPress(); }));
-  $('acts').addEventListener('change', () => { regenText(); regenPress(); });
 
   // ---------- 자동 문구 ----------
   const PURPOSE = { case: '교구 활용 사례를 공유하여 영역별 지도 노하우를 상호 확산하고, 기초학력 지도의 실천적 전문성을 신장', material: '학습코칭 자료의 실제 적용 방법 습득을 통한 현장 실천 역량 강화', emotion: '정서 지원 활동의 이해와 적용을 통해 학생의 정서·학습 동기를 함께 돌보는 역량 함양', lecture: '전문가 특강을 통해 기초학력 지도에 필요한 최신 이론과 실제를 습득', group: '영역별 소모임 협의를 통해 지도 경험을 나누고 공동의 지도 방안을 마련', lend: '교구 대여와 활용 안내를 통한 수업 현장의 교구 활용도 제고' };
@@ -382,15 +381,45 @@
   const makeEffect = (th, t) => fixAud(pick(pool('core', th)) + ' 습득을 통한 ' + pick(EFF_OBJ), t);
   const rami = q => (bat(q) ? '”이라며, “' : '”라며, “');
 
+  // ---------- 주제 연관 단어 ----------
+  // w: 단어, l: 일정표 내용 줄 후보, p: 목적, e: 기대 효과
+  const KW = {
+    진로: [{ w: '진로 카드', l: ['진로 카드를 활용한 학생 진로 지도 방법', '진로 이야기 카드로 나의 강점 찾기'], p: '진로 카드를 활용한 학생 진로 지도 방법 습득', e: '진로 카드 활용 방법 습득을 통한 진로 지도 전문성 신장' }, { w: '흥미 탐색', l: ['흥미·가치 카드로 알아보는 나의 흥미', '학생의 흥미를 읽어 내는 관찰과 대화'], p: '학생의 흥미와 강점을 발견하도록 돕는 방법 습득', e: '흥미 탐색 활동을 통한 학생의 자기이해 향상' }, { w: '강점 찾기', l: ['강점 발견 활동과 피드백 대화', '학생의 강점을 진로와 연결하는 상담'], p: '학생의 강점을 발견하고 진로와 연결하는 지도 방법 습득', e: '강점 중심 지도를 통한 학생의 자존감과 학습 동기 향상' }, { w: '직업 세계', l: ['직업 세계를 넓게 살펴보는 탐색 활동', '직업 카드 분류와 이야기 만들기'], p: '다양한 직업 세계를 탐색하도록 돕는 지도 방법 습득', e: '직업 세계 탐색을 통한 학생의 진로 탐색 동기 향상' }, { w: '진로 상담', l: ['진로 상담 대화법 실습', '진로 고민을 다루는 상담 사례'], p: '학생의 진로 고민을 함께 다루는 상담 역량 강화', e: '진로 상담 역량 향상을 통한 학생 맞춤형 지원 강화' }, { w: '꿈 설계', l: ['‘왜 공부하는지’를 스스로 찾게 돕는 진로 설계 코칭', '진로 목표를 학습 계획으로 잇는 방법'], p: '학습과 진로를 함께 설계하도록 돕는 코칭 방법 습득', e: '진로와 학습을 연결한 학생 맞춤형 지원 강화' }],
+    정서: [{ w: '감정 카드', l: ['감정 카드를 활용한 감정 인식·표현 활동', '감정 카드로 마음 열기'], p: '학생의 감정을 알아차리고 표현하도록 돕는 정서 지원 방법 습득', e: '정서 활동의 현장 적용을 통한 학생 정서 지원의 질 제고' }, { w: '자존감', l: ['자존감을 높이는 칭찬과 피드백 대화법', '작은 성공 경험 쌓기 활동'], p: '학생의 자존감을 지켜 주는 피드백 방법 습득', e: '자존감 향상을 통한 학생의 학습 참여도 향상' }, { w: '학습 불안', l: ['학습 불안이 높은 학생을 위한 안정화 활동', '시험·과제 불안 다루기'], p: '학습 불안을 낮추고 학습 의욕을 높이는 지원 방법 습득', e: '정서적 안정을 바탕으로 한 학생의 학습 참여도 향상' }, { w: '회복탄력성', l: ['실패 경험을 다루는 회복탄력성 활동', '다시 도전하게 하는 격려 대화'], p: '실패를 딛고 다시 도전하도록 돕는 지원 방법 습득', e: '회복탄력성 향상을 통한 학생의 학습 지속력 향상' }, { w: '그림책', l: ['그림책을 활용한 정서 표현 활동', '감정 그림책 읽고 이야기 나누기'], p: '그림책을 활용한 정서 지원 활동 방법 습득', e: '그림책 활용 정서 활동을 통한 학생 정서 지원의 질 제고' }, { w: '관계 맺기', l: ['학생과 신뢰를 쌓는 첫 만남 활동', '마음을 여는 첫 5분 활동'], p: '학생과 신뢰 관계를 형성하는 방법 습득', e: '관계 형성을 통한 학생 지원의 질 제고' }],
+    읽기: [{ w: '한글 해득', l: ['소리와 글자를 연결하는 한글 해득 지도 활동', '자음·모음에서 받침까지 단계별 지도'], p: '한글 해득 단계에 맞는 지도 방법 습득', e: '단계별 한글 지도 방법 습득을 통한 지도 전문성 신장' }, { w: '받아쓰기', l: ['받아쓰기 오류 유형별 지도 방법', '받침과 겹받침 지도 사례'], p: '맞춤법·받아쓰기 오류를 줄이는 지도 방법 습득', e: '받아쓰기 지도 방법 습득을 통한 학생의 쓰기 정확성 향상' }, { w: '어휘', l: ['어휘를 넓히는 읽기 활동', '낱말 카드와 놀이로 어휘 익히기'], p: '어휘력 신장을 위한 체계적 지도 방법 습득', e: '어휘 지도 방법 습득을 통한 학생의 독해력 향상' }, { w: '읽기 유창성', l: ['소리 내어 읽기와 따라 읽기 실습', '읽기 유창성을 높이는 반복 읽기'], p: '읽기 유창성을 높이는 반복 지도 방법 습득', e: '읽기 유창성 향상을 통한 학생의 독해력 향상' }, { w: '독해', l: ['글의 내용을 이해하는 독해 전략 지도', '질문으로 읽는 독해 활동'], p: '독해 전략을 지도하는 방법 습득', e: '독해 지도 방법 습득을 통한 학생의 읽기 이해력 향상' }, { w: '그림책', l: ['그림책을 활용한 읽기 동기 유발 활동', '그림책 읽고 한 문장 쓰기'], p: '그림책을 활용한 읽기 지도 방법 습득', e: '그림책 활용 지도를 통한 학생의 읽기 동기 향상' }, { w: '글쓰기', l: ['한 문장 쓰기부터 시작하는 글쓰기 지도', '그림일기·짧은 글쓰기 지도 사례'], p: '쓰기 발달 단계에 맞는 글쓰기 지도 방법 습득', e: '글쓰기 지도 방법 습득을 통한 학생의 표현력 향상' }],
+    수학: [{ w: '수 개념', l: ['구체물을 활용한 수 개념 지도 활동', '수 세기와 자릿값 지도'], p: '학생의 수 개념을 단계적으로 기르는 지도 방법 습득', e: '수 개념 지도 방법 습득을 통한 학생의 수 감각 향상' }, { w: '연산', l: ['연산의 원리를 이해하게 하는 교구 활용 활동', '받아올림·받아내림 지도 사례'], p: '연산 원리 이해를 돕는 지도 방법 습득', e: '연산 지도 방법 습득을 통한 학생의 계산 정확성 향상' }, { w: '문장제', l: ['문장제 문제를 그림으로 풀어 보는 방법', '문제 상황을 읽고 식 세우기'], p: '문장제 문제 해결을 돕는 지도 방법 습득', e: '문장제 지도 방법 습득을 통한 학생의 수학적 사고력 향상' }, { w: '보드게임', l: ['보드게임을 활용한 연산 연습 활동', '수학 보드게임 체험과 활용 방법'], p: '보드게임을 활용한 수학 기초 지도 방법 습득', e: '보드게임 활용을 통한 학생의 수학 학습 동기 향상' }, { w: '수학 불안', l: ['수학 불안을 줄이는 놀이형 활동', '‘할 수 있다’ 경험을 주는 과제 설계'], p: '수학 불안을 줄이고 자신감을 높이는 지도 방법 습득', e: '수학 자신감 향상을 통한 학생의 학습 참여도 향상' }, { w: '오류 분석', l: ['학생의 오류 유형을 살피는 진단과 지도 방법', '오답 노트로 보는 오류 유형'], p: '연산 오류 유형별 지도 방법 습득', e: '오류 분석을 바탕으로 한 학생 맞춤형 지도의 실천력 향상' }],
+    교구: [{ w: '교구 활용 사례', l: ['학습코칭단 영역별 교구 활용 사례 발표', '교구 활용 사례 발표와 토의'], p: '교구 활용 사례를 공유하여 영역별 지도 노하우를 상호 확산하고, 기초학력 지도의 실천적 전문성을 신장', e: '교구 활용 사례 공유를 통한 실천적 지도 역량 신장' }, { w: '학습코칭 자료', l: ['학습코칭 자료 소개 및 활용 방안', '새로 들어온 학습코칭 자료 체험'], p: '학습코칭 자료의 실제 적용 방법 습득을 통한 현장 실천 역량 강화', e: '학습코칭 자료 소개 및 활용 방안 안내를 통한 학생 맞춤형 자료 활용 능력 함양' }, { w: '보드게임', l: ['보드게임을 활용한 학습 동기 유발 활동', '학습 목표와 연결하는 보드게임 활용법'], p: '보드게임을 학습 목표와 연결하는 활용 방법 습득', e: '보드게임 활용을 통한 학생의 학습 참여도 향상' }, { w: '교구 대여', l: ['교구 대여 안내와 활용 계획 세우기', '교구 대여'], p: '교구 대여와 활용 안내를 통한 수업 현장의 교구 활용도 제고', e: '교구 활용 확대를 통한 학생 맞춤형 지도의 실천력 향상' }, { w: '소모임 협의', l: ['영역별 소모임 협의', '소모임별 지도 사례 나눔과 협의'], p: '영역별 소모임 협의를 통해 지도 경험을 나누고 공동의 지도 방안을 마련', e: '소모임 간 상호 교류 활성화를 통한 학습코칭단의 집단 전문성 강화' }, { w: '교구 체험', l: ['새로 들어온 교구 체험', '영역별 교구 직접 써 보기'], p: '교구의 실제 활용 방법 체험을 통한 현장 실천 역량 강화', e: '교구 체험을 통한 학생 맞춤형 교구 활용 능력 함양' }, { w: '정서 지원 활동', l: ['정서 지원 활동의 실제와 적용', '정서 지원 교구 활용 활동'], p: '정서 지원 활동의 이해와 적용을 통해 학생의 정서·학습 동기를 함께 돌보는 역량 함양', e: '정서 지원 활동의 현장 적용을 통한 학생 정서·학습 지원의 질 제고' }],
+    학습습관: [{ w: '학습 계획', l: ['학습 계획표를 함께 세우는 방법', '주간 계획 세우기 실습'], p: '학생이 스스로 계획하고 점검하는 자기주도 학습 습관을 기르도록 돕는 방법 습득', e: '자기주도 학습 습관 형성을 통한 학생의 학습 능력 증진' }, { w: '학습 동기', l: ['학습 동기를 높이는 칭찬과 피드백 대화법', '작은 목표로 동기 만들기'], p: '학습 동기를 높이는 대화와 피드백 방법 습득', e: '학습 동기 향상을 통한 학생의 학습 참여도 향상' }, { w: '코칭 질문', l: ['공부가 어려운 순간에 함께 원인을 찾아 주는 코칭 질문법', '생각을 여는 질문 연습'], p: '학생의 생각을 이끌어 내는 코칭 질문 기법 습득', e: '코칭 질문 역량 향상을 통한 학생의 자기주도 학습 능력 증진' }, { w: '학습 일지', l: ['스스로 점검하는 학습 일지 활용법', '학습 일지로 돌아보기'], p: '학습 과정을 스스로 점검하게 하는 메타인지 지도 방법 습득', e: '학습 일지 활용을 통한 학생의 자기 점검 능력 향상' }, { w: '공부 습관', l: ['하루 10분 공부 습관 만들기 실습', '습관 형성의 원리와 실천 방법'], p: '꾸준한 공부 습관 형성을 돕는 지도 방법 습득', e: '공부 습관 형성을 통한 학생의 학습 지속력 향상' }, { w: '학습 성향', l: ['자녀(학생)의 학습 성향과 강점을 파악하는 방법', '학습 성향에 맞는 지도 방법'], p: '학생의 학습 성향과 강점에 맞는 학습코칭 방법 습득', e: '학습 성향 이해를 바탕으로 한 맞춤형 지원 강화' }],
+    대화: [{ w: '경청', l: ['학생의 말을 끝까지 듣는 경청 연습', '반영적 경청 실습'], p: '학생의 마음을 여는 경청과 대화 방법 습득', e: '경청 역량 향상을 통한 학생 지원의 질 제고' }, { w: '질문법', l: ['마음을 여는 질문법과 반영적 대화법', '좋은 질문 만들기 실습'], p: '학생의 생각을 깨우는 질문 기법 습득', e: '질문 역량 향상을 통한 학생의 사고력 신장' }, { w: '갈등 대화', l: ['갈등 상황에서의 대화 사례 실습', '화내지 않고 전하는 나-전달법'], p: '갈등 상황에서 관계를 지키는 대화 방법 습득', e: '갈등 대화 역량 향상을 통한 학교생활 적응 능력 향상' }, { w: '피드백', l: ['학생의 강점을 말로 돌려주는 피드백 연습', '성장을 돕는 피드백 대화'], p: '학생의 성장을 돕는 피드백 방법 습득', e: '피드백 역량 향상을 통한 학생의 학습 동기 향상' }, { w: '역할극', l: ['역할극을 통한 상담 대화 실습', '상황별 대화 역할극'], p: '실제 장면을 가정한 대화 연습을 통한 상담 역량 강화', e: '역할극 실습을 통한 상담·대화 역량의 현장 적용력 향상' }],
+    디지털: [{ w: '인공지능 도구', l: ['인공지능 도구로 학습 자료 만들기 실습', '인공지능 도구의 안전한 활용 방법'], p: '인공지능 도구를 안전하게 수업에 쓰는 방법 습득', e: '인공지능 도구 활용을 통한 학습 자료 제작 역량 신장' }, { w: '학습 진단', l: ['학습 진단과 맞춤 처방을 돕는 디지털 도구 활용 실습', '진단 결과 읽고 지도에 연결하기'], p: '디지털 도구를 활용한 학습 진단과 맞춤 처방 방법 습득', e: '학습 데이터 기반 지도 역량 신장' }, { w: '에듀테크', l: ['교실에서 바로 쓰는 에듀테크 활용 사례', '에듀테크 도구 체험'], p: '에듀테크를 활용한 기초학력 지도 방법 습득', e: '에듀테크 활용을 통한 학생 맞춤형 지도의 실천력 향상' }, { w: '학습 기록', l: ['학생의 학습 과정을 기록하고 피드백하는 방법', '디지털 학습 기록 활용법'], p: '학습 과정을 기록하고 피드백하는 방법 습득', e: '학습 기록 활용을 통한 지도의 내실화' }, { w: '개인정보', l: ['디지털 도구 사용 시 유의점과 개인정보 보호', '안전한 디지털 활용 약속'], p: '디지털 도구 활용 시 개인정보 보호 방법 숙지', e: '안전한 디지털 활용 문화 정착' }],
+    진단: [{ w: '학습 진단', l: ['학습 부진의 원인을 살피는 진단 방법', '진단 도구 사용법과 결과 해석 실습'], p: '학생의 학습 어려움을 진단하고 맞춤형으로 지원하는 방법 습득', e: '진단 결과를 바탕으로 한 맞춤형 지도의 실천력 향상' }, { w: '느린 학습자', l: ['느린 학습자의 특성 이해와 지도 사례', '느린 학습자의 강점을 살리는 지도'], p: '느린 학습자의 특성을 이해하고 지원하는 방법 습득', e: '느린 학습자 이해를 바탕으로 한 학생 맞춤형 지도의 실천력 향상' }, { w: '개별 지도 계획', l: ['학생 수준에 맞는 개별 지도 계획 세우기', '개별 지도 계획 사례 나눔'], p: '진단 결과를 개별 지도 계획으로 연결하는 방법 습득', e: '개별 지도 계획 수립 역량 향상을 통한 지도의 내실화' }, { w: '난독', l: ['난독 특성의 이해와 읽기 지도 방법', '난독 학생을 위한 지원 사례'], p: '난독 특성을 이해하고 지원하는 방법 습득', e: '난독 이해를 바탕으로 한 읽기 지원의 질 제고' }, { w: '작은 성공', l: ['작은 성공 경험을 쌓게 하는 과제 설계', '성취를 느끼게 하는 과제 제시 방법'], p: '성공 경험을 통해 학습 자신감을 기르는 지도 방법 습득', e: '성공 경험 축적을 통한 학생의 학습 자신감 향상' }],
+    공통: [{ w: '사례 발표', l: ['우수 지도 사례 발표', '현장 사례 발표와 토의'], p: '우수 사례 공유를 통한 지도 노하우 확산', e: '사례 공유를 통한 실천적 지도 역량 신장' }, { w: '실습', l: ['실습과 적용 연습', '모둠별 실습'], p: '실습을 통한 현장 실천 역량 강화', e: '실습을 통한 현장 적용력 향상' }, { w: '정보 공유', l: ['업무 협의 및 정보 공유', '센터 지원 사업 안내'], p: '센터와 현장 간 정보 공유와 협력 강화', e: '정보 공유를 통한 지원 체계의 내실화' }, { w: '외부 강사 특강', l: ['전문가 특강', '외부 강사 특강'], p: '전문가 특강을 통해 기초학력 지도에 필요한 최신 이론과 실제를 습득', e: '전문가 특강을 통한 기초학력 지도 전문성 심화' }]
+  };
+  const KW_TOPIC = { 진로: /진로|꿈|직업/, 정서: /정서|감정|마음|회복탄력|불안|자존감/, 읽기: /한글|문해|읽기|어휘|국어|독서|글쓰기/, 수학: /수학|수리|연산|셈|수감각/, 교구: /교구|교재|보드게임|놀이|게임|카드|사례/, 학습습관: /자기주도|학습 ?코칭|공부 ?습관|학습 ?전략|메타인지|학습 ?역량|학습 ?동기|코칭/, 대화: /상담|대화|소통|질문|관계/, 디지털: /디지털|AI|인공지능|에듀테크|온라인|앱/, 진단: /진단|평가|느린|경계선|부진|난독|학습 ?장애/ };
+  let SEL = []; // 고른 단어 [{w,l,p,e}]
+  const customKw = w => ({ w, custom: true, l: [w + ' 활용 방법과 사례', w + ' 실습과 적용', w + ' 중심 지도 사례 나눔', w + ' 이해와 현장 적용'], p: '「' + w + '」에 대한 이해와 적용 방법 습득', e: '「' + w + '」 활용을 통한 지도 역량 신장' });
+  function suggestKw() { const th = $('theme').value; let list = []; Object.keys(KW_TOPIC).forEach(k => { if (KW_TOPIC[k].test(th)) list = list.concat(KW[k]); }); if (!list.length) list = KW.교구.concat(KW.학습습관); return list.concat(KW.공통).filter(k => !SEL.some(s => s.w === k.w)); }
+  function renderKw() {
+    $('selKw').innerHTML = SEL.length ? SEL.map((k, i) => '<span class="chip sel" data-i="' + i + '">' + esc(k.w) + ' <b>×</b></span>').join('') : '<span class="small">아직 고른 단어가 없습니다 — 아래 단어를 누르거나 직접 입력하세요</span>';
+    $('sugKw').innerHTML = suggestKw().map(k => '<span class="chip sug" data-w="' + esc(k.w) + '">' + esc(k.w) + '</span>').join('');
+  }
+  function addKw(obj) { if (!obj || !obj.w || SEL.some(s => s.w === obj.w)) return; SEL.push(obj); renderKw(); regenText(); regenPress(); }
+  $('sugKw').addEventListener('click', e => { const c = e.target.closest('.chip'); if (!c) return; addKw(suggestKw().find(k => k.w === c.dataset.w)); });
+  $('selKw').addEventListener('click', e => { const c = e.target.closest('.chip'); if (!c) return; SEL.splice(+c.dataset.i, 1); renderKw(); regenText(); regenPress(); });
+  const addTyped = () => { const w = $('kwIn').value.trim(); if (!w) return; const all = [].concat(...Object.values(KW)); addKw(all.find(k => k.w === w) || customKw(w)); $('kwIn').value = ''; };
+  $('kwAdd').onclick = addTyped; $('kwIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addTyped(); } });
+  $('theme').addEventListener('input', renderKw);
+
   let SCHED_SUB = [];
   function regenText() {
     const t = type(), th = kw(); let P = [], E = [];
     SCHED_SUB = picks(pool('did', th), 2).map(x => fixAud(x, t));
-    if (t === 'coach') {
-      const a = acts(); P = a.map(k => PURPOSE[k]); if (!P.length) P = [makePurpose(th, t), makePurpose(th, t)];
-      P.splice(1, 0, pick(COMMON_P.coach)); P = P.slice(0, 4);
-      E = a.map(k => EFFECT[k]); if (!E.length) E = [makeEffect(th, t), makeEffect(th, t)]; if (!a.includes('group')) E.push(pick(COMMON_E.coach)); E = E.slice(0, 4);
-      if (acts().length) { P = picks(P, P.length); E = picks(E, E.length); }
+    if (SEL.length) {
+      P = picks(SEL, SEL.length).map(k => fixAud(k.p, t)).slice(0, 3); if (P.length < 3) P.push(pick(COMMON_P[t]));
+      E = picks(SEL, SEL.length).map(k => fixAud(k.e, t)).slice(0, 3); if (E.length < 3) E.push(pick(COMMON_E[t]));
+    } else if (t === 'coach') {
+      P = [makePurpose(th, t), makePurpose(th, t)]; P.splice(1, 0, pick(COMMON_P.coach)); P = picks(P, 3);
+      E = [makeEffect(th, t), makeEffect(th, t), pick(COMMON_E.coach)]; E = picks(E, 3);
     } else {
       P = [makePurpose(th, t), makePurpose(th, t), pick(COMMON_P[t])]; E = [makeEffect(th, t), makeEffect(th, t), pick(COMMON_E[t])];
       P = picks(P, 3); E = picks(E, 3);
@@ -436,12 +465,12 @@
     const lectCell = $('lect').value.trim() ? $('lect').value.trim() + ($('lectOrg').value.trim() ? '\n(' + $('lectOrg').value.trim() + ')' : '') : '';
     const st = toMin(s0.start), en = toMin(s0.end); let sched;
     if (t === 'coach') {
-      const a = acts(); const main = a.filter(k => k !== 'lend').map(k => AGENDA[k]); if (!main.length) main.push($('theme').value); SCHED_SUB.forEach(x => main.push(' - ' + x));
+      const main = SEL.length ? SEL.filter(k => k.w !== '교구 대여').map(k => pick(k.l)) : [$('theme').value].concat(SCHED_SUB.map(x => ' - ' + x)); const lend = SEL.some(k => k.w === '교구 대여'); const a = lend ? ['lend'] : [];
       sched = [{ t: fromMin(st - 30) + '~' + fromMin(st), min: 30, c: ['등록'], who: '' }, { t: fromMin(st) + '~' + fromMin(st + 10), min: 10, c: ['개회식', '인사말씀'], who: '담당 장학사\n교육지원과장(센터장)' },
         { t: fromMin(st + 10) + '~' + fromMin(en), min: en - st - 10, c: main, who: lectCell || '학습코칭단' }, { t: fromMin(en) + '~', min: '', c: ['업무 협의 및 정보 공유' + (a.includes('lend') ? ', 교구 대여' : ''), '종합 정리 및 폐회'], who: '' }];
     } else {
       sched = [{ t: fromMin(st - 30) + '~' + fromMin(st), min: 30, c: ['등록 및 자료 배부'], who: '' }, { t: fromMin(st) + '~' + fromMin(st + 10), min: 10, c: ['개회식', '인사 말씀'], who: '담당 장학사\n교육지원과장\n(센터장)' },
-        { t: fromMin(st + 10) + '~' + fromMin(en - 10), min: en - st - 20, c: [$('theme').value].concat(SCHED_SUB.map(x => ' - ' + x)), who: lectCell }, { t: fromMin(en - 10) + '~' + fromMin(en), min: 10, c: [ORG + ' 소개 및 사업 안내'], who: '학습상담교사' }, { t: fromMin(en), min: '', c: ['종합정리 및 폐회'], who: '' }];
+        { t: fromMin(st + 10) + '~' + fromMin(en - 10), min: en - st - 20, c: [$('theme').value].concat((SEL.length ? SEL.map(k => pick(k.l)) : SCHED_SUB).map(x => ' - ' + x)), who: lectCell }, { t: fromMin(en - 10) + '~' + fromMin(en), min: 10, c: [ORG + ' 소개 및 사업 안내'], who: '학습상담교사' }, { t: fromMin(en), min: '', c: ['종합정리 및 폐회'], who: '' }];
     }
     const raw = readBudget(); let total = 0;
     const budget = raw.map(b => { const amt = b.unit * b.qty * b.times; total += amt; return { mok: b.mok, item: b.item, calc: won(b.unit) + '원×' + b.qty + b.u + (b.times > 1 ? '×' + b.times + '회' : '') + '=', amt, amtStr: won(amt), note: b.note }; });

@@ -101,14 +101,14 @@
   </section>
 
   <section class="card">
-    <h2><span class="step">4</span>완성된 계획</h2>
+    <h2><span class="step">4</span>적용하고 파일 만들기</h2>
     <div class="row" style="margin-bottom:10px">
-      <button class="btn primary" id="copyBtn" type="button">글 복사하기 (한글에 붙여넣기)</button>
-      <button class="btn" id="docxBtn" type="button">워드 파일(.docx) 내려받기</button>
+      <button class="btn primary" id="applyBtn" type="button" style="font-size:17px;padding:14px 20px">적용 → 한글용 파일 만들기</button>
+      <button class="btn" id="copyBtn" type="button">글만 복사하기</button>
       <button class="btn" id="printBtn" type="button">인쇄 / PDF</button>
     </div>
     <div id="msg" hidden></div>
-    <div class="small" style="margin:6px 0 10px">아래 글은 직접 고칠 수 있습니다(클릭해서 수정). 위 칸을 바꾸면 다시 자동으로 만들어집니다.</div>
+    <div class="small" style="margin:6px 0 10px">위 1~3번을 고친 뒤 <b>적용</b>을 누르면 아래 미리보기가 새로 만들어지고, 한글에서 바로 열리는 파일(.docx)이 내려받아집니다. 한글에서 열어 「다른 이름으로 저장 → 한글 문서(*.hwp)」로 저장하면 됩니다.</div>
   </div>
   <div class="doc" id="doc" contenteditable="true"></div>
 </div>
@@ -208,8 +208,8 @@
     h += '<h2>6. 기대 효과</h2>' + d.effects.map((p, i) => '<p>' + ga[i] + '. ' + esc(p) + '</p>').join('');
     $('doc').innerHTML = h;
   }
-  document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', render));
   render();
+  $('applyBtn').addEventListener('click', () => { render(); makeDocx(); });
 
   const showMsg = (t, err) => { const m = $('msg'); m.hidden = false; m.className = 'msg' + (err ? ' err' : ''); m.textContent = t; };
   // 글 복사: 표는 탭으로 구분해 한글에 붙여넣으면 표로 바뀌기 쉽게
@@ -224,23 +224,23 @@
   }
   $('copyBtn').addEventListener('click', async () => { try { await navigator.clipboard.writeText(docText()); showMsg('복사했습니다. 한글에서 Ctrl+V로 붙여 넣으세요. (표 부분은 블록 지정 후 "문자열을 표로"를 쓰면 표가 됩니다)'); } catch (e) { showMsg('복사가 안 됩니다. 아래 글을 직접 블록 지정해 복사하세요.', true); } });
   $('printBtn').addEventListener('click', () => window.print());
-  $('docxBtn').addEventListener('click', async () => {
+  async function makeDocx() {
     if (!window.docx) { showMsg('워드 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.', true); return; }
     const d = build();
     const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel } = docx;
     const P = (t, o) => new Paragraph(Object.assign({ children: [new TextRun({ text: t, size: 22, font: '바탕', bold: !!(o && o.bold) })], spacing: { after: 60 } }, o && o.align ? { alignment: o.align } : {}, o && o.indent ? { indent: { left: 360 } } : {}));
     const H = t => new Paragraph({ children: [new TextRun({ text: t, size: 26, bold: true, font: '바탕' })], spacing: { before: 240, after: 80 } });
-    const cell = (t, w, bold) => new TableCell({ width: { size: w, type: WidthType.PERCENTAGE }, children: String(t).split('\n').map(x => new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: x, size: 20, bold: !!bold, font: '바탕' })] })) });
-    const tbl = rows => new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: rows.map((r, i) => new TableRow({ children: r.map(c => cell(c.t, c.w, i === 0)) })) });
+    const cell = (c, head) => new TableCell({ width: { size: c.w, type: WidthType.PERCENTAGE }, columnSpan: c.span || 1, shading: head ? { fill: 'E7E6E6' } : undefined, verticalAlign: 'center', children: String(c.t).split('\n').map(x => new Paragraph({ alignment: (c.left && !head) ? AlignmentType.LEFT : AlignmentType.CENTER, children: [new TextRun({ text: x, size: 20, bold: !!head, font: '바탕' })] })) });
+    const tbl = rows => new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: rows.map((r, i) => new TableRow({ tableHeader: i === 0, children: r.map(c => cell(c, i === 0)) })) });
     const kids = [
       new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: d.y + ' ' + ORG, size: 32, bold: true, font: '바탕' })] }),
       new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '학습코칭단 ' + d.m + '월 ' + d.title + ' 운영 계획', size: 32, bold: true, font: '바탕' })], spacing: { after: 120 } }),
       new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: ORG, size: 22, font: '바탕' })], spacing: { after: 240 } }),
       H('1. 목적'), ...d.purposes.map((p, i) => P(ga[i] + '. ' + p, { indent: true })),
       H('2. 세부 추진 계획'), P('가. 일시: ' + d.dateStr, { indent: true }), P('나. 장소: ' + d.place, { indent: true }), P('다. 대상: ' + d.target, { indent: true }), P('라. 세부 운영 일정(단, 사정에 따라 변경될 수 있음)', { indent: true }),
-      tbl([[{ t: '순', w: 7 }, { t: '시간', w: 20 }, { t: '분', w: 8 }, { t: '내  용', w: 43 }, { t: '담당', w: 22 }]].concat(d.sched.map((s, i) => [{ t: i + 1, w: 7 }, { t: s.t, w: 20 }, { t: s.min, w: 8 }, { t: s.c.join('\n'), w: 43 }, { t: s.who.replace(/ \/ /g, '\n'), w: 22 }]))),
+      tbl([[{ t: '순', w: 7 }, { t: '시간', w: 20 }, { t: '분', w: 8 }, { t: '내  용', w: 43 }, { t: '담당', w: 22 }]].concat(d.sched.map((s, i) => [{ t: i + 1, w: 7 }, { t: s.t, w: 20 }, { t: s.min, w: 8 }, { t: s.c.join('\n'), w: 43, left: true }, { t: s.who.replace(/ \/ /g, '\n'), w: 22 }]))),
       H('3. 예산 집행 계획'),
-      tbl([[{ t: '연번', w: 8 }, { t: '목', w: 8 }, { t: '지출내역', w: 16 }, { t: '산출 근거', w: 34 }, { t: '금액(원)', w: 18 }, { t: '비고', w: 16 }]].concat(d.budget.map((b, i) => [{ t: i + 1, w: 8 }, { t: b.mok, w: 8 }, { t: b.item, w: 16 }, { t: b.calc, w: 34 }, { t: won(b.amt), w: 18 }, { t: b.note, w: 16 }])).concat([[{ t: '', w: 8 }, { t: '', w: 8 }, { t: '총계', w: 16 }, { t: '', w: 34 }, { t: won(d.total), w: 18 }, { t: '', w: 16 }]])),
+      tbl([[{ t: '연번', w: 8 }, { t: '목', w: 8 }, { t: '지출내역', w: 16 }, { t: '산출 근거', w: 34 }, { t: '금액(원)', w: 18 }, { t: '비고', w: 16 }]].concat(d.budget.map((b, i) => [{ t: i + 1, w: 8 }, { t: b.mok, w: 8 }, { t: b.item, w: 16 }, { t: b.calc, w: 34, left: true }, { t: won(b.amt), w: 18 }, { t: b.note, w: 16 }])).concat([[{ t: '총계', w: 66, span: 4 }, { t: won(d.total), w: 18 }, { t: '', w: 16 }]])),
       H('4. 현수막 제작 계획'),
       P(ORG + ' 학습코칭단 ' + d.m + '월 ' + d.title, { align: AlignmentType.CENTER }), P('“ ' + d.slogan + ' ”', { align: AlignmentType.CENTER, bold: true }), P(d.theme, { align: AlignmentType.CENTER, bold: true }), P('♣일시: ' + d.dateStr + '  ♣장소: ' + d.place, { align: AlignmentType.CENTER }),
       H('5. 행정 사항'), P('가. 개인적인 사정으로 불참 시 담당자에게 사전 유선 연락', { indent: true }), P('나. 청도기초학력지원센터 담당 기초학력 전담교사 참석 가능(필요시 수업 일정 조정)', { indent: true }),
@@ -251,8 +251,8 @@
     const name = d.y + '학년도 학습코칭단 ' + d.m + '월 ' + d.title + ' 운영 계획.docx';
     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
-    showMsg('저장했습니다: ' + name + ' — 한글에서 열어 서식을 다듬어 쓰세요.');
-  });
+    showMsg('적용했습니다. 파일 저장: ' + name + ' — 한글에서 열어 「다른 이름으로 저장 → *.hwp」로 저장하세요.');
+  }
 })();
 </script>
 </body>

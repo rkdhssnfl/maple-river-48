@@ -240,7 +240,7 @@
   function applyType() {
     const t = type(), P = PRESET[t];
     document.querySelectorAll('#types label').forEach(l => l.classList.toggle('on', l.querySelector('input').value === t));
-    $('title').value = P.title; $('theme').value = P.theme; $('slogan').value = P.slogan; $('slogan').dataset.auto = '1'; $('sloganSub').value = P.sloganSub;
+    $('title').value = P.title; $('theme').value = P.theme; $('slogan').value = P.slogan; $('slogan').dataset.auto = '1'; $('sloganSub').value = P.sloganSub; $('sloganSub').dataset.auto = '1';
     $('sessions').innerHTML = ''; P.sessions.forEach((s, i) => $('sessions').appendChild(sessRow(s, i)));
     $('targetNote').value = P.note || '';
     $('bud').innerHTML = ''; P.budget.forEach(r => $('bud').appendChild(budRow(r)));
@@ -309,6 +309,9 @@
     quote: ['아이 한 명 한 명의 배움을 끝까지 책임지는 것이 우리의 역할', '현장의 경험이 모일 때 교육은 한 걸음 나아간다'] };
   // 공통 재료 (주제 핵심어를 끼워 넣음)
   const TITLE_T = ['{n}로 여는 배움의 문', '아이의 {n}가 자라는 시간', '{n}에서 시작하는 성장', '손에 잡히는 {n}, 눈에 보이는 성장', '함께 배우는 {n}, 함께 자라는 아이', '{n}가 바꾸는 배움의 시간', '한 아이도 놓치지 않는 {n}', '{n}로 다시 세우는 배움의 기초', '{n}, 배움의 든든한 뿌리', '학교와 가정이 함께 세우는 {n}', '{n}의 힘, 배움의 시작', '{n} 하나가 아이를 바꾼다', '오늘의 {n}, 내일의 자신감', '{n}로 채우는 배움의 빈칸', '천천히, 그러나 단단하게 자라는 {n}', '{n}에 담은 성장의 약속', '{n}로 만나는 아이의 가능성', '배움이 즐거워지는 {n}', '{n}가 열어 주는 새로운 배움', '작은 {n}, 큰 성장'];
+  const SUB_T = ['학교와 가정이 함께하는 {n} 지원', '{n}로 함께 만드는 성장', '{n} 중심 기초학력 지원', '아이의 {n}를 함께 돌보는 시간', '{n}로 여는 배움의 길', '{n}와 기초학력, 함께 자라는 아이', '{n}를 살리는 학습코칭', '현장에서 바로 쓰는 {n} 지원', '{n}로 다시 시작하는 배움', '한 아이도 놓치지 않는 {n} 지원'];
+  const P1_T = ['경산교육지원청(교육장 {edu}) {org}는 {where}에서 {aud}을 대상으로 ‘{th}’{을} 주제로 {name}를 진행하였다.', '{org}(경산교육지원청 교육장 {edu})는 {where}에서 {aud}을 대상으로 {name}를 열고 ‘{th}’{을} 주제로 강의와 실습을 진행하였다.', '경산교육지원청(교육장 {edu}) {org}는 ‘{th}’{을} 주제로 한 {name}를 {where}에서 {aud}을 대상으로 개최하였다.', '{aud}을 대상으로 한 {org}의 {name}가 {where}에서 열렸다. 경산교육지원청(교육장 {edu})이 운영하는 센터는 이번 연수에서 ‘{th}’{을} 주제로 다루었다.'];
+  let p1Idx = 0;
   const PUR_PRE = ['', '', '학생 맞춤형 지도를 위한 ', '현장 적용을 위한 ', '기초학력 향상을 위한 ', '학생의 성장을 돕는 ', '실천 중심의 ', '사례 중심의 '];
   const PUR_END = ['습득', '습득을 통한 지도 역량 강화', '이해와 적용', '습득 및 현장 실천 역량 강화', '공유를 통한 전문성 신장', '습득을 통한 실천적 전문성 신장', '이해를 바탕으로 한 지도 방안 모색', '익힘을 통한 지도의 질 제고'];
   const EFF_OBJ = ['학생 맞춤형 지도의 실천력 향상', '지도 전문성 신장', '학생 지원의 질 제고', '현장 실천 역량 강화', '학생의 학습 참여도와 자신감 향상', '지도 역량 신장', '기초학력 지원의 질 제고', '학생의 자기주도 학습 능력 증진', '지도의 내실화', '실천적 지도 역량 함양', '학생 이해를 바탕으로 한 맞춤형 지원 강화', '우수 사례 확산'];
@@ -338,7 +341,16 @@
   const audWord = { coach: '학습코칭단', teacher: '교사', parent: '학부모' };
   const fixAud = (s, t) => t === 'parent' ? s.replace(/자녀\(학생\)/g, '자녀').replace(/학생 맞춤형/g, '자녀 맞춤형').replace(/학생(의|이|을|과|에게)/g, '자녀$1') : s.replace(/자녀\(학생\)/g, '학생');
   const fresh = (key, fn) => { let v = fn(), i = 0; while (v === LAST[key] && i++ < 5) v = fn(); LAST[key] = v; return v; };
-  const nounJosa = (tpl, n) => tpl.replace(/\{n\}([가-힣]?)/g, (m, j) => n + (j === '가' ? (bat(n) ? '이' : '가') : j === '로' ? (bat(n) && n.slice(-1) !== '를' ? '으로' : '로') : j));
+  const nounJosa = (tpl, n) => tpl.replace(/\{n\}([가-힣]?)/g, (m, j) => { const b = bat(n); return n + ({ '가': b ? '이' : '가', '를': b ? '을' : '를', '와': b ? '과' : '와', '는': b ? '은' : '는', '로': (b && n.slice(-1) !== '를') ? '으로' : '로' }[j] || j); });
+  function makeSub(th) { const ts = topicOf(th); const n = pick(ts.flatMap(t => t.nouns)); return type() === 'coach' && Math.random() < 0.5 ? th : nounJosa(pick(SUB_T), n); }
+  function computeP1() {
+    const t = type(), ss = readSessions(), th = kw(), N = TYPE_NAME[t];
+    const total = ss.reduce((s, x) => s + (x.n || 0), 0);
+    const where = ss.map(s => fmtLong(s.date) + ' ' + s.place.replace(/\s*\d*층?\s*(대회의실|2강당|201호|강당).*$/, '')).join(', ');
+    const aud = t === 'coach' ? '학습코칭단' : '경산·청도 지역 ' + audWord[t] + ' ' + total + '여명';
+    const name = t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value;
+    return P1_T[p1Idx % P1_T.length].replace(/\{edu\}/g, $('eduGs').value).replace(/\{org\}/g, ORG).replace(/\{where\}/g, where).replace(/\{aud\}/g, aud).replace(/\{th\}/g, th).replace(/\{을\}/g, eul(th)).replace(/\{name\}/g, name);
+  }
   function makeTitle(th) { const ts = topicOf(th); const n = pick(ts.flatMap(t => t.nouns)); return nounJosa(pick(TITLE_T), n); }
   const makePurpose = (th, t) => { const c = pick(pool('core', th)); return fixAud((c.length < 22 ? pick(PUR_PRE) : '') + c + ' ' + pick(PUR_END), t); };
   const makeEffect = (th, t) => fixAud(pick(pool('core', th)) + ' 습득을 통한 ' + pick(EFF_OBJ), t);
@@ -357,8 +369,11 @@
     }
     $('purpose').value = fresh('P', () => P.join('\n')); $('effect').value = fresh('E', () => E.join('\n'));
     if (!$('slogan').value || $('slogan').dataset.auto === '1') { $('slogan').value = fresh('S', () => makeTitle(th)); $('slogan').dataset.auto = '1'; }
+    if (!$('sloganSub').value || $('sloganSub').dataset.auto === '1') { $('sloganSub').value = fresh('SS', () => makeSub(th)); $('sloganSub').dataset.auto = '1'; }
   }
   $('slogan').addEventListener('input', () => $('slogan').dataset.auto = '0');
+  $('sloganSub').addEventListener('input', () => $('sloganSub').dataset.auto = '0');
+  $('p1').addEventListener('input', () => $('p1').dataset.edited = '1');
 
   function regenPress() {
     const t = type(), ss = readSessions(), th = kw(), N = TYPE_NAME[t];
@@ -369,7 +384,7 @@
     const what = pick(pool('core', th)).replace(/ 방안$|의 실제 적용 방법$/, ' 방법'); const did = picks(pool('did', th), 3).map(x => fixAud(x, t)).join(', ');
     const qs = picks(pool('quote', th).concat(picks(QUOTE_C, 3)), 2);
     const aud = t === 'coach' ? '학습코칭단' : '경산·청도 지역 ' + audWord[t] + ' ' + total + '여명';
-    const p1 = '경산교육지원청(교육장 ' + eduGs + ') ' + ORG + '는 ' + where + '에서 ' + aud + '을 대상으로 ‘' + th + '’' + eul(th) + ' 주제로 ' + (t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value) + '를 진행하였다.';
+    p1Idx = Math.floor(rnd() * P1_T.length); if (P1_T.length > 1 && $('p1').value === computeP1()) p1Idx = (p1Idx + 1) % P1_T.length; const p1 = computeP1(); $('p1').dataset.edited = '';
     const p2 = fresh('p2', () => pick(INTRO[t]).replace('{what}', what).replace('{을}', eul(what)) + ' ' + pick(BODY[t]).replace('{did}', did) + ' ' + pick(CLOSE[t]));
     const speaker = (s, i) => t === 'coach' ? ORG + '장 ' + headGs + ' 교육지원과장은' : s.region === '청도' ? '청도교육지원청 ' + (t === 'parent' ? eduCd + ' 교육장은' : headCd + ' 교육지원과장은') : (t === 'parent' ? '경산교육지원청 ' + eduGs + ' 교육장은' : ORG + '장 ' + headGs + ' 교육지원과장은');
     const q2 = picks(Q2[t], 2);
@@ -574,7 +589,7 @@
     if (which !== 'plan') { await new Promise(r => setTimeout(r, 600)); names.push(await buildDocx(r.blocks, r.fileName)); }
     showMsg('저장한 파일: ' + names.join(' / ') + ' — 한글에서 열어 「다른 이름으로 저장 → *.hwp」로 저장하세요.');
   }
-  $('applyBtn').onclick = () => { renderAll(); showMsg('적용했습니다. 아래 미리보기를 확인하세요.'); };
+  $('applyBtn').onclick = () => { if (!$('p1').dataset.edited) $('p1').value = computeP1(); renderAll(); showMsg('적용했습니다. 아래 미리보기를 확인하세요.'); };
   $('bothBtn').onclick = () => make('both'); $('planBtn').onclick = () => make('plan'); $('pressBtn').onclick = () => make('press');
   $('printBtn').onclick = () => window.print();
   $('copyBtn').onclick = async () => {

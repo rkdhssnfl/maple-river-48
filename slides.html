@@ -13,15 +13,15 @@ body{display:flex;flex-direction:column}
 .nav button:disabled{background:#2c3a34;color:#7a8a83}
 .hint{font-size:12px;color:#8fa89e;text-align:center;padding:0 0 6px}
 </style></head><body>
-<div class="bar"><a href="./">← 제출 페이지</a><span class="sp"></span><span class="n" id="n"></span><a href="guide.pptx" download="코칭단_제출안내.pptx">PPT 받기</a></div>
+<div class="bar"><a href="./">← 제출 페이지</a><span class="sp"></span><span class="n" id="n"></span><a href="guide.pptx?v=3" download="코칭단_제출안내.pptx">PPT 받기</a></div>
 <div class="stage" id="st"><img id="im" alt="안내 슬라이드"></div>
 <div class="hint">좌우로 밀거나 아래 버튼으로 넘겨요 · 휴대폰을 가로로 돌리면 더 크게 보여요</div>
 <div class="nav"><button id="pv">‹ 이전</button><button id="nx">다음 ›</button></div>
 <script>
 var T=24,i=1;try{var h=parseInt(location.hash.slice(1));if(h>=1&&h<=T)i=h}catch(e){}
 var im=document.getElementById('im'),n=document.getElementById('n'),pv=document.getElementById('pv'),nx=document.getElementById('nx');
-function show(k){i=Math.max(1,Math.min(T,k));im.src='slides/s'+String(i).padStart(2,'0')+'.jpg';n.textContent=i+' / '+T;pv.disabled=i==1;nx.disabled=i==T;try{history.replaceState(null,'','#'+i)}catch(e){}
- if(i<T){new Image().src='slides/s'+String(i+1).padStart(2,'0')+'.jpg'}}
+function show(k){i=Math.max(1,Math.min(T,k));im.src='slides/s'+String(i).padStart(2,'0')+'.jpg?v=3';n.textContent=i+' / '+T;pv.disabled=i==1;nx.disabled=i==T;try{history.replaceState(null,'','#'+i)}catch(e){}
+ if(i<T){new Image().src='slides/s'+String(i+1).padStart(2,'0')+'.jpg?v=3'}}
 pv.onclick=function(){show(i-1)};nx.onclick=function(){show(i+1)};
 document.addEventListener('keydown',function(e){if(e.key=='ArrowRight')show(i+1);if(e.key=='ArrowLeft')show(i-1)});
 var x0=null;var st=document.getElementById('st');

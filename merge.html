@@ -54,8 +54,8 @@
   /* 연간 일지 (연간 페이지와 같은 모양) */
   :root { --mk: #1e5fa8; --meet: #2e7d32; }
   .yr .ytbl { overflow-x: auto; }
-  table.yt { border-collapse: collapse; font-size: 12px; width: auto; table-layout: auto; font-variant-numeric: tabular-nums; }
-  table.yt th, table.yt td { border: 1px solid var(--line); padding: 4px 6px; text-align: center; white-space: nowrap; overflow-wrap: normal; vertical-align: middle; }
+  table.yt { border-collapse: collapse; font-size: 14px; width: 100%; min-width: 100%; table-layout: auto; font-variant-numeric: tabular-nums; }
+  table.yt th, table.yt td { border: 1px solid var(--line); padding: 6px 8px; text-align: center; white-space: nowrap; overflow-wrap: normal; vertical-align: middle; }
   table.yt th { background: var(--accent-soft); font-weight: 500; }
   table.yt td.l { text-align: left; }
   .yr .mk { color: var(--mk); font-weight: 700; } .yr .meet { color: var(--meet); font-weight: 700; }
@@ -63,7 +63,7 @@
   table.yt th.mo { cursor: pointer; text-decoration: underline dotted; } table.yt th.mo.on { background: var(--accent); color: var(--accent-fg); }
   table.yt td.mcell { cursor: pointer; } table.yt td.mcell:hover { background: var(--accent-soft); } table.yt td.mcell.on { background: var(--accent); color: var(--accent-fg); } table.yt td.mcell.on .mk, table.yt td.mcell.on .meet { color: var(--accent-fg); }
   .yr .ystats { display: flex; gap: 18px; flex-wrap: wrap; margin: 8px 0; font-variant-numeric: tabular-nums; }
-  .yr .ystats .k { font-size: 11px; color: var(--muted); } .yr .ystats .v { font-size: 18px; font-weight: 700; }
+  .yr .ystats .k { font-size: 12px; color: var(--muted); } .yr .ystats .v { font-size: 20px; font-weight: 700; }
   .yr h4 { margin: 12px 0 4px; font-size: 14px; }
   .cal { margin-top: 12px; }
   .cal-head { display: flex; align-items: center; justify-content: space-between; font-size: 13px; margin-bottom: 6px; flex-wrap: wrap; gap: 6px; }
@@ -984,12 +984,12 @@
     $('jSub').textContent = sub.length; $('jMiss').textContent = rows.length - sub.length;
     $('jState').textContent = JOURNAL.size ? '(' + JOURNAL.size + '명 읽음)' : '';
     $('jAll').disabled = !sub.length;
-    let html = '<tr><th>순</th><th>지역</th><th>이름</th><th>제출</th><th>제출 시각</th><th>파일</th><th>받기</th></tr>';
-    if (!rows.length) html += '<tr><td colspan="7" class="small">일지 응답 엑셀을 올리면 표가 표시됩니다.</td></tr>';
+    let html = '<tr><th style="width:8%">순</th><th style="width:12%">지역</th><th style="width:18%">이름</th><th style="width:14%">제출</th><th>파일</th><th style="width:14%">받기</th></tr>';
+    if (!rows.length) html += '<tr><td colspan="6" class="small">일지 응답 엑셀을 올리면 표가 표시됩니다.</td></tr>';
     rows.forEach((r, i) => {
       html += '<tr><td>' + (i + 1) + '</td><td>' + esc(r.region) + '</td><td>' + esc(r.name) + (r.unknown ? ' <span class="small">(명단 없음)</span>' : '') + '</td>' +
         '<td class="' + (r.j && r.j.link ? 'ok">제출' : 'warn">미제출') + '</td>' +
-        '<td class="small">' + (r.j ? esc(r.j.tRaw) : '') + '</td><td class="l small">' + (r.j ? esc(r.j.fname) : '') + '</td>' +
+        '<td class="l small">' + (r.j ? esc(r.j.fname) : '') + '</td>' +
         '<td>' + (r.j && r.j.link ? '<button class="btn ghost" data-j="' + esc(norm(r.j.name)) + '" type="button">받기</button>' : '') + '</td></tr>';
     });
     $('jTbl').innerHTML = html;

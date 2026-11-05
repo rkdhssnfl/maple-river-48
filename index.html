@@ -541,8 +541,8 @@
       if (r === 0) html += '<td rowspan="' + rows + '">' + esc(state.name) + '</td>';
       html += '<td class="l' + (ln.meet ? ' mt' : '') + '">' + esc(ln.group) + '</td>';
       for (let k = 0; k < DATE_COLS; k++) {
-        const cls = ln.dates[k] ? (ln.meet ? ' class="mt"' : (ln.mk && ln.mk[k] ? ' class="mk"' : '')) : '';
-        html += '<td' + cls + '>' + (ln.dates[k] ? md(ln.dates[k]) : '') + '</td>';
+        const cls = ln.dates[k] ? (ln.meet ? ' class="mt"' : (ln.mk && ln.mk[k] ? ' class="mk"' : '')) : (ln.meet && k === 0 && !ln.dates.length && ln.note ? ' class="mt"' : '');
+        html += '<td' + cls + '>' + (ln.dates[k] ? md(ln.dates[k]) : (ln.meet && k === 0 && !ln.dates.length ? esc(ln.note || '') : '')) + '</td>';
       }
       if (r === 0) html += '<td rowspan="' + rows + '">' + total + '</td>';
       html += '</tr>';
@@ -626,6 +626,7 @@
       if (!ln) continue;
       ws.getCell(r, 2).value = ln.group;
       if (ln.meet) ws.getCell(r, 2).font = Object.assign({}, meetFont, { size: 11 });
+      if (ln.meet && !ln.dates.length && ln.note) { ws.getCell(r, 3).value = ln.note; ws.getCell(r, 3).font = meetFont; }
       ln.dates.forEach((d, k) => {
         const cell = ws.getCell(r, 3 + k); cell.value = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); // 시차로 하루 밀림 방지
         if (ln.meet) cell.font = meetFont; else if (ln.mk && ln.mk[k]) cell.font = mkFont;

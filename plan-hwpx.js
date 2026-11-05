@@ -215,5 +215,44 @@ window.HWPX = (() => {
     names.filter(n => n !== 'mimetype').forEach(n => z2.file(n, files[n], { compression: 'DEFLATE', createFolders: false }));
     return z2.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip' });
   }
-  return { build, buildPress };
+  // ---------- 등록부 ----------
+  // m = { title, blocks: [{ dateStr, place, cols, rows: [[...]] }] }
+  async function buildReg(templateBuf, m) {
+    const zip = await JSZip.loadAsync(templateBuf);
+    const xml = await zip.file('Contents/section0.xml').async('string');
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    const sec = doc.documentElement; const ps = paras(sec);
+    const isTitle = p => { const t = tblOf(p); return t && t.getAttribute('colCnt') === '4' && rows(t).length === 3; };
+    const starts = []; ps.forEach((p, i) => { if (isTitle(p)) starts.push(i); });
+    const tpls = starts.map((s, k) => { const blk = ps.slice(s, k + 1 < starts.length ? starts[k + 1] : ps.length); const ti = blk.findIndex(p => tblOf(p) && !isTitle(p)); const tbl = tblOf(blk[ti]); return { head: blk.slice(0, ti), tableP: blk[ti], cols: +tbl.getAttribute('colCnt'), secRun: q(ps[0], 'hp:run')[0] }; });
+    const pick = cols => tpls.find(t => t.cols === cols) || tpls[0];
+    const secRun = q(ps[0], 'hp:run')[0].cloneNode(true); // 구역 설정은 첫 문단에만
+    ps.forEach(removeP);
+    const PAGE1 = 14, PAGEN = 20;
+    m.blocks.forEach((b, bi) => {
+      const T = pick(b.cols);
+      T.head.forEach((p, i) => {
+        const c = p.cloneNode(true);
+        q(c, 'hp:run').forEach(r => { if (q(r, 'hp:secPr').length || q(r, 'hp:ctrl').length) c.removeChild(r); });
+        if (i === 0) { if (bi === 0) c.insertBefore(secRun.cloneNode(true), c.firstChild); c.setAttribute('pageBreak', bi === 0 ? '0' : '1'); const tc = cells(rows(tblOf(c))[1])[0]; setCell(tc, m.title); }
+        const tx = ptext(c); if (/^○ 일시/.test(tx)) setP(c, '○ 일시: ' + b.dateStr); if (/^○ 장소/.test(tx)) setP(c, '○ 장소: ' + b.place);
+        sec.appendChild(c);
+      });
+      const chunks = []; const rowsAll = b.rows.map((r, i) => [String(i + 1)].concat(r));
+      chunks.push(rowsAll.slice(0, PAGE1)); for (let i = PAGE1; i < rowsAll.length; i += PAGEN) chunks.push(rowsAll.slice(i, i + PAGEN));
+      chunks.forEach(ch => { const tp = T.tableP.cloneNode(true); const tbl = tblOf(tp); const tplRow = rows(tbl)[1]; fillTable(tbl, 1, tplRow, ch.map(r => r.concat(['', '']).slice(0, T.cols))); sec.appendChild(tp); });
+      const blank = T.head[1] ? T.head[1].cloneNode(true) : null; if (blank) { setP(blank, ''); sec.appendChild(blank); }
+    });
+    // 복제된 표의 id·zOrder를 고유하게
+    let id = 1700000000, z = 0; Array.from(sec.getElementsByTagName('hp:tbl')).forEach(tb => { tb.setAttribute('id', String(id++)); tb.setAttribute('zOrder', String(z++)); });
+    let out = new XMLSerializer().serializeToString(doc);
+    if (!/^<\?xml/.test(out)) out = '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>' + out;
+    zip.file('Contents/section0.xml', out); zip.remove('Preview/PrvText.txt'); zip.remove('Preview/PrvImage.png');
+    const files = {}; const names = Object.keys(zip.files).filter(n => !zip.files[n].dir);
+    for (const n of names) files[n] = await zip.file(n).async('uint8array');
+    const z2 = new JSZip(); z2.file('mimetype', files['mimetype'], { compression: 'STORE', createFolders: false });
+    names.filter(n => n !== 'mimetype').forEach(n => z2.file(n, files[n], { compression: 'DEFLATE', createFolders: false }));
+    return z2.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip' });
+  }
+  return { build, buildPress, buildReg };
 })();

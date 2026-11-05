@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>연수 등록부 만들기</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="plan-hwpx.js?v=3"></script>
+<style>
+  html, body { margin: 0; } [hidden] { display: none !important; }
+  :root { --bg:#f4f5f7; --surface:#fff; --fg:#1c2430; --muted:#66707d; --line:#d9dee5; --accent:#1d5fa6; --accent-fg:#fff; --accent-soft:#e3edf8; --input:#fffbe6; --err:#c62828; }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--fg); font-family: "Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; font-size: 15px; line-height: 1.5; }
+  .wrap { display: grid; grid-template-columns: minmax(360px, 520px) minmax(0, 1fr); gap: 20px; align-items: start; padding: 16px 16px 48px; }
+  .docs { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; min-width: 0; }
+  .docs .scale { transform-origin: 0 0; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } .docs { position: static; max-height: none; } }
+  h1 { font-size: 20px; margin: 0 0 4px; } .sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  .homebtn { display:inline-block; margin:0 0 10px; padding:6px 12px; border-radius:999px; background:#1f6f5c; color:#fff; font-size:13px; font-weight:700; text-decoration:none; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 15px; margin: 0 0 10px; }
+  .step { display:inline-block; background:var(--accent); color:var(--accent-fg); border-radius:999px; font-size:12px; padding:1px 9px; margin-right:6px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 14px; }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+  input, select, textarea { font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--input); color: var(--fg); width: 100%; }
+  textarea { min-height: 90px; line-height: 1.5; font-size: 14px; }
+  .wide { grid-column: 1 / -1; }
+  .btn { font: inherit; font-size: 15px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; }
+  .btn.sm { font-size: 13px; padding: 6px 10px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .small { font-size: 12px; color: var(--muted); }
+  .msg { margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); }
+  .types { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .types label { flex:1; min-width:120px; text-align:center; padding:12px; border:2px solid var(--line); border-radius:12px; cursor:pointer; font-weight:700; background:var(--surface); }
+  .types input { display:none; } .types label.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+  .drop { border: 2px dashed var(--line); border-radius: 10px; padding: 14px; text-align: center; color: var(--muted); font-size: 14px; background: #fafbfc; }
+  .drop.on { border-color: var(--accent); background: var(--accent-soft); }
+  .sess { border:1px dashed var(--line); border-radius:10px; padding:10px; margin-bottom:8px; }
+  .sess .h { font-weight:700; font-size:13px; margin-bottom:6px; }
+  /* 미리보기: 한글 등록부 양식 */
+  .page { width: 210mm; min-height: 297mm; padding: 20mm 20mm 15mm; background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,.18); box-sizing: border-box; color: #000; font-family: "맑은 고딕","Malgun Gothic","Noto Sans KR",sans-serif; font-size: 13pt; margin-bottom: 12px; }
+  .page .bar { display: flex; height: 2.6pt; } .page .bar i { flex: 1; }
+  .page .ttl { font-size: 16pt; font-weight: 700; text-align: center; padding: 6pt 0; }
+  .page .info { margin: 10pt 0 8pt; font-size: 13pt; line-height: 1.7; }
+  .page table { border-collapse: collapse; width: 100%; font-size: 12pt; }
+  .page th, .page td { border: 0.12mm solid #000; text-align: center; height: 30pt; padding: 0 3pt; }
+  .page th { background: #d9ead3; font-weight: 400; height: 24pt; }
+  .page.p5 th:nth-child(1) { width: 9%; } .page.p5 th:nth-child(2) { width: 36%; } .page.p5 th:nth-child(3) { width: 20%; } .page.p5 th:nth-child(4) { width: 20%; }
+  .page.p6 th:nth-child(1) { width: 8%; } .page.p6 th:nth-child(2) { width: 14%; } .page.p6 th:nth-child(3) { width: 23%; } .page.p6 th:nth-child(4) { width: 23%; } .page.p6 th:nth-child(5) { width: 21%; }
+  .page.p7 th:nth-child(1) { width: 7%; } .page.p7 th:nth-child(2) { width: 10%; } .page.p7 th:nth-child(3) { width: 25%; } .page.p7 th:nth-child(4) { width: 10%; } .page.p7 th:nth-child(5) { width: 17%; } .page.p7 th:nth-child(6) { width: 19%; }
+  @media print { body { background: #fff; } .noprint { display: none !important; } .wrap { display: block; padding: 0; } .docs { position: static; max-height: none; overflow: visible; } .docs .scale { transform: none !important; height: auto !important; } .page { box-shadow: none; margin: 0; page-break-after: always; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="noprint">
+  <a href="home.html" class="homebtn">⌂ 관리 모음</a>
+  <h1>연수 등록부 만들기</h1>
+  <p class="sub">코칭단 연수는 일시·장소만 넣으면, 교사·학부모 연수는 참석자 명단 엑셀을 올리면 등록부가 한글 양식 그대로 만들어집니다. 명단은 이 페이지(서버)에 올라가지 않고 내 브라우저 안에서만 처리됩니다.</p>
+
+  <section class="card">
+    <h2><span class="step">1</span>연수 종류</h2>
+    <div class="types" id="types">
+      <label class="on"><input type="radio" name="type" value="coach" checked>학습코칭단 연수</label>
+      <label><input type="radio" name="type" value="teacher">교사 연수</label>
+      <label><input type="radio" name="type" value="parent">학부모 연수</label>
+    </div>
+    <div class="grid">
+      <label class="f">연도<input type="number" id="year" value="2026"></label>
+      <label class="f wide">등록부 제목<input type="text" id="title"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">2</span>일시·장소</h2>
+    <div id="sessions"></div>
+  </section>
+
+  <section class="card" id="coachCard">
+    <h2><span class="step">3</span>코칭단 명단 <span class="small">(이 브라우저에만 저장됩니다)</span></h2>
+    <div id="rosterState" class="small" style="margin-bottom:8px"></div>
+    <div class="drop" id="rDrop">명단 엑셀 파일을 여기에 놓거나 클릭해서 선택 (교통비 양식, 코칭일자 왈라 응답 등 지역·이름 열이 있는 파일)<input type="file" id="rFile" accept=".xlsx" hidden></div>
+    <details style="margin-top:8px"><summary class="small">또는 글로 붙여넣기 (한 줄에 "지역 이름")</summary>
+      <textarea id="rText" placeholder="경산 홍길동&#10;청도 김철수"></textarea>
+      <div class="row" style="margin-top:6px"><button class="btn sm" type="button" id="rTextBtn">이 명단으로 저장</button></div>
+    </details>
+    <div class="row" style="margin-top:8px"><button class="btn sm" type="button" id="rClear">저장된 명단 지우기</button></div>
+  </section>
+
+  <section class="card" id="xlsCard" hidden>
+    <h2><span class="step">3</span>참석자 명단 엑셀 올리기</h2>
+    <div class="drop" id="xDrop">참석자 명단 엑셀(붙임2)을 여기에 놓거나 클릭해서 선택<br><span class="small">지역·학교명(소속)·성명 열을 자동으로 찾습니다. 시트가 여러 개면 연수 종류에 맞는 시트를 씁니다.</span><input type="file" id="xFile" accept=".xlsx" hidden></div>
+    <div id="xState" class="small" style="margin-top:8px"></div>
+  </section>
+
+  <section class="card" id="vipCard">
+    <h2><span class="step">4</span>내빈·관계자 <span class="small">(한 줄에 "소속 | 직책 | 성명", 비우면 표가 빠집니다)</span></h2>
+    <textarea id="vip"></textarea>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">5</span>적용 · 파일 내려받기</h2>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn primary" id="applyBtn" type="button" style="font-size:17px;padding:14px 20px">적용 (미리보기 갱신)</button>
+      <button class="btn primary" id="hwpxBtn" type="button">등록부 한글 파일(.hwpx)</button>
+      <button class="btn" id="printBtn" type="button">인쇄 / PDF</button>
+    </div>
+    <div id="msg" hidden></div>
+    <div class="small">한글 파일은 보내주신 등록부 양식에 명단만 채운 것입니다. 첫 장 14명, 다음 장부터 20명씩 표가 이어집니다.</div>
+  </section>
+  </div>
+  <div class="docs"><div class="scale" id="scale"><div id="pages"></div></div></div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const ORG = '경산기초학력거점지원센터';
+  const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const pd = s => { const d = new Date(s + 'T00:00:00'); return isNaN(d) ? null : d; };
+  const fmtD = s => { const d = pd(s); return d ? d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate() + '.(' + DOW[d.getDay()] + ')' : ''; };
+  const addDays = (s, n) => { const d = pd(s); if (!d) return ''; d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+  const today = new Date().toISOString().slice(0, 10);
+  const type = () => document.querySelector('input[name=type]:checked').value;
+  const TITLE = { coach: '학습코칭단 연수회 등록부', teacher: '교사 역량 강화 연수 등록부', parent: '학부모 연수 등록부' };
+  const VIP = {
+    coach: '경산교육지원청 | 교육장 | 정영석\n경산교육지원청 | 교육지원과장 | 허영선\n청도교육지원청 | 교육지원과장 | 신운식\n경산교육지원청 | 장학사 | 장성혜\n청도교육지원청 | 장학사 | 김지연\n청도초등학교 | 기초학력 전담교사 | 조세은\n경산교육지원청 | 학습상담교사 | 권태우\n경산교육지원청 | 학습상담사 | 홍민지',
+    teacher: '청도교육지원청 | 교육지원과장 | 신운식\n청도교육지원청 | 장학사 | 김지연\n경산교육지원청 | 장학사 | 장성혜\n청도교육지원청 | 기초학력전담교사 | 조세은\n경산교육지원청 | 학습상담교사 | 권태우\n경산교육지원청 | 학습상담사 | 홍민지',
+    parent: ''
+  };
+
+  // ---------- 회차 ----------
+  function sessRow(s, i, showRegion) {
+    const d = document.createElement('div'); d.className = 'sess';
+    d.innerHTML = '<div class="h">' + (showRegion ? esc(s.region) + ' 회차' : '일시·장소') + '</div><div class="grid">' +
+      (showRegion ? '<label class="f">지역<input data-k="region" value="' + esc(s.region) + '"></label>' : '') +
+      '<label class="f">날짜<input type="date" data-k="date" value="' + esc(s.date) + '"></label>' +
+      '<label class="f">시작 시간 (비우면 날짜만)<input type="time" data-k="start" value="' + esc(s.start || '') + '"></label>' +
+      '<label class="f wide">장소<input data-k="place" value="' + esc(s.place) + '"></label></div>';
+    return d;
+  }
+  const readSessions = () => Array.from($('sessions').children).map(d => { const o = {}; d.querySelectorAll('[data-k]').forEach(el => o[el.dataset.k] = el.value); return o; });
+  function applyType() {
+    const t = type();
+    document.querySelectorAll('#types label').forEach(l => l.classList.toggle('on', l.querySelector('input').value === t));
+    $('title').value = $('year').value + ' ' + ORG + ' ' + TITLE[t];
+    $('sessions').innerHTML = '';
+    if (t === 'coach') $('sessions').appendChild(sessRow({ date: today, start: '', place: '경산교육지원청 학생교육지원관 201호' }, 0, false));
+    else { $('sessions').appendChild(sessRow({ region: '청도', date: today, start: t === 'teacher' ? '14:00' : '10:00', place: '청도교육지원청 대회의실' }, 0, true)); $('sessions').appendChild(sessRow({ region: '경산', date: addDays(today, 14), start: t === 'teacher' ? '14:00' : '10:00', place: '경산교육지원청 2강당' }, 1, true)); }
+    $('coachCard').hidden = t !== 'coach'; $('xlsCard').hidden = t === 'coach'; $('vipCard').hidden = t === 'parent';
+    $('vip').value = VIP[t];
+    render();
+  }
+  document.querySelectorAll('input[name=type]').forEach(r => r.addEventListener('change', applyType));
+  $('year').addEventListener('change', () => { $('title').value = $('year').value + ' ' + ORG + ' ' + TITLE[type()]; });
+
+  // ---------- 코칭단 명단 (localStorage) ----------
+  const KEY = 'coachRoster.v1';
+  function loadRoster() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  function saveRoster(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) { showMsg('이 브라우저에는 저장할 수 없습니다(시크릿 모드 등). 매번 올려 주세요.', true); } ROSTER = list; rosterState(); render(); }
+  let ROSTER = loadRoster();
+  function rosterState() {
+    const g = ROSTER.filter(r => r.region === '경산').length, c = ROSTER.filter(r => r.region === '청도').length, e = ROSTER.length - g - c;
+    $('rosterState').textContent = ROSTER.length ? '저장된 명단: 경산 ' + g + '명, 청도 ' + c + '명' + (e ? ', 기타 ' + e + '명' : '') + ' (이 브라우저)' : '저장된 명단이 없습니다. 아래에서 한 번만 올려 주세요.';
+  }
+  rosterState();
+  const normRegion = v => { const s = String(v || '').trim(); return /청도/.test(s) ? '청도' : /경산/.test(s) ? '경산' : s; };
+  async function readSheetRows(file) { // [{sheet, rows:[[...]]}]
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer()); const out = [];
+    wb.eachSheet(ws => { const rows = []; ws.eachRow({ includeEmpty: true }, (row, n) => { const vals = []; for (let c = 1; c <= ws.columnCount; c++) { let v = row.getCell(c).value; if (v && typeof v === 'object') v = v.richText ? v.richText.map(x => x.text).join('') : (v.result != null ? v.result : v.text != null ? v.text : v instanceof Date ? v.toISOString().slice(0, 10) : ''); vals.push(v == null ? '' : String(v).trim()); } rows.push(vals); }); out.push({ sheet: ws.name, rows }); });
+    return out;
+  }
+  function findCols(rows, need) { // need: [[regex...], ...] → {hdrIdx, cols:[...]}
+    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+      const r = rows[i]; const cols = need.map(res => r.findIndex(v => res.some(re => re.test(v))));
+      if (cols.filter(c => c >= 0).length >= need.length - 1 && cols[cols.length - 1] >= 0) return { hdrIdx: i, cols };
+    }
+    return null;
+  }
+  async function parseRosterFile(file) {
+    const sheets = await readSheetRows(file); const list = [];
+    sheets.forEach(({ sheet, rows }) => {
+      const f = findCols(rows, [[/지역/], [/^이름$|^성명$|이름|성명/]]); if (!f) return;
+      rows.slice(f.hdrIdx + 1).forEach(r => { const name = (r[f.cols[1]] || '').trim(); if (!name || /합계|계$/.test(name)) return; if (list.some(x => x.name === name)) return; list.push({ region: normRegion(f.cols[0] >= 0 ? r[f.cols[0]] : sheet), name }); });
+    });
+    return list;
+  }
+  $('rDrop').onclick = () => $('rFile').click();
+  $('rFile').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const l = await parseRosterFile(f); if (!l.length) throw new Error('지역·이름 열을 찾지 못했습니다'); saveRoster(l); showMsg('명단 ' + l.length + '명을 이 브라우저에 저장했습니다.'); } catch (err) { showMsg('명단을 읽지 못했습니다: ' + err.message, true); } e.target.value = ''; };
+  ['dragover', 'dragleave', 'drop'].forEach(ev => $('rDrop').addEventListener(ev, e => { e.preventDefault(); $('rDrop').classList.toggle('on', ev === 'dragover'); if (ev === 'drop' && e.dataTransfer.files[0]) { $('rFile').files = e.dataTransfer.files; $('rFile').dispatchEvent(new Event('change')); } }));
+  $('rTextBtn').onclick = () => { const l = $('rText').value.split('\n').map(s => s.trim()).filter(Boolean).map(s => { const m = s.split(/[\s,\t|]+/); return m.length >= 2 ? { region: normRegion(m[0]), name: m.slice(1).join(' ') } : { region: '경산', name: m[0] }; }); if (l.length) { saveRoster(l); showMsg('명단 ' + l.length + '명을 저장했습니다.'); } };
+  $('rClear').onclick = () => { try { localStorage.removeItem(KEY); } catch (e) {} ROSTER = []; rosterState(); render(); };
+
+  // ---------- 참석자 엑셀 (교사·학부모) ----------
+  let XLS = [];
+  async function parseAttendees(file) {
+    const t = type(); const sheets = await readSheetRows(file); const list = [];
+    const want = t === 'teacher' ? /교사|교원/ : /학부모/;
+    let use = sheets.filter(s => want.test(s.sheet)); if (!use.length) use = sheets;
+    use.forEach(({ sheet, rows }) => {
+      const f = findCols(rows, [[/지역/], [/학교명|학교|소속/], [/^성명$|성명|보호자|참여자|이름/]]); if (!f) return;
+      rows.slice(f.hdrIdx + 1).forEach(r => { const name = (r[f.cols[2]] || '').trim(), school = (r[f.cols[1]] || '').trim(); if (!name || !school) return; list.push({ region: normRegion(f.cols[0] >= 0 ? r[f.cols[0]] : sheet), school, name }); });
+    });
+    return list;
+  }
+  $('xDrop').onclick = () => $('xFile').click();
+  $('xFile').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { XLS = await parseAttendees(f); if (!XLS.length) throw new Error('지역·학교명·성명 열을 찾지 못했습니다'); const g = XLS.filter(r => r.region === '경산').length, c = XLS.filter(r => r.region === '청도').length; $('xState').textContent = f.name + ' — ' + XLS.length + '명 (청도 ' + c + ', 경산 ' + g + (XLS.length - g - c ? ', 기타 ' + (XLS.length - g - c) : '') + ')'; render(); showMsg('명단을 읽었습니다. 미리보기를 확인하세요.'); } catch (err) { showMsg('엑셀을 읽지 못했습니다: ' + err.message, true); } e.target.value = ''; };
+  ['dragover', 'dragleave', 'drop'].forEach(ev => $('xDrop').addEventListener(ev, e => { e.preventDefault(); $('xDrop').classList.toggle('on', ev === 'dragover'); if (ev === 'drop' && e.dataTransfer.files[0]) { $('xFile').files = e.dataTransfer.files; $('xFile').dispatchEvent(new Event('change')); } }));
+
+  // ---------- 모델 ----------
+  function model() {
+    const t = type(), ss = readSessions(); const blocks = [];
+    const dstr = s => fmtD(s.date) + (s.start ? ' ' + s.start + '~' : '');
+    const vip = $('vip').value.split('\n').map(l => l.split('|').map(x => x.trim())).filter(a => a.length >= 3 && a[2]);
+    if (t === 'coach') {
+      const s0 = ss[0];
+      ['경산', '청도'].forEach(rg => { const rows = ROSTER.filter(r => r.region === rg).map(r => [rg, '학습코칭단', r.name, '', '']); if (rows.length) blocks.push({ dateStr: dstr(s0), place: s0.place, cols: 6, rows, head: ['순', '소속', '직책', '성명', '서명', '비고'] }); });
+      const etc = ROSTER.filter(r => r.region !== '경산' && r.region !== '청도'); if (etc.length) blocks.push({ dateStr: dstr(s0), place: s0.place, cols: 6, rows: etc.map(r => [r.region, '학습코칭단', r.name, '', '']), head: ['순', '소속', '직책', '성명', '서명', '비고'] });
+      if (vip.length) blocks.push({ dateStr: dstr(s0), place: s0.place, cols: 6, rows: vip.map(a => [a[0], a[1], a[2], '', '']), head: ['순', '소속', '직책', '성명', '서명', '비고'] });
+    } else {
+      ss.forEach(s => { const rg = normRegion(s.region); const ppl = XLS.filter(r => r.region === rg); if (!ppl.length) return;
+        if (t === 'teacher') blocks.push({ dateStr: dstr(s), place: s.place, cols: 7, rows: ppl.map(r => [rg, r.school, '교사', r.name, '', '']), head: ['순', '지역', '소속', '직책', '성명', '서명', '비고'] });
+        else blocks.push({ dateStr: dstr(s), place: s.place, cols: 5, rows: ppl.map(r => [r.school, r.name, '', '']), head: ['순', '소속', '성명', '서명', '비고'] }); });
+      const other = XLS.filter(r => !ss.some(s => normRegion(s.region) === r.region)); if (other.length && ss[0]) blocks.push({ dateStr: dstr(ss[0]), place: ss[0].place, cols: t === 'teacher' ? 7 : 5, rows: other.map(r => t === 'teacher' ? [r.region, r.school, '교사', r.name, '', ''] : [r.school, r.name, '', '']), head: t === 'teacher' ? ['순', '지역', '소속', '직책', '성명', '서명', '비고'] : ['순', '소속', '성명', '서명', '비고'] });
+      if (t === 'teacher' && vip.length && ss[0]) blocks.push({ dateStr: dstr(ss[0]), place: ss[0].place, cols: 6, rows: vip.map(a => [a[0], a[1], a[2], '', '']), head: ['순', '소속', '직책', '성명', '서명', '비고'] });
+    }
+    return { title: $('title').value.trim(), blocks };
+  }
+
+  // ---------- 미리보기 ----------
+  function render() {
+    const m = model(); let h = '';
+    const bar = (a, b) => '<div class="bar"><i style="background:' + a + '"></i><i style="background:' + b + '"></i></div>';
+    const tableHtml = (b, rows, from) => '<table><tr>' + b.head.map(x => '<th>' + esc(x) + '</th>').join('') + '</tr>' + rows.map((r, i) => '<tr><td>' + (from + i + 1) + '</td>' + r.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') + '</table>';
+    if (!m.blocks.length) h = '<div class="page p6">' + bar('#2f6fdd', '#f5c400') + '<div class="ttl">' + esc(m.title) + '</div>' + bar('#3a9a3a', '#e53935') + '<div class="info" style="color:#888">명단이 없습니다. ' + (type() === 'coach' ? '코칭단 명단을 한 번 올려 주세요.' : '참석자 명단 엑셀을 올려 주세요.') + '</div></div>';
+    m.blocks.forEach(b => {
+      const chunks = []; chunks.push(b.rows.slice(0, 14)); for (let i = 14; i < b.rows.length; i += 20) chunks.push(b.rows.slice(i, i + 20));
+      let from = 0;
+      chunks.forEach((ch, ci) => {
+        h += '<div class="page p' + b.cols + '">';
+        if (ci === 0) h += bar('#2f6fdd', '#f5c400') + '<div class="ttl">' + esc(m.title) + '</div>' + bar('#3a9a3a', '#e53935') + '<div class="info">○ 일시: ' + esc(b.dateStr) + '<br>○ 장소: ' + esc(b.place) + '</div>';
+        h += tableHtml(b, ch, from) + '</div>'; from += ch.length;
+      });
+    });
+    $('pages').innerHTML = h; fit();
+  }
+  function fit() { const sc = $('scale'), w = sc.parentNode.clientWidth; if (!w) return; const s = Math.min(1, w / sc.scrollWidth); sc.style.transform = 'scale(' + s + ')'; sc.style.height = ($('pages').offsetHeight * s) + 'px'; }
+  window.addEventListener('resize', fit);
+
+  // ---------- 파일 ----------
+  const showMsg = (t, err) => { const m = $('msg'); m.hidden = false; m.className = 'msg'; m.style.color = err ? 'var(--err)' : ''; m.textContent = t; };
+  const TPL = {};
+  async function makeHwpx() {
+    const t = type();
+    if (!window.JSZip || !window.HWPX) { showMsg('파일 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.', true); return; }
+    try {
+      const m = model(); if (!m.blocks.length) throw new Error('명단이 없습니다');
+      if (!TPL[t]) { const r = await fetch('tpl/reg_' + t + '.hwpx?v=1'); if (!r.ok) throw new Error('양식 파일을 찾을 수 없습니다'); TPL[t] = await r.arrayBuffer(); }
+      render();
+      const blob = await HWPX.buildReg(TPL[t], m);
+      const name = m.title + '.hwpx';
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+      showMsg('저장한 파일: ' + name + ' — 한글에서 열어 확인하세요.');
+    } catch (e) { showMsg('한글 파일을 만들지 못했습니다: ' + e.message, true); console.error(e); }
+  }
+  $('applyBtn').onclick = () => { render(); showMsg('적용했습니다. 미리보기를 확인하세요.'); };
+  $('hwpxBtn').onclick = makeHwpx; $('printBtn').onclick = () => window.print();
+  applyType();
+})();
+</script>
+</body>
+</html>

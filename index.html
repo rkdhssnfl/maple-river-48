@@ -124,7 +124,7 @@
   .msg { margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--fg); white-space: pre-wrap; }
   .msg.err { background: transparent; border: 1px solid var(--warn); color: var(--warn); }
   .msg ul { margin: 4px 0 0; padding-left: 18px; }
-  .preview { overflow-x: auto; margin-top: 10px; cursor: zoom-in; }
+  .preview { overflow-x: auto; margin-top: 10px; }
   .zoom-hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
   #pvZoom { position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 50; display: flex; flex-direction: column; padding: 12px; }
   #pvZoom .bar { display: flex; justify-content: space-between; align-items: center; color: #fff; font-size: 15px; margin-bottom: 8px; }
@@ -196,9 +196,7 @@
 
   <section class="card">
     <h2>미리보기 <span class="count">파랑=보강, 초록=사례회의</span></h2>
-    <div class="preview" id="pvWrap" title="누르면 크게 보기"><table class="pv" id="pv"></table></div>
-    <div class="zoom-hint">표를 누르면 크게 볼 수 있어요. 휴대폰을 가로로 돌리면 더 잘 보여요.</div>
-    <div id="pvZoom" hidden><div class="bar"><span>미리보기 (크게)</span><button type="button" id="pvZoomClose">닫기 ✕</button></div><div class="body"><table class="pv" id="pvBig"></table></div></div>
+    <div class="preview" id="pvWrap"><table class="pv" id="pv"></table></div>
     <div id="msg" hidden></div>
     <p class="foot" hidden>파일 이름: <span id="fname"></span></p>
     <a id="wallaSubmit" href="https://walla.my/v/JCVUXo3ZR92bs2yEiujD" hidden>폰으로 제출하기</a>
@@ -497,9 +495,6 @@
       showMsg('파일을 만들지 못했습니다. 다시 시도해 주세요. (오류: ' + ((e && e.message) || '알 수 없음') + ')', true);
     } finally { btn.disabled = false; btn.innerHTML = '엑셀 파일로 제출 (내려받아 양식에 올리기)<br><span style="font-size:13px;font-weight:500;opacity:.9">컴퓨터에서 · 파일로 내고 싶을 때</span>'; }
   });
-  $('pvWrap').addEventListener('click', () => { $('pvBig').innerHTML = $('pv').innerHTML; $('pvZoom').hidden = false; document.body.style.overflow = 'hidden'; });
-  $('pvZoomClose').addEventListener('click', () => { $('pvZoom').hidden = true; document.body.style.overflow = ''; });
-  $('pvZoom').addEventListener('click', e => { if (e.target === $('pvZoom')) { $('pvZoom').hidden = true; document.body.style.overflow = ''; } });
   $('xferCopy').addEventListener('click', async () => {
     const code = encodeState();
     $('xferBox').value = code;

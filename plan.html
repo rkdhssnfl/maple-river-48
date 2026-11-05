@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>연수 운영 계획·보도자료 만들기</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   html, body { margin: 0; } [hidden] { display: none !important; }
   :root { --bg:#f4f5f7; --surface:#fff; --fg:#1c2430; --muted:#66707d; --line:#d9dee5; --accent:#1d5fa6; --accent-fg:#fff; --accent-soft:#e3edf8; --input:#fffbe6; --err:#c62828; }
@@ -469,7 +469,7 @@
     const t = type(), N = TYPE_NAME[t];
     const sub = '-' + ORG + ' ' + (t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value) + ' 개최-';
     const B = [
-      { k: 'table', rows: [[{ t: '보도자료', w: 22, big: true, span: 1, rows: 2 }, { t: fmtD($('pressDate').value), w: 28 }, { t: '기 관 명', w: 15 }, { t: '경상북도경산교육지원청', w: 35 }], [{ t: '', w: 22 }, { t: '', w: 28 }, { t: '자료문의', w: 15 }, { t: '담당자 ' + $('officer').value + '\n(☎' + $('officerTel').value + ')', w: 35 }]], plain: true },
+      { k: 'table', rows: [[{ t: '보도자료', w: 22, big: true, span: 1, rows: 2 }, { t: fmtD($('pressDate').value), w: 28, rows: 2 }, { t: '기 관 명', w: 15 }, { t: '경상북도경산교육지원청', w: 35 }], [{ t: '', w: 22, vm: true }, { t: '', w: 28, vm: true }, { t: '자료문의', w: 15 }, { t: '담당자 ' + $('officer').value + '\n(☎' + $('officerTel').value + ')', w: 35 }]], plain: true },
       { k: 'p', text: '￭총 2쪽    ￭사진: ' + $('photos').value + '매(16:00 제공)' },
       { k: 'blank' },
       { k: 'title', text: '“ ' + $('pTitle').value + ' ”' },
@@ -499,33 +499,62 @@
   }
 
   // ---------- DOCX ----------
-  async function buildDocx(B, fileName) {
-    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle } = docx;
-    const run = (t, o = {}) => new TextRun({ text: t, size: o.size || 22, bold: !!o.bold, font: '바탕' });
-    const kids = [];
-    B.forEach(b => {
-      if (b.k === 'title') kids.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [run(b.text, { size: 32, bold: true })] }));
-      else if (b.k === 'center') kids.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [run(b.text, { bold: b.bold })], spacing: { after: b.after || 60 } }));
-      else if (b.k === 'h') kids.push(new Paragraph({ children: [run(b.text, { size: 26, bold: true })], spacing: { before: 240, after: 80 } }));
-      else if (b.k === 'p') kids.push(new Paragraph({ children: [run(b.text)], spacing: { after: b.after || 60, line: 320 }, indent: b.in ? { left: 360 * b.in } : undefined }));
-      else if (b.k === 'blank') kids.push(new Paragraph({ children: [run('')] }));
-      else if (b.k === 'banner') {
-        const border = { style: BorderStyle.SINGLE, size: 12, color: '000000' };
-        kids.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [new TableRow({ children: [new TableCell({ borders: { top: border, bottom: border, left: border, right: border }, children: b.lines.map((l, i) => new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 80, after: 80 }, children: [run(l, { size: i === 1 ? 32 : i === 2 ? 26 : 22, bold: i === 1 || i === 2 })] })) })] })] }));
-      } else if (b.k === 'table') {
-        const rows = b.rows.map((r, ri) => new TableRow({ children: r.filter(c => !c.skip).map(c => {
-          const head = (ri === 0 && !b.plain) || c.head;
-          const opts = { width: { size: c.w, type: WidthType.PERCENTAGE }, columnSpan: c.span || 1, verticalAlign: 'center', children: String(c.t).split('\n').map(x => new Paragraph({ alignment: c.left && !head ? AlignmentType.LEFT : AlignmentType.CENTER, children: [run(x, { size: c.big ? 36 : 20, bold: head || c.big })] })) };
-          if (head) opts.shading = { fill: 'E7E6E6' };
-          if (c.rows) opts.rowSpan = c.rows;
-          return new TableCell(opts);
-        }) }));
-        kids.push(new Table({ width: { size: b.narrow ? 50 : 100, type: WidthType.PERCENTAGE }, indent: b.narrow ? { size: 720, type: WidthType.DXA } : undefined, rows }));
-        kids.push(new Paragraph({ children: [run('', { size: 8 })], spacing: { after: 0 } }));
-      }
+  // ---------- DOCX (외부 라이브러리 없이 직접 생성: JSZip만 사용) ----------
+  const X = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const PAGE_W = 9638; // A4 폭 - 좌우 여백(2cm)
+  function wRun(t, o = {}) { return '<w:r><w:rPr><w:rFonts w:ascii="바탕" w:eastAsia="바탕" w:hAnsi="바탕" w:cs="바탕"/>' + (o.bold ? '<w:b/>' : '') + '<w:sz w:val="' + (o.size || 22) + '"/><w:szCs w:val="' + (o.size || 22) + '"/></w:rPr><w:t xml:space="preserve">' + X(t) + '</w:t></w:r>'; }
+  function wP(t, o = {}) {
+    let pr = '<w:pPr>' + (o.center ? '<w:jc w:val="center"/>' : o.left ? '<w:jc w:val="left"/>' : '') + '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after == null ? 60 : o.after) + '" w:line="' + (o.line || 320) + '" w:lineRule="auto"/>' + (o.indent ? '<w:ind w:left="' + o.indent + '"/>' : '') + '</w:pPr>';
+    return '<w:p>' + pr + wRun(t, o) + '</w:p>';
+  }
+  function wTable(rows, o = {}) {
+    const bs = o.thick ? 12 : 4, widths = rows[0].map(c => c.w);
+    const grid = []; rows[0].forEach(c => { const n = c.span || 1; for (let i = 0; i < n; i++) grid.push(Math.round(PAGE_W * (o.pct || 100) / 100 * c.w / 100 / n)); });
+    let x = '<w:tbl><w:tblPr><w:tblW w:w="' + ((o.pct || 100) * 50) + '" w:type="pct"/>' + (o.indent ? '<w:tblInd w:w="' + o.indent + '" w:type="dxa"/>' : '') + '<w:jc w:val="left"/><w:tblBorders>' + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(k => '<w:' + k + ' w:val="single" w:sz="' + bs + '" w:space="0" w:color="000000"/>').join('') + '</w:tblBorders><w:tblCellMar><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>' + grid.map(g => '<w:gridCol w:w="' + g + '"/>').join('') + '</w:tblGrid>';
+    rows.forEach((r, ri) => {
+      x += '<w:tr>' + (ri === 0 && !o.plain ? '<w:trPr><w:tblHeader/></w:trPr>' : '');
+      r.forEach(c => {
+        const head = (ri === 0 && !o.plain) || c.head;
+        x += '<w:tc><w:tcPr><w:tcW w:w="' + Math.round(c.w * 50) + '" w:type="pct"/>' + (c.span ? '<w:gridSpan w:val="' + c.span + '"/>' : '') + (c.rows ? '<w:vMerge w:val="restart"/>' : c.vm ? '<w:vMerge/>' : '') + (head ? '<w:shd w:val="clear" w:color="auto" w:fill="E7E6E6"/>' : '') + '<w:vAlign w:val="center"/></w:tcPr>';
+        const lines = String(c.t == null ? '' : c.t).split('\n');
+        x += lines.map(l => wP(l, { center: !(c.left && !head), left: c.left && !head, size: c.big ? 36 : (o.sizes && o.sizes[0]) || 20, bold: head || c.big, after: 0, line: 300 })).join('');
+        x += '</w:tc>';
+      });
+      x += '</w:tr>';
     });
-    const d = new Document({ sections: [{ properties: { page: { margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 } } }, children: kids }] });
-    const blob = await Packer.toBlob(d);
+    return x + '</w:tbl>' + wP('', { size: 8, after: 0, line: 200 });
+  }
+  function blocksToXml(B) {
+    let body = '';
+    B.forEach(b => {
+      if (b.k === 'title') body += wP(b.text, { center: true, size: 32, bold: true, after: 0 });
+      else if (b.k === 'center') body += wP(b.text, { center: true, bold: b.bold, after: b.after || 60 });
+      else if (b.k === 'h') body += wP(b.text, { size: 26, bold: true, before: 240, after: 80 });
+      else if (b.k === 'p') body += wP(b.text, { after: b.after || 60, indent: b.in ? 360 * b.in : 0 });
+      else if (b.k === 'blank') body += wP('');
+      else if (b.k === 'banner') body += wTable([[{ t: b.lines.join('\n'), w: 100, noHead: true }]], { thick: true, plain: true, bannerLines: true });
+      else if (b.k === 'table') body += wTable(b.rows, { plain: b.plain, pct: b.narrow ? 50 : 100, indent: b.narrow ? 720 : 0 });
+    });
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>';
+  }
+  // 현수막 상자: 줄마다 크기 다르게
+  const _wTable = wTable;
+  wTable = function (rows, o) {
+    if (o && o.bannerLines) {
+      const lines = rows[0][0].t.split('\n');
+      let x = '<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/><w:tblBorders>' + ['top', 'left', 'bottom', 'right'].map(k => '<w:' + k + ' w:val="single" w:sz="12" w:space="0" w:color="000000"/>').join('') + '</w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="' + PAGE_W + '"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:tcW w:w="5000" w:type="pct"/></w:tcPr>';
+      x += lines.map((l, i) => wP(l, { center: true, size: i === 1 ? 32 : i === 2 ? 26 : 22, bold: i === 1 || i === 2, before: 80, after: 80 })).join('');
+      return x + '</w:tc></w:tr></w:tbl>' + wP('', { size: 8, after: 0, line: 200 });
+    }
+    return _wTable(rows, o);
+  };
+  async function buildDocx(B, fileName) {
+    const zip = new JSZip();
+    zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+    zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+    zip.file('word/_rels/document.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>');
+    zip.file('word/document.xml', blocksToXml(B));
+    const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
     return fileName;
@@ -536,7 +565,7 @@
   function renderAll() { const p = planBlocks(), r = pressBlocks(); renderHTML(p.blocks, $('docPlan')); renderHTML(r.blocks, $('docPress')); return { p, r }; }
   async function make(which) {
     const { p, r } = renderAll();
-    if (!window.docx) { showMsg('파일 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.', true); return; }
+    if (!window.JSZip) { showMsg('파일 압축 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요. (미리보기는 갱신했습니다)', true); return; }
     const names = [];
     if (which !== 'press') names.push(await buildDocx(p.blocks, p.fileName));
     if (which !== 'plan') { await new Promise(r => setTimeout(r, 600)); names.push(await buildDocx(r.blocks, r.fileName)); }

@@ -6,12 +6,16 @@
 <meta name="robots" content="noindex">
 <title>연수 운영 계획·보도자료 만들기</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="plan-hwpx.js?v=1"></script>
 <style>
   html, body { margin: 0; } [hidden] { display: none !important; }
   :root { --bg:#f4f5f7; --surface:#fff; --fg:#1c2430; --muted:#66707d; --line:#d9dee5; --accent:#1d5fa6; --accent-fg:#fff; --accent-soft:#e3edf8; --input:#fffbe6; --err:#c62828; }
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--fg); font-family: "Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; font-size: 15px; line-height: 1.5; }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 48px; }
+  .wrap { display: grid; grid-template-columns: minmax(360px, 520px) minmax(0, 1fr); gap: 20px; align-items: start; padding: 16px 16px 48px; }
+  .wrap > .noprint { min-width: 0; }
+  .docs { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; min-width: 0; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } .docs { position: static; max-height: none; } }
   h1 { font-size: 20px; margin: 0 0 4px; } .sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
   .homebtn { display:inline-block; margin:0 0 10px; padding:6px 12px; border-radius:999px; background:#1f6f5c; color:#fff; font-size:13px; font-weight:700; text-decoration:none; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
@@ -37,6 +41,7 @@
   .tabs { display:flex; gap:6px; margin:10px 0; } .tabs button { flex:1; }
   .tabs button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
   /* 문서 미리보기 */
+  .doc .ttlbox { border: 1px solid #000; padding: 14px 10px; margin-bottom: 6px; }
   .doc { background: #fff; border: 1px solid var(--line); padding: 36px 40px; font-family: "Batang","바탕","Noto Serif KR","Malgun Gothic",serif; font-size: 15px; color: #000; line-height: 1.7; }
   .doc .ttl { font-size: 22px; font-weight: 700; text-align: center; line-height: 1.4; }
   .doc .c { text-align: center; } .doc .b { font-weight: 700; }
@@ -150,18 +155,20 @@
     </div>
     <div class="row" style="margin-bottom:10px">
       <span class="small">내려받기:</span>
-      <button class="btn" id="bothBtn" type="button">운영 계획 + 보도자료</button>
-      <button class="btn" id="planBtn" type="button">운영 계획만</button>
-      <button class="btn" id="pressBtn" type="button">보도자료만</button>
+      <button class="btn primary" id="hwpxBtn" type="button">운영 계획 한글 파일(.hwpx)</button>
+      <button class="btn" id="pressBtn" type="button">보도자료(.docx)</button>
+      <button class="btn" id="planBtn" type="button">운영 계획 워드(.docx)</button>
       <button class="btn" id="copyBtn" type="button">보이는 글 복사</button>
       <button class="btn" id="printBtn" type="button">인쇄 / PDF</button>
     </div>
     <div id="msg" hidden></div>
-    <div class="small" style="margin:6px 0 4px">적용을 누르면 아래 미리보기만 새로 만들어집니다. 파일이 필요할 때 내려받기 버튼을 누르세요(한글에서 바로 열리는 .docx → 한글에서 「다른 이름으로 저장 → *.hwp」).</div>
+    <div class="small" style="margin:6px 0 4px">한글 파일(.hwpx)은 보내주신 예시 양식 파일에 내용만 바꿔 넣은 것이라 서식이 똑같습니다. 한글에서 바로 열리고, 필요하면 「다른 이름으로 저장 → *.hwp」로 바꾸면 됩니다.</div>
     <div class="tabs"><button class="btn on" type="button" data-v="plan">운영 계획 미리보기</button><button class="btn" type="button" data-v="press">보도자료 미리보기</button></div>
   </div>
-  <div class="doc" id="docPlan"></div>
-  <div class="doc" id="docPress" hidden></div>
+  <div class="docs">
+    <div class="doc" id="docPlan"></div>
+    <div class="doc" id="docPress" hidden></div>
+  </div>
 </div>
 
 <script>
@@ -341,7 +348,7 @@
   const fixAud = (s, t) => t === 'parent' ? s.replace(/자녀\(학생\)/g, '자녀').replace(/학생 맞춤형/g, '자녀 맞춤형').replace(/학생(의|이|을|과|에게)/g, '자녀$1') : s.replace(/자녀\(학생\)/g, '학생');
   const fresh = (key, fn) => { let v = fn(), i = 0; while (v === LAST[key] && i++ < 5) v = fn(); LAST[key] = v; return v; };
   const nounJosa = (tpl, n) => tpl.replace(/\{n\}([가-힣]?)/g, (m, j) => { const b = bat(n); return n + ({ '가': b ? '이' : '가', '를': b ? '을' : '를', '와': b ? '과' : '와', '는': b ? '은' : '는', '로': (b && n.slice(-1) !== '를') ? '으로' : '로' }[j] || j); });
-  function makeSub(th) { const ts = topicOf(th); const n = pick(ts.flatMap(t => t.nouns)); return type() === 'coach' && Math.random() < 0.5 ? th : nounJosa(pick(SUB_T), n); }
+  function makeSub(th) { const ts = topicOf(th); const n = pick(ts.flatMap(t => t.nouns)); return (type() === 'coach' && Math.random() < 0.5 ? th : nounJosa(pick(SUB_T), n)).replace('아이의 아이의', '아이의'); }
   function computeP1() {
     const t = type(), ss = readSessions(), th = kw(), N = TYPE_NAME[t];
     const total = ss.reduce((s, x) => s + (x.n || 0), 0);
@@ -350,7 +357,7 @@
     const name = t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value;
     return P1_T[p1Idx % P1_T.length].replace(/\{edu\}/g, $('eduGs').value).replace(/\{org\}/g, ORG).replace(/\{where\}/g, where).replace(/\{aud\}/g, aud).replace(/\{th\}/g, th).replace(/\{을\}/g, eul(th)).replace(/\{name\}/g, name);
   }
-  function makeTitle(th) { const ts = topicOf(th); const n = pick(ts.flatMap(t => t.nouns)); return nounJosa(pick(TITLE_T), n); }
+  function makeTitle(th) { const ts = topicOf(th); const n = pick(ts.flatMap(t => t.nouns)); return nounJosa(pick(TITLE_T), n).replace('아이의 아이의', '아이의'); }
   const makePurpose = (th, t) => { const c = pick(pool('core', th)); return fixAud((c.length < 22 ? pick(PUR_PRE) : '') + c + ' ' + pick(PUR_END), t); };
   const makeEffect = (th, t) => fixAud(pick(pool('core', th)) + ' 습득을 통한 ' + pick(EFF_OBJ), t);
   const rami = q => (bat(q) ? '”이라며, “' : '”라며, “');
@@ -396,6 +403,37 @@
 
   // ---------- 문서 블록 만들기 ----------
   // block: {k:'title'|'center'|'h'|'p'|'table'|'banner'|'blank', ...}
+  // ---------- 문서 자료(한글 양식 채우기·미리보기 공용) ----------
+  function planModel() {
+    const t = type(), y = $('year').value, ss0 = readSessions(), N = TYPE_NAME[t];
+    const ss = ss0.map(s => Object.assign({}, s, { dateStr: fmtD(s.date) }));
+    const s0 = ss[0] || {};
+    const titleLine2 = t === 'coach' ? '학습코칭단 ' + $('month').value + '월 ' + $('title').value + ' 운영 계획' : N + ' ' + $('title').value + ' 운영 계획';
+    const name = (t === 'coach' ? '학습코칭단 ' + $('month').value + '월 ' : N + ' ') + $('title').value;
+    const lectStr = $('lect').value.trim() ? $('lect').value.trim() + ($('lectOrg').value.trim() ? '(' + $('lectOrg').value.trim() + ')' : '') : '';
+    const lectCell = $('lect').value.trim() ? $('lect').value.trim() + ($('lectOrg').value.trim() ? '\n(' + $('lectOrg').value.trim() + ')' : '') : '';
+    const st = toMin(s0.start), en = toMin(s0.end); let sched;
+    if (t === 'coach') {
+      const a = acts(); const main = a.filter(k => k !== 'lend').map(k => AGENDA[k]); if (!main.length) main.push($('theme').value);
+      sched = [{ t: fromMin(st - 30) + '~' + fromMin(st), min: 30, c: ['등록'], who: '' }, { t: fromMin(st) + '~' + fromMin(st + 10), min: 10, c: ['개회식', '인사말씀'], who: '담당 장학사\n교육지원과장(센터장)' },
+        { t: fromMin(st + 10) + '~' + fromMin(en), min: en - st - 10, c: main, who: lectCell || '학습코칭단' }, { t: fromMin(en) + '~', min: '', c: ['업무 협의 및 정보 공유' + (a.includes('lend') ? ', 교구 대여' : ''), '종합 정리 및 폐회'], who: '' }];
+    } else {
+      sched = [{ t: fromMin(st - 30) + '~' + fromMin(st), min: 30, c: ['등록 및 자료 배부'], who: '' }, { t: fromMin(st) + '~' + fromMin(st + 10), min: 10, c: ['개회식', '인사 말씀'], who: '담당 장학사\n교육지원과장\n(센터장)' },
+        { t: fromMin(st + 10) + '~' + fromMin(en - 10), min: en - st - 20, c: [$('theme').value], who: lectCell }, { t: fromMin(en - 10) + '~' + fromMin(en), min: 10, c: [ORG + ' 소개 및 사업 안내'], who: '학습상담교사' }, { t: fromMin(en), min: '', c: ['종합정리 및 폐회'], who: '' }];
+    }
+    const raw = readBudget(); let total = 0;
+    const budget = raw.map(b => { const amt = b.unit * b.qty * b.times; total += amt; return { mok: b.mok, item: b.item, calc: won(b.unit) + '원×' + b.qty + b.u + (b.times > 1 ? '×' + b.times + '회' : '') + '=', amt, amtStr: won(amt), note: b.note }; });
+    budget.forEach((b, i) => { const nx = budget[i + 1]; b.amtStr2 = (/강사비/.test(b.item) && nx && /강사비/.test(nx.item)) ? won(b.amt + nx.amt) : b.amtStr; });
+    const banner = [t === 'coach' ? ORG + ' ' + name : ORG, '“ ' + $('slogan').value + ' ”', $('sloganSub').value || $('theme').value, '♣일시: ' + fmtD(s0.date) + ' ' + s0.start + '~  ♣장소: ' + s0.place];
+    const P = $('purpose').value.split('\n').map(x => x.trim()).filter(Boolean), E = $('effect').value.split('\n').map(x => x.trim()).filter(Boolean);
+    const m = { type: t, year: y, titleLine2, name, purposes: P, effects: E, sessions: ss, targetNote: $('targetNote').value.trim(), theme: $('theme').value, lectStr, lectCell, sched, budget, total, totalStr: won(total), banner, dueCd: fmtD($('dueCd').value), dueGs: fmtD($('dueGs').value), perSchool: $('perSchool').value, tel: $('tel').value };
+    if (t === 'parent') {
+      const sched2 = sched.map(r => Object.assign({}, r, { who: r.who.replace('\n(센터장)', '') }));
+      m.after = { sched: sched2, map: [['우리 아이의 진로 설계와 학습 역량 향상을 위한 코칭', $('theme').value], ['유병훈', $('lect').value.trim()], ['행복한 교육 이야기 대표', $('lectOrg').value.trim()], ['2026 경산', y + ' 경산'], ['교당 2명 내외', '교당 ' + $('perSchool').value], ['2026. 10. ~', y + '. ' + ($('date') ? '' : '') + (s0.date ? (new Date(s0.date)).getMonth() + 1 : '') + '. ~']] };
+    }
+    return m;
+  }
+
   function planBlocks() {
     const t = type(), y = $('year').value, ss = readSessions(), N = TYPE_NAME[t];
     const titleLine2 = t === 'coach' ? '학습코칭단 ' + $('month').value + '월 ' + $('title').value + ' 운영 계획' : N + ' ' + $('title').value + ' 운영 계획';
@@ -501,8 +539,10 @@
 
   // ---------- HTML 렌더 ----------
   function renderHTML(B, el) {
-    let h = '';
-    B.forEach(b => {
+    let h = ''; let inBox = false;
+    B.forEach((b, i) => {
+      if (b.k === 'title' && !inBox) { h += '<div class="ttlbox">'; inBox = true; }
+      if (b.k !== 'title' && inBox) { h += '</div>'; inBox = false; }
       if (b.k === 'title') h += '<div class="ttl">' + esc(b.text) + '</div>';
       else if (b.k === 'center') h += '<div class="c' + (b.bold ? ' b' : '') + '">' + esc(b.text) + '</div>';
       else if (b.k === 'h') h += '<div class="h2">' + esc(b.text) + '</div>';
@@ -592,7 +632,20 @@
     showMsg('저장한 파일: ' + names.join(' / ') + ' — 한글에서 열어 「다른 이름으로 저장 → *.hwp」로 저장하세요.');
   }
   $('applyBtn').onclick = () => { if (!$('p1').dataset.edited) $('p1').value = computeP1(); renderAll(); showMsg('적용했습니다. 아래 미리보기를 확인하세요.'); };
-  $('bothBtn').onclick = () => make('both'); $('planBtn').onclick = () => make('plan'); $('pressBtn').onclick = () => make('press');
+  const TPL = {};
+  async function makeHwpx() {
+    const t = type(); const tplName = t === 'parent' ? 'parent' : 'teacher';
+    if (!window.JSZip || !window.HWPX) { showMsg('파일 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.', true); return; }
+    try {
+      if (!TPL[tplName]) { const r = await fetch('tpl/' + tplName + '.hwpx?v=1'); if (!r.ok) throw new Error('양식 파일을 찾을 수 없습니다'); TPL[tplName] = await r.arrayBuffer(); }
+      if (!$('p1').dataset.edited) $('p1').value = computeP1(); renderAll();
+      const m = planModel(); const blob = await HWPX.build(TPL[tplName], m);
+      const name = m.year + '학년도 ' + m.name + ' 운영 계획.hwpx';
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+      showMsg('저장한 파일: ' + name + ' — 한글에서 열어 확인하세요.');
+    } catch (e) { showMsg('한글 파일을 만들지 못했습니다: ' + e.message, true); console.error(e); }
+  }
+  $('hwpxBtn').onclick = makeHwpx; $('planBtn').onclick = () => make('plan'); $('pressBtn').onclick = () => make('press');
   $('printBtn').onclick = () => window.print();
   $('copyBtn').onclick = async () => {
     const el = $('docPlan').hidden ? $('docPress') : $('docPlan'); const out = [];

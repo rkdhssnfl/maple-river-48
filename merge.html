@@ -123,7 +123,7 @@
     <label class="drop" id="drop" style="margin-top:10px">
       <input type="file" id="files" multiple accept=".xlsx">
       <b>여기를 눌러 왈라 응답 엑셀 선택</b> (코칭단 코칭일자 파일도 가능, 여러 개 한 번에) 또는 끌어다 놓기<br>
-      <span class="small">코칭단이 저장한 "코칭일자" 파일도, 왈라에서 내려받은 <b>응답 엑셀</b>(응답시간·지역·이름·코칭일자 칸)도 됩니다. 왈라 파일은 같은 사람이 여러 번 냈으면 가장 나중 것만 씁니다.</span><br>
+      <span class="small">코칭단이 저장한 "코칭일자" 파일도, 왈라에서 내려받은 <b>응답 엑셀</b>(응답시간·지역·이름·코칭일자 칸)도 됩니다. 왈라 파일은 같은 사람이 여러 번 냈으면 가장 나중 것만 씁니다. <b>학습서비스 일지</b> 양식의 응답 엑셀을 올리면 첨부된 일지 파일을 한꺼번에 내려받는 목록이 뜹니다.</span><br>
       <span class="small">같은 이름의 파일을 다시 올리면 새 파일로 바뀝니다.</span>
     </label>
     <div id="parseMsg" hidden></div>
@@ -403,7 +403,7 @@
       const prev = latest.get(norm(p.name));
       if (!prev || prev.time <= t) latest.set(norm(p.name), p);
     }
-    if (!latest.size && !PENDING_LINKS.length) throw new Error('응답이 없습니다');
+    if (!latest.size && !PENDING_LINKS.length && !OTHER_LINKS.length) throw new Error('응답이 없습니다');
     return Array.from(latest.values());
   }
 

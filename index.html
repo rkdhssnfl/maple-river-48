@@ -58,6 +58,9 @@
     .colL { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); max-height: calc(100vh - 88px); overflow-y: auto; padding-right: 4px; }
     .colL > :last-child { margin-bottom: 14px; }
     .colR #pv { width: 100%; }
+    .subRow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+    .subRow .subB { margin-top: 12px !important; padding-top: 0 !important; border-top: 0 !important; }
+    .subRow .btn.primary { padding: 9px 12px; font-size: 15px; }
     .colR { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); max-height: calc(100vh - 88px); overflow-y: auto; padding-right: 4px; }
     .colR > .card:first-child { margin-top: 0; }
   }
@@ -199,13 +202,16 @@
     <div id="msg" hidden></div>
     <p class="foot" hidden>파일 이름: <span id="fname"></span></p>
     <a id="wallaSubmit" href="https://walla.my/v/JCVUXo3ZR92bs2yEiujD" hidden>폰으로 제출하기</a>
-    <button class="btn primary" id="kakaoText" type="button" style="margin-top:12px;background:#1f4e9c;border-color:#1f4e9c">제출하기 (글 복사 → 양식에 붙여넣기)</button>
-    <p class="foot">누르면 입력한 날짜가 글로 <b>복사</b>되고 제출 양식이 열려요. 양식에서 지역·이름을 적고, 코칭일자 칸에 <b>붙여넣기</b>(휴대폰은 길게 누르기, 컴퓨터는 Ctrl+V) → 응답 제출. 입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
     <button id="pcSubmit" type="button" hidden></button>
     <a id="wallaOpen" href="https://walla.my/v/R6PEMy65GJN5Lo2Ygy8X" target="_blank" rel="noopener" hidden>제출 양식 열기</a>
-    <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
+    <div class="subRow"><div class="subA">
+    <button class="btn primary" id="kakaoText" type="button" style="margin-top:12px;background:#1f4e9c;border-color:#1f4e9c">제출하기 (글 복사 → 양식에 붙여넣기)</button>
+    <p class="foot">누르면 입력한 날짜가 글로 <b>복사</b>되고 제출 양식이 열려요. 양식에서 지역·이름을 적고, 코칭일자 칸에 <b>붙여넣기</b>(휴대폰은 길게 누르기, 컴퓨터는 Ctrl+V) → 응답 제출. 입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
+    </div>
+    <div class="subB" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
       <a id="journalSubmit" href="https://walla.my/v/JCVUXo3ZR92bs2yEiujD" target="_blank" rel="noopener" class="btn primary" style="display:block;text-align:center;text-decoration:none;background:#6a4fb3;border-color:#6a4fb3">학습서비스 일지 제출 (파일 첨부)</a>
       <div class="foot" style="margin-top:6px">매달 작성한 <b>학습서비스 일지(한글 파일)</b>를 내는 양식이 열려요. 이름을 적고 파일을 첨부해 응답 제출하면 끝. 코칭일자 제출과는 별개로 한 번 더 내는 거예요.</div>
+    </div>
     </div>
     <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
       <button class="btn" id="makeXlsx" type="button" style="width:100%">코칭일자 양식 내려받기 (내 기록 엑셀로 보관)</button>

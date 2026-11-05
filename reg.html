@@ -97,7 +97,7 @@
   </section>
 
   <section class="card" id="vipCard">
-    <h2><span class="step">4</span>내빈·관계자 <span class="small">(한 줄에 "소속 | 직책 | 성명", 비우면 표가 빠집니다)</span></h2>
+    <h2><span class="step">4</span>내빈·관계자 <span class="small">(한 줄에 "소속 | 직책 | 성명" — 성명은 비워 두고 현장에서 쓰게 해도 됩니다. 전부 비우면 표가 빠집니다)</span></h2>
     <textarea id="vip"></textarea>
   </section>
 
@@ -128,10 +128,11 @@
   const type = () => document.querySelector('input[name=type]:checked').value;
   const TITLE = { coach: '학습코칭단 연수회 등록부', teacher: '교사 역량 강화 연수 등록부', parent: '학부모 연수 등록부' };
   const VIP = {
-    coach: '경산교육지원청 | 교육장 | 정영석\n경산교육지원청 | 교육지원과장 | 허영선\n청도교육지원청 | 교육지원과장 | 신운식\n경산교육지원청 | 장학사 | 장성혜\n청도교육지원청 | 장학사 | 김지연\n청도초등학교 | 기초학력 전담교사 | 조세은\n경산교육지원청 | 학습상담교사 | 권태우\n경산교육지원청 | 학습상담사 | 홍민지',
-    teacher: '청도교육지원청 | 교육지원과장 | 신운식\n청도교육지원청 | 장학사 | 김지연\n경산교육지원청 | 장학사 | 장성혜\n청도교육지원청 | 기초학력전담교사 | 조세은\n경산교육지원청 | 학습상담교사 | 권태우\n경산교육지원청 | 학습상담사 | 홍민지',
+    coach: '경산교육지원청 | 교육장 |\n경산교육지원청 | 교육지원과장 |\n청도교육지원청 | 교육지원과장 |\n경산교육지원청 | 장학사 |\n청도교육지원청 | 장학사 |\n청도초등학교 | 기초학력 전담교사 |\n경산교육지원청 | 학습상담교사 |\n경산교육지원청 | 학습상담사 |',
+    teacher: '청도교육지원청 | 교육지원과장 |\n청도교육지원청 | 장학사 |\n경산교육지원청 | 장학사 |\n청도교육지원청 | 기초학력전담교사 |\n경산교육지원청 | 학습상담교사 |\n경산교육지원청 | 학습상담사 |',
     parent: ''
   };
+
 
   // ---------- 회차 ----------
   function sessRow(s, i, showRegion) {
@@ -216,7 +217,7 @@
   function model() {
     const t = type(), ss = readSessions(); const blocks = [];
     const dstr = s => fmtD(s.date) + (s.start ? ' ' + s.start + '~' : '');
-    const vip = $('vip').value.split('\n').map(l => l.split('|').map(x => x.trim())).filter(a => a.length >= 3 && a[2]);
+    const vip = $('vip').value.split('\n').map(l => l.split('|').map(x => x.trim())).filter(a => a.length >= 2 && (a[0] || a[1] || a[2])).map(a => [a[0] || '', a[1] || '', a[2] || '']);
     if (t === 'coach') {
       const s0 = ss[0];
       ['경산', '청도'].forEach(rg => { const rows = ROSTER.filter(r => r.region === rg).map(r => [rg, '학습코칭단', r.name, '', '']); if (rows.length) blocks.push({ dateStr: dstr(s0), place: s0.place, cols: 6, rows, head: ['순', '소속', '직책', '성명', '서명', '비고'] }); });

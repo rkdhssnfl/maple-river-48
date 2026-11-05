@@ -40,20 +40,28 @@
   table.bud { width:100%; border-collapse:collapse; font-size:13px; } table.bud th, table.bud td { padding:3px; } table.bud input, table.bud select { font-size:13px; padding:5px 6px; }
   .tabs { display:flex; gap:6px; margin:10px 0; } .tabs button { flex:1; }
   .tabs button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
-  /* 문서 미리보기 */
-  .doc .ttlbox { border: 1px solid #000; padding: 14px 10px; margin-bottom: 6px; }
-  .doc { background: #fff; border: 1px solid var(--line); padding: 36px 40px; font-family: "Batang","바탕","Noto Serif KR","Malgun Gothic",serif; font-size: 15px; color: #000; line-height: 1.7; }
-  .doc .ttl { font-size: 22px; font-weight: 700; text-align: center; line-height: 1.4; }
+  /* 문서 미리보기 — 한글 양식(A4, 여백 20mm, 휴먼명조/HY울릉도M)과 같게 */
+  .docs .scale { transform-origin: 0 0; }
+  .doc { width: 210mm; min-height: 297mm; padding: 20mm; background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,.18); box-sizing: border-box; color: #000; font-family: "휴먼명조","HY울릉도M","함초롬바탕","Batang","바탕","Noto Serif KR",serif; font-size: 12pt; line-height: 1.6; }
+  .doc p, .doc div { white-space: pre-wrap; }
+  .doc .tbar { display: flex; height: 2.2pt; margin: 2pt 0; } .doc .tbar i { flex: 1; }
+  .doc .ttl1 { font-family: "HY울릉도M","휴먼명조",serif; font-size: 16pt; font-weight: 700; text-align: center; line-height: 1.35; margin-top: 10pt; }
+  .doc .ttl2 { font-family: "HY울릉도M","휴먼명조",serif; font-size: 18pt; font-weight: 700; text-align: center; line-height: 1.35; margin-bottom: 10pt; }
+  .doc .org { text-align: right; font-size: 12pt; margin: 2pt 0 16pt; }
   .doc .c { text-align: center; } .doc .b { font-weight: 700; }
-  .doc .h2 { font-size: 17px; font-weight: 700; margin: 18px 0 6px; }
-  .doc p { margin: 2px 0; } .doc p.in { margin-left: 14px; } .doc p.in2 { margin-left: 32px; }
-  .doc table { border-collapse: collapse; width: 100%; margin: 6px 0 10px; font-size: 14px; }
-  .doc th, .doc td { border: 1px solid #000; padding: 4px 6px; text-align: center; vertical-align: middle; }
-  .doc th { background: #e7e6e6; } .doc td.l { text-align: left; }
-  .doc table.noline td { border: 0; }
-  .doc .banner { border: 2px solid #000; padding: 14px; text-align: center; margin: 8px 0 4px; }
-  .doc .big { font-size: 20px; } .doc .mid { font-size: 17px; }
-  @media print { body { background: #fff; } .noprint { display: none !important; } .wrap { max-width: none; padding: 0; } .doc { border: 0; padding: 0; } }
+  .doc .h2 { font-family: "HY울릉도M","휴먼명조",serif; font-size: 15pt; margin: 12pt 0 3pt; }
+  .doc p { margin: 0; } .doc p.in { margin-left: 1.5em; } .doc p.in2 { margin-left: 3.2em; }
+  .doc table { border-collapse: collapse; width: 100%; margin: 3pt 0 8pt; font-size: 11pt; line-height: 1.5; border-top: 0.4mm solid #000; border-left: 0.4mm solid #000; }
+  .doc th, .doc td { border: 0.1mm solid #000; padding: 2pt 5pt; text-align: center; vertical-align: middle; white-space: pre-wrap; }
+  .doc th { background: #f3f0f4; font-weight: 400; } .doc td.l { text-align: left; }
+  .doc table.plain { border-top-width: 0.12mm; border-left-width: 0.12mm; } .doc table.plain td { border-width: 0.12mm; }
+  .doc .banner { border: 0.12mm solid #000; padding: 10pt 8pt; text-align: center; margin: 3pt 0 6pt; font-family: "맑은 고딕","Malgun Gothic",sans-serif; font-weight: 700; }
+  .doc .banner .l0 { font-size: 12pt; } .doc .banner .l1 { font-size: 20pt; margin: 6pt 0 8pt; } .doc .banner .l2 { font-size: 15pt; margin-bottom: 6pt; } .doc .banner .l3 { font-size: 12pt; }
+  .doc .pttl { font-family: "HY울릉도M","휴먼명조",serif; font-size: 20pt; font-weight: 700; text-align: center; line-height: 1.4; margin: 14pt 0 2pt; }
+  .doc .psub { text-align: center; font-size: 14pt; font-weight: 700; margin-bottom: 14pt; }
+  .doc .pbody { margin: 0 0 10pt; text-align: justify; }
+  .doc .big { font-size: 20pt; }
+  @media print { body { background: #fff; } .noprint { display: none !important; } .wrap { display: block; padding: 0; } .docs { position: static; max-height: none; overflow: visible; } .docs .scale { transform: none !important; height: auto !important; } .doc { box-shadow: none; } }
 </style>
 </head>
 <body>
@@ -165,10 +173,10 @@
     <div class="small" style="margin:6px 0 4px">한글 파일(.hwpx)은 보내주신 예시 양식 파일에 내용만 바꿔 넣은 것이라 서식이 똑같습니다. 한글에서 바로 열리고, 필요하면 「다른 이름으로 저장 → *.hwp」로 바꾸면 됩니다.</div>
     <div class="tabs"><button class="btn on" type="button" data-v="plan">운영 계획 미리보기</button><button class="btn" type="button" data-v="press">보도자료 미리보기</button></div>
   </div>
-  <div class="docs">
+  <div class="docs"><div class="scale" id="scale">
     <div class="doc" id="docPlan"></div>
     <div class="doc" id="docPress" hidden></div>
-  </div>
+  </div></div>
 </div>
 
 <script>
@@ -438,7 +446,7 @@
     const t = type(), y = $('year').value, ss = readSessions(), N = TYPE_NAME[t];
     const titleLine2 = t === 'coach' ? '학습코칭단 ' + $('month').value + '월 ' + $('title').value + ' 운영 계획' : N + ' ' + $('title').value + ' 운영 계획';
     const name = (t === 'coach' ? '학습코칭단 ' + $('month').value + '월 ' : N + ' ') + $('title').value;
-    const B = [{ k: 'title', text: y + ' ' + ORG }, { k: 'title', text: titleLine2 }, { k: 'center', text: ORG, after: 240 }];
+    const B = [{ k: 'title', text: y + ' ' + ORG }, { k: 'title', text: titleLine2 }, { k: 'center', text: ORG, after: 240, org: true }];
     const P = $('purpose').value.split('\n').map(s => s.trim()).filter(Boolean), E = $('effect').value.split('\n').map(s => s.trim()).filter(Boolean);
     B.push({ k: 'h', text: '1. 목적' }); P.forEach((p, i) => B.push({ k: 'p', text: ga[i] + '. ' + p, in: 1 }));
     B.push({ k: 'h', text: '2. 세부 추진 계획' });
@@ -487,10 +495,18 @@
     B.push({ k: 'table', rows: [hdr].concat(sch.map(r => [{ t: r[0], w: 7 }, { t: r[1], w: 20 }, { t: r[2], w: 8 }, { t: r[3], w: 43, left: true }, { t: r[4], w: 22 }])) });
     // 예산
     B.push({ k: 'h', text: '3. 예산 집행 계획' });
-    const bud = readBudget(); let total = 0;
-    const brows = [[{ t: '연번', w: 8 }, { t: '목', w: 8 }, { t: '지출내역', w: 16 }, { t: '산출 근거', w: 34 }, { t: '금액(원)', w: 18 }, { t: '비고', w: 16 }]];
-    bud.forEach((b, i) => { const amt = b.unit * b.qty * b.times; total += amt; const calc = won(b.unit) + '원×' + b.qty + b.u + (b.times > 1 ? '×' + b.times + '회' : '') + '='; brows.push([{ t: i + 1, w: 8 }, { t: b.mok, w: 8 }, { t: b.item, w: 16 }, { t: calc, w: 34, left: true }, { t: won(amt), w: 18 }, { t: b.note, w: 16 }]); });
-    brows.push([{ t: '총계', w: 66, span: 4 }, { t: won(total), w: 18 }, { t: '', w: 16 }]);
+    const mm = planModel(); const total = mm.total;
+    const brows = [[{ t: '연번', w: 8 }, { t: '목', w: 8 }, { t: '지출내역', w: 16 }, { t: '산출 근거', w: 34, span: 2 }, { t: '금액(원)', w: 18 }, { t: '비고', w: 16 }]];
+    let no = 0;
+    for (let i = 0; i < mm.budget.length; i++) {
+      const b = mm.budget[i], nx = mm.budget[i + 1];
+      if (/강사비/.test(b.item) && nx && /강사비/.test(nx.item)) {
+        brows.push([{ t: ++no, w: 8, rows: 2 }, { t: b.mok, w: 8, rows: 2 }, { t: '강사비', w: 16, rows: 2 }, { t: (b.item.match(/\((.*)\)/) || [, '기본'])[1], w: 8 }, { t: b.calc, w: 26, left: true }, { t: b.amtStr2, w: 18, rows: 2 }, { t: b.note || nx.note || '', w: 16, rows: 2 }]);
+        brows.push([{ t: '', w: 8, vm: true }, { t: '', w: 8, vm: true }, { t: '', w: 16, vm: true }, { t: (nx.item.match(/\((.*)\)/) || [, '초과'])[1], w: 8 }, { t: nx.calc, w: 26, left: true }, { t: '', w: 18, vm: true }, { t: '', w: 16, vm: true }]);
+        i++;
+      } else brows.push([{ t: ++no, w: 8 }, { t: b.mok, w: 8 }, { t: b.item.replace(/\(.*\)/, ''), w: 16 }, { t: b.calc, w: 34, span: 2, left: true }, { t: b.amtStr, w: 18 }, { t: b.note, w: 16 }]);
+    }
+    brows.push([{ t: '총계', w: 66, span: 5 }, { t: won(total), w: 18 }, { t: '', w: 16 }]);
     B.push({ k: 'table', rows: brows });
     // 현수막
     B.push({ k: 'h', text: '4. 현수막 제작 계획' });
@@ -530,33 +546,39 @@
       { k: 'table', rows: [[{ t: '보도자료', w: 22, big: true, span: 1, rows: 2 }, { t: fmtD($('pressDate').value), w: 28, rows: 2 }, { t: '기 관 명', w: 15 }, { t: '경상북도경산교육지원청', w: 35 }], [{ t: '', w: 22, vm: true }, { t: '', w: 28, vm: true }, { t: '자료문의', w: 15 }, { t: '담당자 ' + $('officer').value + '\n(☎' + $('officerTel').value + ')', w: 35 }]], plain: true },
       { k: 'p', text: '￭총 2쪽    ￭사진: ' + $('photos').value + '매(16:00 제공)' },
       { k: 'blank' },
-      { k: 'title', text: '“ ' + $('pTitle').value + ' ”' },
-      { k: 'center', text: sub, bold: true, after: 240 }
+      { k: 'ptitle', text: '“ ' + $('pTitle').value + ' ”' },
+      { k: 'center', text: sub, bold: true, after: 240, sub: true }
     ];
-    ['p1', 'p2', 'p3'].forEach(id => $(id).value.split('\n').map(s => s.trim()).filter(Boolean).forEach((p, i) => B.push({ k: 'p', text: (i === 0 ? '□ ' : '   ') + p, after: 200 })));
+    ['p1', 'p2', 'p3'].forEach(id => $(id).value.split('\n').map(s => s.trim()).filter(Boolean).forEach((p, i) => B.push({ k: 'p', text: (i === 0 ? '□ ' : '   ') + p, after: 200, body: true })));
     return { blocks: B, fileName: fmtD($('pressDate').value).replace(/[.\s]/g, '').replace(/\(.\)/, '') + ' 보도자료 ' + ORG + ' ' + N + ' 연수.docx' };
   }
 
   // ---------- HTML 렌더 ----------
   function renderHTML(B, el) {
-    let h = ''; let inBox = false;
-    B.forEach((b, i) => {
-      if (b.k === 'title' && !inBox) { h += '<div class="ttlbox">'; inBox = true; }
-      if (b.k !== 'title' && inBox) { h += '</div>'; inBox = false; }
-      if (b.k === 'title') h += '<div class="ttl">' + esc(b.text) + '</div>';
-      else if (b.k === 'center') h += '<div class="c' + (b.bold ? ' b' : '') + '">' + esc(b.text) + '</div>';
+    let h = ''; let nt = 0;
+    const bars = (l, r) => '<div class="tbar"><i style="background:' + l + '"></i><i style="background:' + r + '"></i></div>';
+    B.forEach(b => {
+      if (b.k === 'title') { if (nt === 0) h += bars('#000', '#006ddb'); h += '<div class="' + (nt === 0 ? 'ttl1' : 'ttl2') + '">' + esc(b.text) + '</div>'; nt++; if (nt === 2 || b.last) h += bars('#ea0000', '#000'); }
+      else if (b.k === 'center') h += '<div class="' + (b.org ? 'org' : b.sub ? 'psub' : 'c' + (b.bold ? ' b' : '')) + '">' + esc(b.text) + '</div>';
+      else if (b.k === 'ptitle') h += '<div class="pttl">' + esc(b.text) + '</div>';
       else if (b.k === 'h') h += '<div class="h2">' + esc(b.text) + '</div>';
-      else if (b.k === 'p') h += '<p class="' + (b.in === 1 ? 'in' : b.in === 2 ? 'in2' : '') + '">' + esc(b.text) + '</p>';
+      else if (b.k === 'p') h += '<p class="' + (b.in === 1 ? 'in' : b.in === 2 ? 'in2' : b.body ? 'pbody' : '') + '">' + esc(b.text) + '</p>';
       else if (b.k === 'blank') h += '<p>&nbsp;</p>';
-      else if (b.k === 'banner') h += '<div class="banner">' + b.lines.map((l, i) => '<div class="' + (i === 1 ? 'big b' : i === 2 ? 'mid b' : '') + '">' + esc(l) + '</div>').join('') + '</div>';
+      else if (b.k === 'banner') h += '<div class="banner">' + b.lines.map((l, i) => '<div class="l' + i + '">' + esc(l) + '</div>').join('') + '</div>';
       else if (b.k === 'table') {
-        h += '<table' + (b.narrow ? ' style="width:50%;margin-left:32px"' : '') + '>';
-        b.rows.forEach((r, ri) => { h += '<tr>' + r.map(c => { if (c.skip) return ''; const tag = (ri === 0 && !b.plain && !c.noHead) || c.head ? 'th' : 'td'; return '<' + tag + (c.span ? ' colspan="' + c.span + '"' : '') + (c.rows ? ' rowspan="' + c.rows + '"' : '') + ' style="width:' + c.w + '%"' + (c.left ? ' class="l"' : '') + '>' + (c.big ? '<span class="big b">' : '') + esc(c.t).replace(/\n/g, '<br>') + (c.big ? '</span>' : '') + '</' + tag + '>'; }).join('') + '</tr>'; });
+        h += '<table' + (b.plain ? ' class="plain"' : '') + (b.narrow ? ' style="width:45%;margin-left:3.2em"' : '') + '>';
+        b.rows.forEach((r, ri) => { h += '<tr>' + r.map(c => { if (c.skip || c.vm) return ''; const tag = (ri === 0 && !b.plain && !c.noHead) || c.head ? 'th' : 'td'; return '<' + tag + (c.span ? ' colspan="' + c.span + '"' : '') + (c.rows ? ' rowspan="' + c.rows + '"' : '') + ' style="width:' + c.w + '%"' + (c.left ? ' class="l"' : '') + '>' + (c.big ? '<span class="big b">' : '') + esc(c.t) + (c.big ? '</span>' : '') + '</' + tag + '>'; }).join('') + '</tr>'; });
         h += '</table>';
       }
     });
-    el.innerHTML = h;
+    el.innerHTML = h; fitPreview();
   }
+  function fitPreview() {
+    const sc = $('scale'), box = sc.parentNode; const w = box.clientWidth; if (!w) return;
+    const s = Math.min(1, w / sc.scrollWidth); sc.style.transform = 'scale(' + s + ')';
+    const vis = $('docPlan').hidden ? $('docPress') : $('docPlan'); sc.style.height = (vis.offsetHeight * s) + 'px';
+  }
+  window.addEventListener('resize', fitPreview);
 
   // ---------- DOCX ----------
   // ---------- DOCX (외부 라이브러리 없이 직접 생성: JSZip만 사용) ----------
@@ -587,7 +609,7 @@
   function blocksToXml(B) {
     let body = '';
     B.forEach(b => {
-      if (b.k === 'title') body += wP(b.text, { center: true, size: 32, bold: true, after: 0 });
+      if (b.k === 'title' || b.k === 'ptitle') body += wP(b.text, { center: true, size: b.k === 'ptitle' ? 40 : 32, bold: true, after: b.k === 'ptitle' ? 120 : 0 });
       else if (b.k === 'center') body += wP(b.text, { center: true, bold: b.bold, after: b.after || 60 });
       else if (b.k === 'h') body += wP(b.text, { size: 26, bold: true, before: 240, after: 80 });
       else if (b.k === 'p') body += wP(b.text, { after: b.after || 60, indent: b.in ? 360 * b.in : 0 });
@@ -652,7 +674,7 @@
     el.childNodes.forEach(n => { if (n.nodeName === 'TABLE') { n.querySelectorAll('tr').forEach(tr => out.push(Array.from(tr.children).map(c => c.innerText.replace(/\n/g, ' / ')).join('\t'))); out.push(''); } else out.push(n.innerText); });
     try { await navigator.clipboard.writeText(out.join('\n')); showMsg('복사했습니다. 한글에서 Ctrl+V로 붙여 넣으세요.'); } catch (e) { showMsg('복사가 안 됩니다. 아래 글을 직접 블록 지정해 복사하세요.', true); }
   };
-  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); $('docPlan').hidden = b.dataset.v !== 'plan'; $('docPress').hidden = b.dataset.v !== 'press'; renderAll(); });
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); $('docPlan').hidden = b.dataset.v !== 'plan'; $('docPress').hidden = b.dataset.v !== 'press'; renderAll(); fitPreview(); });
 
   applyType(); renderAll();
 })();

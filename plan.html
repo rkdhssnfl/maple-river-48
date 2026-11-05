@@ -4,43 +4,50 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>연수 운영 계획 만들기</title>
+<title>연수 운영 계획·보도자료 만들기</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
 <style>
   html, body { margin: 0; } [hidden] { display: none !important; }
   :root { --bg:#f4f5f7; --surface:#fff; --fg:#1c2430; --muted:#66707d; --line:#d9dee5; --accent:#1d5fa6; --accent-fg:#fff; --accent-soft:#e3edf8; --input:#fffbe6; --err:#c62828; }
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--fg); font-family: "Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; font-size: 15px; line-height: 1.5; }
-  .wrap { max-width: 900px; margin: 0 auto; padding: 20px 16px 48px; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 48px; }
   h1 { font-size: 20px; margin: 0 0 4px; } .sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
   .homebtn { display:inline-block; margin:0 0 10px; padding:6px 12px; border-radius:999px; background:#1f6f5c; color:#fff; font-size:13px; font-weight:700; text-decoration:none; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
   .card h2 { font-size: 15px; margin: 0 0 10px; }
   .step { display:inline-block; background:var(--accent); color:var(--accent-fg); border-radius:999px; font-size:12px; padding:1px 9px; margin-right:6px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 14px; }
   label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
   input, select, textarea { font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--input); color: var(--fg); width: 100%; }
-  textarea { min-height: 70px; }
+  textarea { min-height: 64px; line-height: 1.5; }
   .wide { grid-column: 1 / -1; }
   .btn { font: inherit; font-size: 15px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
   .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; }
+  .btn.sm { font-size: 13px; padding: 6px 10px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .small { font-size: 12px; color: var(--muted); }
   .msg { margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); }
-  .chk { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; color: var(--fg); }
-  .chk label { display: flex; gap: 6px; align-items: center; }
-  .chk input { width: auto; }
-  /* 문서 미리보기 (한글 문서 느낌) */
+  .types { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .types label { flex:1; min-width:140px; text-align:center; padding:12px; border:2px solid var(--line); border-radius:12px; cursor:pointer; font-weight:700; background:var(--surface); }
+  .types input { display:none; } .types label.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+  .sess { border:1px dashed var(--line); border-radius:10px; padding:10px; margin-bottom:8px; }
+  .sess .h { font-weight:700; font-size:13px; margin-bottom:6px; }
+  table.bud { width:100%; border-collapse:collapse; font-size:13px; } table.bud th, table.bud td { padding:3px; } table.bud input, table.bud select { font-size:13px; padding:5px 6px; }
+  .tabs { display:flex; gap:6px; margin:10px 0; } .tabs button { flex:1; }
+  .tabs button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  /* 문서 미리보기 */
   .doc { background: #fff; border: 1px solid var(--line); padding: 36px 40px; font-family: "Batang","바탕","Noto Serif KR","Malgun Gothic",serif; font-size: 15px; color: #000; line-height: 1.7; }
-  .doc h1 { font-size: 22px; text-align: center; margin: 0 0 4px; line-height: 1.4; }
-  .doc .org { text-align: center; font-size: 15px; margin-bottom: 22px; }
-  .doc h2 { font-size: 17px; margin: 18px 0 6px; }
-  .doc p { margin: 2px 0 2px 14px; }
+  .doc .ttl { font-size: 22px; font-weight: 700; text-align: center; line-height: 1.4; }
+  .doc .c { text-align: center; } .doc .b { font-weight: 700; }
+  .doc .h2 { font-size: 17px; font-weight: 700; margin: 18px 0 6px; }
+  .doc p { margin: 2px 0; } .doc p.in { margin-left: 14px; } .doc p.in2 { margin-left: 32px; }
   .doc table { border-collapse: collapse; width: 100%; margin: 6px 0 10px; font-size: 14px; }
   .doc th, .doc td { border: 1px solid #000; padding: 4px 6px; text-align: center; vertical-align: middle; }
-  .doc td.l { text-align: left; }
+  .doc th { background: #e7e6e6; } .doc td.l { text-align: left; }
+  .doc table.noline td { border: 0; }
   .doc .banner { border: 2px solid #000; padding: 14px; text-align: center; margin: 8px 0 4px; }
-  .doc .banner .t1 { font-size: 15px; } .doc .banner .t2 { font-size: 20px; font-weight: 700; margin: 6px 0; } .doc .banner .t3 { font-size: 16px; font-weight: 700; }
+  .doc .big { font-size: 20px; } .doc .mid { font-size: 17px; }
   @media print { body { background: #fff; } .noprint { display: none !important; } .wrap { max-width: none; padding: 0; } .doc { border: 0; padding: 0; } }
 </style>
 </head>
@@ -48,211 +55,428 @@
 <div class="wrap">
   <div class="noprint">
   <a href="home.html" class="homebtn">⌂ 관리 모음</a>
-  <h1>연수 운영 계획 만들기</h1>
-  <p class="sub">일시·장소·대상·시간만 넣으면 학습코칭단 역량 강화 연수 운영 계획이 양식대로 만들어집니다. 목적과 기대 효과는 연수 내용에 맞춰 자동으로 써 주고, 행정 사항은 고정입니다. 만든 뒤 글을 복사해 한글에 붙이거나, 워드 파일로 내려받아 한글에서 열면 됩니다.</p>
+  <h1>연수 운영 계획·보도자료 만들기</h1>
+  <p class="sub">연수 종류를 고르고 일시·장소·대상·시간만 넣으면 운영 계획과 보도자료가 양식대로 만들어집니다. 목적·기대 효과·보도자료 문구는 자동으로 써 주고(직접 고칠 수 있음), 행정 사항은 연수 종류별로 고정입니다.</p>
 
   <section class="card">
-    <h2><span class="step">1</span>기본 정보</h2>
+    <h2><span class="step">1</span>연수 종류</h2>
+    <div class="types" id="types">
+      <label class="on"><input type="radio" name="type" value="coach" checked>학습코칭단 연수</label>
+      <label><input type="radio" name="type" value="teacher">교사 연수</label>
+      <label><input type="radio" name="type" value="parent">학부모 연수</label>
+    </div>
     <div class="grid">
       <label class="f">연도<input type="number" id="year" value="2026"></label>
-      <label class="f">월<select id="month"></select></label>
-      <label class="f">연수 이름<input type="text" id="title" value="역량 강화 연수"></label>
-      <label class="f">날짜<input type="date" id="date"></label>
-      <label class="f">시작 시간<input type="time" id="start" value="09:30"></label>
-      <label class="f">끝나는 시간<input type="time" id="end" value="11:30"></label>
-      <label class="f wide">장소<input type="text" id="place" value="경산교육지원청 학생교육지원관 201호"></label>
-      <label class="f">학습코칭단 참석 인원(명)<input type="number" id="nCoach" value="31"></label>
-      <label class="f">그 밖의 참석자(명)<input type="number" id="nOther" value="7"></label>
-      <label class="f wide">대상<input type="text" id="target" value="센터장, 청도교육지원과장, 담당 장학사 2명, 기초학력 전담교사, 학습상담교사, 학습상담사, 학습코칭단"></label>
+      <label class="f" id="monthWrap">월(제목에 들어감)<select id="month"></select></label>
+      <label class="f">연수 이름<input type="text" id="title"></label>
+      <label class="f wide">연수 주제 (한 줄)<input type="text" id="theme"></label>
+      <label class="f" id="lectWrap1">강사 이름<input type="text" id="lect" value="유병훈"></label>
+      <label class="f" id="lectWrap2">강사 소속·직위<input type="text" id="lectOrg" value="행복한 교육 이야기 대표"></label>
     </div>
   </section>
 
   <section class="card">
-    <h2><span class="step">2</span>연수 내용</h2>
+    <h2><span class="step">2</span>일시·장소·대상</h2>
+    <div id="sessions"></div>
+    <div class="row"><button class="btn sm" type="button" id="addSess">+ 회차 추가</button><span class="small">코칭단 연수는 보통 1회, 교사·학부모 연수는 청도·경산 2회입니다.</span></div>
+    <div class="grid" style="margin-top:10px">
+      <label class="f wide" id="noteWrap">대상 비고(※ 줄)<input type="text" id="targetNote"></label>
+    </div>
+  </section>
+
+  <section class="card" id="actCard">
+    <h2><span class="step">3</span>연수 내용 (코칭단 연수)</h2>
+    <div class="small" style="margin-bottom:6px">이번 연수에 들어가는 활동 (고르면 목적·기대 효과·일정이 맞춰집니다)</div>
+    <div class="row" id="acts">
+      <label><input type="checkbox" name="act" value="case" checked> 교구 활용 사례 발표</label>
+      <label><input type="checkbox" name="act" value="material" checked> 학습코칭 자료 소개</label>
+      <label><input type="checkbox" name="act" value="emotion"> 정서 지원 활동</label>
+      <label><input type="checkbox" name="act" value="lecture"> 외부 강사 특강</label>
+      <label><input type="checkbox" name="act" value="group"> 영역별 소모임 협의</label>
+      <label><input type="checkbox" name="act" value="lend"> 교구 대여</label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">4</span>자동으로 쓴 문구 <span class="small">(고쳐도 됩니다 · 종류·주제를 바꾸면 다시 자동으로 씁니다)</span></h2>
     <div class="grid">
-      <label class="f wide">연수 주제 (한 줄)<input type="text" id="theme" value="영역별 교구활용 학습코칭 사례발표" placeholder="예) 영역별 교구활용 학습코칭 사례발표"></label>
-      <label class="f wide">현수막 표어<input type="text" id="slogan" value="손에 잡히는 배움, 눈에 보이는 성장"></label>
-      <div class="wide"><div class="small" style="margin-bottom:6px">이번 연수에 들어가는 활동 (고르면 목적·기대 효과·일정이 맞춰집니다)</div>
-        <div class="chk">
-          <label><input type="checkbox" name="act" value="case" checked> 교구 활용 사례 발표</label>
-          <label><input type="checkbox" name="act" value="material" checked> 학습코칭 자료 소개</label>
-          <label><input type="checkbox" name="act" value="emotion"> 정서 지원 활동</label>
-          <label><input type="checkbox" name="act" value="lecture"> 외부 강사 특강</label>
-          <label><input type="checkbox" name="act" value="group"> 영역별 소모임 협의</label>
-          <label><input type="checkbox" name="act" value="lend"> 교구 대여</label>
-        </div>
-      </div>
-      <label class="f">본 연수 담당<input type="text" id="who" value="학습코칭단"></label>
-      <label class="f">개회식 담당<input type="text" id="whoOpen" value="담당 장학사 / 교육지원과장(센터장)"></label>
+      <label class="f wide">목적 (한 줄에 하나)<textarea id="purpose"></textarea></label>
+      <label class="f wide">기대 효과 (한 줄에 하나)<textarea id="effect"></textarea></label>
+      <label class="f">현수막 표어<input type="text" id="slogan"></label>
+      <label class="f">현수막 부제<input type="text" id="sloganSub"></label>
     </div>
+    <div class="row" style="margin-top:8px"><button class="btn sm" type="button" id="regen">문구 자동으로 다시 쓰기</button></div>
   </section>
 
-  <section class="card">
-    <h2><span class="step">3</span>예산 (필요한 것만)</h2>
+  <section class="card" id="adminCard">
+    <h2><span class="step">5</span>행정 사항 (신청)</h2>
     <div class="grid">
-      <label class="f">식비 단가(원)<input type="number" id="mealUnit" value="10000"></label>
-      <label class="f">식비 인원(명)<input type="number" id="mealN" value="31"></label>
-      <label class="f">간식비 단가(원)<input type="number" id="snackUnit" value="4000"></label>
-      <label class="f">간식 횟수<input type="number" id="snackTimes" value="4"></label>
-      <label class="f">간식 인원(명)<input type="number" id="snackN" value="160"></label>
-      <label class="f">현수막(원)<input type="number" id="bannerCost" value="66000"></label>
+      <label class="f">청도 신청 기한<input type="date" id="dueCd"></label>
+      <label class="f">경산 신청 기한<input type="date" id="dueGs"></label>
+      <label class="f">교당 신청 인원<input type="text" id="perSchool" value="2명 내외"></label>
+      <label class="f">문의 전화<input type="text" id="tel" value="053. 819-7626, 7630"></label>
     </div>
-    <div class="small" style="margin-top:6px">0을 넣으면 그 줄은 빠집니다.</div>
   </section>
 
   <section class="card">
-    <h2><span class="step">4</span>적용하고 파일 만들기</h2>
+    <h2><span class="step">6</span>예산 집행 계획 <span class="small">(수량이 0인 줄은 빠집니다)</span></h2>
+    <table class="bud"><thead><tr><th style="width:60px">목</th><th>지출내역</th><th style="width:90px">단가(원)</th><th style="width:70px">수량</th><th style="width:60px">단위</th><th style="width:60px">횟수</th><th>비고</th><th></th></tr></thead><tbody id="bud"></tbody></table>
+    <div class="row" style="margin-top:6px"><button class="btn sm" type="button" id="addBud">+ 줄 추가</button></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">7</span>보도자료</h2>
+    <div class="grid">
+      <label class="f">배포일<input type="date" id="pressDate"></label>
+      <label class="f">담당자<input type="text" id="officer" value="권태우"></label>
+      <label class="f">담당자 전화<input type="text" id="officerTel" value="053-819-7626"></label>
+      <label class="f">사진(매)<input type="number" id="photos" value="2"></label>
+      <label class="f">경산 교육장<input type="text" id="eduGs" value="정영석"></label>
+      <label class="f">센터장(경산 교육지원과장)<input type="text" id="headGs" value="허영선"></label>
+      <label class="f">청도 교육지원과장<input type="text" id="headCd" value="신운식"></label>
+      <label class="f">청도 교육장<input type="text" id="eduCd" value="오홍현"></label>
+      <label class="f wide">제목(큰따옴표 안 문구)<input type="text" id="pTitle"></label>
+      <label class="f wide">본문 1 (개최 사실)<textarea id="p1"></textarea></label>
+      <label class="f wide">본문 2 (연수 내용)<textarea id="p2"></textarea></label>
+      <label class="f wide">본문 3 (인사 말씀 인용)<textarea id="p3"></textarea></label>
+    </div>
+    <div class="row" style="margin-top:8px"><button class="btn sm" type="button" id="regenP">보도자료 문구 자동으로 다시 쓰기</button></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">8</span>적용하고 파일 만들기</h2>
     <div class="row" style="margin-bottom:10px">
-      <button class="btn primary" id="applyBtn" type="button" style="font-size:17px;padding:14px 20px">적용 → 한글용 파일 만들기</button>
-      <button class="btn" id="copyBtn" type="button">글만 복사하기</button>
+      <button class="btn primary" id="applyBtn" type="button" style="font-size:17px;padding:14px 20px">적용 → 운영 계획·보도자료 파일 만들기</button>
+      <button class="btn" id="planBtn" type="button">운영 계획만 받기</button>
+      <button class="btn" id="pressBtn" type="button">보도자료만 받기</button>
+      <button class="btn" id="copyBtn" type="button">보이는 글 복사</button>
       <button class="btn" id="printBtn" type="button">인쇄 / PDF</button>
     </div>
     <div id="msg" hidden></div>
-    <div class="small" style="margin:6px 0 10px">위 1~3번을 고친 뒤 <b>적용</b>을 누르면 아래 미리보기가 새로 만들어지고, 한글에서 바로 열리는 파일(.docx)이 내려받아집니다. 한글에서 열어 「다른 이름으로 저장 → 한글 문서(*.hwp)」로 저장하면 됩니다.</div>
+    <div class="small" style="margin:6px 0 4px">한글에서 바로 열리는 파일(.docx) 2개가 내려받아집니다. 한글에서 열어 「다른 이름으로 저장 → 한글 문서(*.hwp)」로 저장하세요.</div>
+    <div class="tabs"><button class="btn on" type="button" data-v="plan">운영 계획 미리보기</button><button class="btn" type="button" data-v="press">보도자료 미리보기</button></div>
   </div>
-  <div class="doc" id="doc" contenteditable="true"></div>
+  <div class="doc" id="docPlan"></div>
+  <div class="doc" id="docPress" hidden></div>
 </div>
 
 <script>
 (() => {
   const $ = id => document.getElementById(id);
   const ORG = '경산기초학력거점지원센터';
-  const now = new Date();
-  for (let m = 1; m <= 12; m++) $('month').add(new Option(m + '월', m));
-  $('month').value = now.getMonth() + 1;
-  $('date').value = now.toISOString().slice(0, 10);
   const DOW = ['일', '월', '화', '수', '목', '금', '토'];
-  const fmtDate = s => { const d = new Date(s + 'T00:00:00'); if (isNaN(d)) return ''; return d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate() + '.(' + DOW[d.getDay()] + ')'; };
+  const won = n => Number(n || 0).toLocaleString('ko-KR');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const toMin = t => { const [h, m] = (t || '0:0').split(':').map(Number); return h * 60 + m; };
   const fromMin = n => String(Math.floor(((n % 1440) + 1440) % 1440 / 60)).padStart(2, '0') + ':' + String(((n % 60) + 60) % 60).padStart(2, '0');
-  const won = n => Number(n || 0).toLocaleString('ko-KR');
-  const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const pd = s => { const d = new Date(s + 'T00:00:00'); return isNaN(d) ? null : d; };
+  const fmtD = s => { const d = pd(s); return d ? d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate() + '.(' + DOW[d.getDay()] + ')' : ''; };
+  const fmtLong = s => { const d = pd(s); return d ? d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일(' + DOW[d.getDay()] + ')' : ''; };
+  const fmtShort = s => { const d = pd(s); return d ? (d.getMonth() + 1) + '월 ' + d.getDate() + '일(' + DOW[d.getDay()] + ')' : ''; };
+  const addDays = (s, n) => { const d = pd(s); if (!d) return ''; d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+  const ga = ['가', '나', '다', '라', '마', '바', '사'];
+  const type = () => document.querySelector('input[name=type]:checked').value;
+  const TYPE_NAME = { coach: '학습코칭단', teacher: '교사', parent: '학부모' };
+
+  // ---------- 기본값 ----------
+  const today = new Date().toISOString().slice(0, 10);
+  for (let m = 1; m <= 12; m++) $('month').add(new Option(m + '월', m));
+  $('month').value = new Date().getMonth() + 1;
+
+  const PRESET = {
+    coach: {
+      title: '역량 강화 연수', theme: '영역별 교구활용 학습코칭 사례발표', slogan: '손에 잡히는 배움, 눈에 보이는 성장', sloganSub: '',
+      sessions: [{ region: '', date: today, start: '09:30', end: '11:30', n: 31, unit: '명', place: '경산교육지원청 학생교육지원관 201호', target: '센터장, 청도교육지원과장, 담당 장학사 2명, 기초학력 전담교사, 학습상담교사, 학습상담사, 학습코칭단', other: 7 }],
+      budget: [['310', '식비', 10000, 31, '명', 1, '학습코칭단'], ['210', '간식비', 4000, 160, '명', 4, '학생간식'], ['210', '현수막', 66000, 1, '매', 1, '']]
+    },
+    teacher: {
+      title: '역량 강화 연수', theme: '진로 카드를 활용한 학생 진로 지도 방법', slogan: '꿈을 찾고 배움을 키우다', sloganSub: '가정과 학교가 함께하는 성장 지원',
+      sessions: [{ region: '청도', date: today, start: '14:00', end: '16:30', n: 30, unit: '명', place: '청도교육지원청 3층 대회의실', target: '초·중등 교사' }, { region: '경산', date: addDays(today, 14), start: '14:00', end: '16:30', n: 90, unit: '명', place: '경산교육지원청 2강당', target: '초·중등 교사' }],
+      note: '관내 초등학교, 중학교 기초학력 업무 담당자 및 희망 교원(교당 2명 이내)',
+      budget: [['210', '강사비(기본)', 200000, 1, '시간', 2, '일반강사1'], ['210', '강사비(초과)', 100000, 2, '시간', 2, ''], ['210', '원고료', 7000, 18, '매', 2, ''], ['230', '다과비', 4000, 120, '명', 1, ''], ['210', '현수막', 77000, 1, '매', 1, ''], ['210', '행사용품', 15000, 120, '개', 1, '생수 및 문구'], ['210', '연수자료', 20000, 120, '명', 1, '진로스토리북(인사이트)']]
+    },
+    parent: {
+      title: '연수', theme: '우리 아이의 진로 설계와 학습 역량 향상을 위한 코칭', slogan: '꿈을 찾고 배움을 키우다', sloganSub: '가정과 학교가 함께하는 성장 지원',
+      sessions: [{ region: '청도', date: today, start: '10:00', end: '12:30', n: 30, unit: '명', place: '청도교육지원청 3층 대회의실', target: '초·중등 학부모' }, { region: '경산', date: addDays(today, 14), start: '10:00', end: '12:30', n: 90, unit: '명', place: '경산교육지원청 2강당', target: '초·중등 학부모' }],
+      note: '',
+      budget: [['210', '강사비(기본)', 200000, 1, '시간', 2, '일반강사1'], ['210', '강사비(초과)', 100000, 2, '시간', 2, ''], ['210', '원고료', 7000, 18, '매', 2, ''], ['210', '현수막', 77000, 1, '매', 1, ''], ['230', '간담회', 25000, 7, '명', 1, ''], ['210', '행사용품', 15000, 120, '개', 1, '생수 및 문구'], ['310', '다과비', 10000, 5, '개', 1, ''], ['210', '연수자료', 20000, 120, '명', 1, '진로스토리북(인사이트)']]
+    }
+  };
+
+  // ---------- 회차 ----------
+  function sessRow(s, i) {
+    const d = document.createElement('div'); d.className = 'sess'; d.dataset.i = i;
+    d.innerHTML = '<div class="h">' + (i + 1) + '회차 <button class="btn sm" type="button" data-del style="float:right">삭제</button></div><div class="grid">' +
+      '<label class="f">지역<input data-k="region" value="' + esc(s.region) + '" placeholder="청도 / 경산"></label>' +
+      '<label class="f">날짜<input type="date" data-k="date" value="' + esc(s.date) + '"></label>' +
+      '<label class="f">시작 시간<input type="time" data-k="start" value="' + esc(s.start) + '"></label>' +
+      '<label class="f">끝나는 시간<input type="time" data-k="end" value="' + esc(s.end) + '"></label>' +
+      '<label class="f">인원(명)<input type="number" data-k="n" value="' + esc(s.n) + '"></label>' +
+      (type() === 'coach' ? '<label class="f">그 밖의 참석자(명)<input type="number" data-k="other" value="' + esc(s.other == null ? 0 : s.other) + '"></label>' : '') +
+      '<label class="f wide">장소<input data-k="place" value="' + esc(s.place) + '"></label>' +
+      '<label class="f wide">대상<input data-k="target" value="' + esc(s.target) + '"></label></div>';
+    d.querySelector('[data-del]').onclick = () => { if ($('sessions').children.length > 1) { d.remove(); renumber(); } };
+    return d;
+  }
+  const renumber = () => Array.from($('sessions').children).forEach((d, i) => d.querySelector('.h').firstChild.textContent = (i + 1) + '회차 ');
+  function readSessions() { return Array.from($('sessions').children).map(d => { const o = {}; d.querySelectorAll('[data-k]').forEach(el => o[el.dataset.k] = el.type === 'number' ? Number(el.value || 0) : el.value); return o; }); }
+  $('addSess').onclick = () => { const ss = readSessions(); const last = ss[ss.length - 1] || PRESET[type()].sessions[0]; const s = Object.assign({}, last, { region: last.region === '청도' ? '경산' : '', date: addDays(last.date, 14) }); $('sessions').appendChild(sessRow(s, ss.length)); };
+
+  // ---------- 예산 ----------
+  function budRow(r) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td><input data-k="mok" value="' + esc(r[0]) + '"></td><td><input data-k="item" value="' + esc(r[1]) + '"></td><td><input type="number" data-k="unit" value="' + esc(r[2]) + '"></td><td><input type="number" data-k="qty" value="' + esc(r[3]) + '"></td><td><input data-k="u" value="' + esc(r[4]) + '"></td><td><input type="number" data-k="times" value="' + esc(r[5]) + '"></td><td><input data-k="note" value="' + esc(r[6]) + '"></td><td><button class="btn sm" type="button">×</button></td>';
+    tr.querySelector('button').onclick = () => tr.remove();
+    return tr;
+  }
+  function readBudget() { return Array.from($('bud').children).map(tr => { const o = {}; tr.querySelectorAll('[data-k]').forEach(el => o[el.dataset.k] = el.type === 'number' ? Number(el.value || 0) : el.value); return o; }).filter(o => o.unit && o.qty && o.times); }
+  $('addBud').onclick = () => $('bud').appendChild(budRow(['210', '', 0, 1, '개', 1, '']));
+
+  // ---------- 종류 적용 ----------
+  function applyType() {
+    const t = type(), P = PRESET[t];
+    document.querySelectorAll('#types label').forEach(l => l.classList.toggle('on', l.querySelector('input').value === t));
+    $('title').value = P.title; $('theme').value = P.theme; $('slogan').value = P.slogan; $('sloganSub').value = P.sloganSub;
+    $('sessions').innerHTML = ''; P.sessions.forEach((s, i) => $('sessions').appendChild(sessRow(s, i)));
+    $('targetNote').value = P.note || '';
+    $('bud').innerHTML = ''; P.budget.forEach(r => $('bud').appendChild(budRow(r)));
+    $('actCard').hidden = t !== 'coach'; $('adminCard').hidden = t === 'coach'; $('monthWrap').hidden = t !== 'coach'; $('noteWrap').hidden = t === 'coach';
+    $('lectWrap1').hidden = $('lectWrap2').hidden = t === 'coach';
+    $('dueCd').value = addDays(today, -7); $('dueGs').value = today;
+    regenText(); regenPress();
+  }
+  document.querySelectorAll('input[name=type]').forEach(r => r.addEventListener('change', applyType));
+  ['theme', 'title'].forEach(id => $(id).addEventListener('change', () => { regenText(); regenPress(); }));
+  $('acts').addEventListener('change', () => { regenText(); regenPress(); });
+  $('regen').onclick = regenText; $('regenP').onclick = regenPress;
+
+  // ---------- 자동 문구 ----------
+  const PURPOSE = { case: '교구 활용 사례를 공유하여 영역별 지도 노하우를 상호 확산하고, 기초학력 지도의 실천적 전문성을 신장', material: '학습코칭 자료의 실제 적용 방법 습득을 통한 현장 실천 역량 강화', emotion: '정서 지원 활동의 이해와 적용을 통해 학생의 정서·학습 동기를 함께 돌보는 역량 함양', lecture: '전문가 특강을 통해 기초학력 지도에 필요한 최신 이론과 실제를 습득', group: '영역별 소모임 협의를 통해 지도 경험을 나누고 공동의 지도 방안을 마련', lend: '교구 대여와 활용 안내를 통한 수업 현장의 교구 활용도 제고' };
+  const EFFECT = { case: '학습코칭단의 교구 활용 사례 공유를 통한 실천적 지도 역량 신장', material: '학습코칭 자료 소개 및 활용 방안 안내를 통한 학생 맞춤형 자료 활용 능력 함양', emotion: '정서 지원 활동의 현장 적용을 통한 학생 정서·학습 지원의 질 제고', lecture: '전문가 특강을 통한 기초학력 지도 전문성 심화', group: '소모임 간 상호 교류 활성화를 통한 학습코칭단의 집단 전문성 강화', lend: '교구 활용 확대를 통한 학생 맞춤형 지도의 실천력 향상' };
+  const AGENDA = { case: '학습코칭단 영역별 교구 활용 사례 발표', material: '학습코칭 자료 소개 및 활용 방안', emotion: '정서 지원 활동의 실제와 적용', lecture: '전문가 특강', group: '영역별 소모임 협의', lend: '교구 대여' };
   const acts = () => Array.from(document.querySelectorAll('input[name=act]:checked')).map(x => x.value);
+  const kw = () => { const th = $('theme').value.trim(); return th || '연수 주제'; };
+  const isCareer = () => /진로/.test($('theme').value);
+  const bat = w => { const c = (w || '').replace(/[^가-힣]+$/, '').slice(-1); return c && (c.charCodeAt(0) - 0xAC00) % 28 > 0; };
+  const eul = w => bat(w) ? '을' : '를', eun = w => bat(w) ? '은' : '는';
 
-  // 활동별 문장 — 목적(가·나·다)과 기대 효과
-  const PURPOSE = {
-    case: '교구 활용 사례를 공유하여 영역별 지도 노하우를 상호 확산하고, 기초학력 지도의 실천적 전문성을 신장',
-    material: '학습코칭 자료의 실제 적용 방법 습득을 통한 현장 실천 역량 강화',
-    emotion: '정서 지원 활동의 이해와 적용을 통해 학생의 정서·학습 동기를 함께 돌보는 역량 함양',
-    lecture: '전문가 특강을 통해 기초학력 지도에 필요한 최신 이론과 실제를 습득',
-    group: '영역별 소모임 협의를 통해 지도 경험을 나누고 공동의 지도 방안을 마련',
-    lend: '교구 대여와 활용 안내를 통해 수업 현장의 교구 활용도 제고'
-  };
-  const EFFECT = {
-    case: '학습코칭단의 교구 활용 사례 공유를 통한 실천적 지도 역량 신장',
-    material: '학습코칭 자료 소개 및 활용 방안 안내를 통한 학생 맞춤형 자료 활용 능력 함양',
-    emotion: '정서 지원 활동의 현장 적용을 통한 학생 정서·학습 지원의 질 제고',
-    lecture: '전문가 특강을 통한 기초학력 지도 전문성 심화',
-    group: '소모임 간 상호 교류 활성화를 통한 학습코칭단의 집단 전문성 강화',
-    lend: '교구 활용 확대를 통한 학생 맞춤형 지도의 실천력 향상'
-  };
-  const AGENDA = {
-    case: '학습코칭단 영역별 교구 활용 사례 발표',
-    material: '학습코칭 자료 소개 및 활용 방안',
-    emotion: '정서 지원 활동의 실제와 적용',
-    lecture: '전문가 특강',
-    group: '영역별 소모임 협의',
-    lend: '교구 대여'
-  };
-  const ga = ['가', '나', '다', '라', '마', '바'];
+  function regenText() {
+    const t = type(); let P = [], E = [];
+    if (t === 'coach') {
+      const a = acts(); P = a.map(k => PURPOSE[k]); if (!P.length) P = ['학습코칭단의 전문성 향상을 위한 상호 교류 촉진'];
+      P.splice(1, 0, '학습코칭단의 전문성 향상을 위한 상호 교류 촉진'); P = P.slice(0, 4);
+      E = a.map(k => EFFECT[k]); if (!a.includes('group')) E.push('소모임 간 상호 교류 활성화를 통한 학습코칭단의 집단 전문성 강화'); E = E.slice(0, 4);
+    } else if (t === 'teacher') {
+      P = isCareer() ? ['학생의 자기이해와 진로 탐색을 돕는 ' + kw() + ' 습득', '교원의 학생 진로 지도 역량 강화'] : ['「' + kw() + '」에 대한 이해와 실천 방법 습득', '학습에 어려움을 겪는 학생을 지원하는 교원의 지도 역량 강화'];
+      E = isCareer() ? ['카드 활동을 통한 학생의 자기이해 및 진로 탐색 동기 향상', kw() + ' 습득을 통한 교원의 진로 지도 전문성 신장'] : ['「' + kw() + '」의 현장 적용을 통한 학생 맞춤형 지도의 실천력 향상', '교원의 기초학력 지도 전문성 신장 및 학교 간 우수 사례 확산'];
+    } else {
+      P = ['학생의 성장 배경에 대한 이해 증진 및 공감 능력 향상', '가정 내 지지적 환경 조성을 통한 학생의 정서적 안정과 학습 의욕 고취', '학생의 건강한 성장을 위한 공동체적 지지망 구축'];
+      E = ['자녀의 자기주도적 학습을 위한 학부모 역량 강화', '학부모와 자녀 간의 정서행동 지원 프로그램 운영으로 부모-자녀 의사소통 도모', '소통과 공감능력 향상으로 학생의 자기주도 학습 능력 증진 및 학교생활 적응 능력 향상'];
+    }
+    $('purpose').value = P.join('\n'); $('effect').value = E.join('\n');
+  }
 
-  function build() {
-    const y = $('year').value, m = $('month').value, title = $('title').value.trim();
-    const name = y + ' ' + ORG + ' 학습코칭단 ' + m + '월 ' + title;
-    const start = toMin($('start').value), end = toMin($('end').value);
-    const nCoach = Number($('nCoach').value || 0), nOther = Number($('nOther').value || 0);
-    const target = $('target').value.trim() + ' ' + nCoach + '명(총 ' + (nCoach + nOther) + '명)';
-    const a = acts(); const theme = $('theme').value.trim();
-    // 목적
-    let purposes = a.map(k => PURPOSE[k]);
-    if (!purposes.length) purposes = ['학습코칭단의 전문성 향상을 위한 상호 교류 촉진'];
-    purposes.splice(1, 0, '학습코칭단의 전문성 향상을 위한 상호 교류 촉진');
-    purposes = purposes.slice(0, 4);
-    let effects = a.map(k => EFFECT[k]); if (!effects.length) effects = ['학습코칭단의 상호 교류를 통한 집단 전문성 강화'];
-    if (!a.includes('group')) effects.push('소모임 간 상호 교류 활성화를 통한 학습코칭단의 집단 전문성 강화');
-    effects = effects.slice(0, 4);
-    // 일정
-    const main = a.filter(k => k !== 'lend').map(k => '◦ ' + AGENDA[k]); if (!main.length) main.push('◦ ' + (theme || '연수'));
-    const closing = ['◦ 업무 협의 및 정보 공유' + (a.includes('lend') ? ', 교구 대여' : ''), '◦ 종합 정리 및 폐회'];
-    const regStart = start - 30, openEnd = start + 10;
-    const sched = [
-      { t: fromMin(regStart) + '~' + fromMin(start), min: 30, c: ['◦ 등록'], who: '' },
-      { t: fromMin(start) + '~' + fromMin(openEnd), min: 10, c: ['◦ 개회식', '◦ 인사말씀'], who: $('whoOpen').value },
-      { t: fromMin(openEnd) + '~' + fromMin(end), min: end - openEnd, c: main, who: $('who').value },
-      { t: fromMin(end) + '~', min: '', c: closing, who: '' }
-    ];
+  function regenPress() {
+    const t = type(), ss = readSessions(), th = kw(), N = TYPE_NAME[t];
+    const total = ss.reduce((s, x) => s + (x.n || 0), 0);
+    const where = ss.map(s => fmtLong(s.date) + ' ' + s.place.replace(/\s*\d*층?\s*(대회의실|2강당|201호|강당).*$/, '')).join(', ');
+    const last = ss[ss.length - 1] || {}; $('pressDate').value = last.date || today;
+    const eduGs = $('eduGs').value, headGs = $('headGs').value, headCd = $('headCd').value, eduCd = $('eduCd').value;
+    let title, p1, p2, p3;
+    if (t === 'coach') {
+      title = $('slogan').value;
+      p1 = '경산교육지원청(교육장 ' + eduGs + ') ' + ORG + '는 ' + where + '에서 학습코칭단을 대상으로 ‘' + th + '’' + eul(th) + ' 주제로 역량 강화 연수를 진행하였다.';
+      p2 = '이번 연수는 기초학력 지원 현장에서 학생을 지도하는 학습코칭단이 각자의 지도 경험과 노하우를 서로 나누고, 이를 바탕으로 코칭단 스스로 지도 역량을 키워 가기 위해 마련되었다. 코칭단은 한글·수리·정서·영어 영역별로 모여 ' + th + eul(th) + ' 중심으로 어떤 학생에게 효과가 있었는지, 어떤 상황에서 활용하는지를 실제 지도 사례와 함께 발표하였다. 참석자들은 발표를 들으며 자신의 지도 방식과 비교해 보고 새로운 활용 방법을 질문하고 제안하는 등 활발한 토의를 이어갔다. 이번 연수의 가장 큰 특징은 외부 강사의 강의가 아니라 코칭단 한 사람 한 사람의 경험이 곧 연수 내용이 되었다는 점으로, 서로의 사례를 나누는 과정에서 코칭단이 자발적으로 배우고 성장하는 학습 공동체의 모습을 보여 주었다.';
+      p3 = ORG + '장 ' + headGs + ' 교육지원과장은 “학생 한 명 한 명에게 맞는 교재와 교구를 찾아 쓰는 코칭단의 경험은 그 어떤 강의보다 값진 연수 자료”라며, “오늘 나눈 사례들이 현장에서 더 다양한 학생에게 적용되어, 기초학력 지원의 질을 한층 높이는 밑거름이 되기를 기대한다”고 밝혔다.';
+    } else if (t === 'teacher') {
+      title = isCareer() ? '카드 한 장으로 아이들의 꿈을 여는 진로 지도' : '현장에서 바로 쓰는 ' + th;
+      p1 = '경산교육지원청(교육장 ' + eduGs + ') ' + ORG + '는 ' + where + '에서 경산·청도 지역 교사 ' + total + '여명을 대상으로 ‘' + th + '’' + eul(th) + ' 주제로 교사 역량 강화 연수를 진행하였다.';
+      p2 = '이번 연수는 교사들이 ' + th + eul(th) + ' 수업과 상담에 효과적으로 활용하는 방법을 익히기 위해 마련되었다. 참석 교사들은 강의와 실습을 통해 핵심 원리를 이해하고 활동을 직접 체험하였으며, 특히 학습에 어려움을 겪는 학생도 부담 없이 참여할 수 있는 활동에 중점을 두어 학생의 자존감과 학습 동기를 높이는 디딤돌이 되도록 하는 데 의미를 두었다. 교사들은 분임 토의를 통해 각자의 학급 상황에 맞는 적용 방안을 함께 나누고, 실제 수업과 상담 장면에서 활용할 수 있는 활동안을 구안하였다.';
+      p3 = ss.map((s, i) => (s.region === '청도' ? fmtShort(s.date) + ' 청도 연수에서 청도교육지원청 ' + headCd + ' 교육지원과장은 “교육은 아이들이 자신을 이해하고 가능성을 발견하는 출발점”이라며, “아이들이 더 넓은 세상을 만나고 꿈을 키워 갈 수 있도록 학교 현장을 꾸준히 지원하겠다”고 말했다.' : fmtShort(s.date) + (s.region ? ' ' + s.region : '') + ' 연수에서 ' + ORG + '장 ' + headGs + ' 교육지원과장은 “' + th + eun(th) + ' 기초학력과 더불어 아이들의 배움을 지탱하는 든든한 뿌리”라며, “이번 연수를 통해 현장 교사들이 아이 한 명 한 명의 꿈과 강점을 발견하는 지도를 실천하고, 모든 학생이 배움의 의미를 찾아가는 책임 교육이 실현되기를 기대한다”고 밝혔다.')).join('\n');
+    } else {
+      title = '학교와 가정이 함께 세우는 우리 아이 배움의 길';
+      p1 = '경산교육지원청(교육장 ' + eduGs + ') ' + ORG + '는 ' + where + '에서 경산·청도 지역 학부모 ' + total + '여명을 대상으로 ‘' + th + '’' + eul(th) + ' 주제로 학부모 연수를 진행하였다.';
+      p2 = '이번 연수는 학부모가 가정에서 자녀의 학습을 효과적으로 코칭할 수 있도록 ' + th + eul(th) + ' 익히는 데 중점을 두었다. 참석 학부모들은 자녀의 학습 성향과 강점을 파악하는 방법, 스스로 목표를 세우고 계획·점검하는 자기주도 학습 습관 기르기, 학습 동기를 높이는 칭찬과 피드백 대화법, 공부가 어려운 순간에 아이를 다그치지 않고 함께 원인을 찾아 주는 코칭 질문법 등을 사례와 실습을 통해 배웠다. 또한 자녀의 흥미와 강점을 진로와 연결해 ‘왜 공부하는지’를 아이 스스로 찾게 돕는 진로 설계 코칭도 함께 다루었다.';
+      p3 = ss.map(s => (s.region === '청도' ? fmtShort(s.date) + ' 청도 연수에서 청도교육지원청 ' + eduCd + ' 교육장은 “아이의 배움은 학교와 가정이 함께 가꾸어 갈 때 가장 단단하게 자란다”며, “오늘 연수가 학부모님들이 자녀의 가능성을 새롭게 발견하고 가정에서 따뜻한 학습코칭을 실천하는 계기가 되기를 바란다”고 말했다.' : fmtShort(s.date) + (s.region ? ' ' + s.region : '') + ' 연수에서 경산교육지원청 ' + eduGs + ' 교육장은 “부모의 믿음과 기다림은 아이가 스스로 배우고 꿈꾸게 하는 가장 큰 힘”이라며, “앞으로도 학부모와 학교가 함께 아이 한 명 한 명의 학습과 진로를 든든히 뒷받침할 수 있도록 다양한 연수와 지원을 이어가겠다”고 밝혔다.')).join('\n');
+    }
+    $('pTitle').value = title; $('p1').value = p1; $('p2').value = p2; $('p3').value = p3;
+  }
+
+  // ---------- 문서 블록 만들기 ----------
+  // block: {k:'title'|'center'|'h'|'p'|'table'|'banner'|'blank', ...}
+  function planBlocks() {
+    const t = type(), y = $('year').value, ss = readSessions(), N = TYPE_NAME[t];
+    const titleLine2 = t === 'coach' ? '학습코칭단 ' + $('month').value + '월 ' + $('title').value + ' 운영 계획' : N + ' ' + $('title').value + ' 운영 계획';
+    const name = (t === 'coach' ? '학습코칭단 ' + $('month').value + '월 ' : N + ' ') + $('title').value;
+    const B = [{ k: 'title', text: y + ' ' + ORG }, { k: 'title', text: titleLine2 }, { k: 'center', text: ORG, after: 240 }];
+    const P = $('purpose').value.split('\n').map(s => s.trim()).filter(Boolean), E = $('effect').value.split('\n').map(s => s.trim()).filter(Boolean);
+    B.push({ k: 'h', text: '1. 목적' }); P.forEach((p, i) => B.push({ k: 'p', text: ga[i] + '. ' + p, in: 1 }));
+    B.push({ k: 'h', text: '2. 세부 추진 계획' });
+    const s0 = ss[0] || {};
+    if (t === 'coach') {
+      const nOther = s0.other || 0;
+      B.push({ k: 'p', text: '가. 일시: ' + fmtD(s0.date) + ' ' + s0.start + '~', in: 1 });
+      B.push({ k: 'p', text: '나. 장소: ' + s0.place, in: 1 });
+      B.push({ k: 'p', text: '다. 대상: ' + s0.target + ' ' + s0.n + '명(총 ' + (s0.n + nOther) + '명)', in: 1 });
+      B.push({ k: 'p', text: '라. 세부 운영 일정(단, 사정에 따라 변경될 수 있음)', in: 1 });
+    } else {
+      B.push({ k: 'p', text: '가. 일시·대상·장소', in: 1 });
+      const rows = [[{ t: '일시', w: 14, head: true }].concat(ss.map(s => ({ t: fmtD(s.date) + ' ' + s.start + '~' + s.end, w: 86 / ss.length })))];
+      rows.push([{ t: '대상', w: 14, head: true }].concat(ss.map(s => ({ t: (s.region ? s.region + ' 지역\n' : '') + s.target + ' ' + s.n + '명', w: 86 / ss.length }))));
+      rows.push([{ t: '장소', w: 14, head: true }].concat(ss.map(s => ({ t: s.place, w: 86 / ss.length }))));
+      B.push({ k: 'table', rows });
+      if ($('targetNote').value.trim()) B.push({ k: 'p', text: '※ ' + $('targetNote').value.trim(), in: 1 });
+      B.push({ k: 'p', text: '나. 연수 주제: ' + $('theme').value, in: 1 });
+      B.push({ k: 'p', text: '다. 연수 강사: ' + $('lect').value + '(' + $('lectOrg').value + ')', in: 1 });
+      B.push({ k: 'p', text: '라. 세부 운영 일정(단, 사정에 따라 변경될 수 있음)', in: 1 });
+    }
+    // 일정표 (1회차 시간 기준)
+    const st = toMin(s0.start), en = toMin(s0.end);
+    const hdr = [{ t: '순', w: 7 }, { t: '시간', w: 20 }, { t: '분', w: 8 }, { t: '내  용', w: 43 }, { t: '담당', w: 22 }];
+    let sch;
+    if (t === 'coach') {
+      const a = acts(); const main = a.filter(k => k !== 'lend').map(k => '◦ ' + AGENDA[k]); if (!main.length) main.push('◦ ' + $('theme').value);
+      sch = [
+        ['1', fromMin(st - 30) + '~' + fromMin(st), 30, '◦ 등록', ''],
+        ['2', fromMin(st) + '~' + fromMin(st + 10), 10, '◦ 개회식\n◦ 인사말씀', '담당 장학사\n교육지원과장(센터장)'],
+        ['3', fromMin(st + 10) + '~' + fromMin(en), en - st - 10, main.join('\n'), '학습코칭단'],
+        ['4', fromMin(en) + '~', '', '◦ 업무 협의 및 정보 공유' + (a.includes('lend') ? ', 교구 대여' : '') + '\n◦ 종합 정리 및 폐회', '']
+      ];
+    } else {
+      sch = [
+        ['1', fromMin(st - 30) + '~' + fromMin(st), 30, '◦ 등록 및 자료 배부', ''],
+        ['2', fromMin(st) + '~' + fromMin(st + 10), 10, '◦ 개회식\n◦ 인사 말씀', '담당 장학사\n교육지원과장\n(센터장)'],
+        ['3', fromMin(st + 10) + '~' + fromMin(en - 10), en - st - 20, '◦ ' + $('theme').value, $('lect').value + '\n(' + $('lectOrg').value + ')'],
+        ['4', fromMin(en - 10) + '~' + fromMin(en), 10, '◦ ' + ORG + ' 소개 및 사업 안내', '학습상담교사'],
+        ['5', fromMin(en), '', '◦ 종합정리 및 폐회', '']
+      ];
+    }
+    B.push({ k: 'table', rows: [hdr].concat(sch.map(r => [{ t: r[0], w: 7 }, { t: r[1], w: 20 }, { t: r[2], w: 8 }, { t: r[3], w: 43, left: true }, { t: r[4], w: 22 }])) });
     // 예산
-    const budget = [];
-    const mu = +$('mealUnit').value, mn = +$('mealN').value, su = +$('snackUnit').value, st = +$('snackTimes').value, sn = +$('snackN').value, bc = +$('bannerCost').value;
-    if (mu && mn) budget.push({ mok: '310', item: '식비', calc: won(mu) + '원×' + mn + '명=', amt: mu * mn, note: '학습코칭단' });
-    if (su && st && sn) budget.push({ mok: '210', item: '간식비', calc: won(su) + '원×' + st + '회×' + sn + '명=', amt: su * st * sn, note: '학생간식' });
-    if (bc) budget.push({ mok: '210', item: '현수막', calc: won(bc) + '원×1매', amt: bc, note: '' });
-    const total = budget.reduce((s, b) => s + b.amt, 0);
-    const dateStr = fmtDate($('date').value) + ' ' + $('start').value + '~';
-    return { name, y, m, title, dateStr, place: $('place').value.trim(), target, purposes, effects, sched, budget, total, slogan: $('slogan').value.trim(), theme };
+    B.push({ k: 'h', text: '3. 예산 집행 계획' });
+    const bud = readBudget(); let total = 0;
+    const brows = [[{ t: '연번', w: 8 }, { t: '목', w: 8 }, { t: '지출내역', w: 16 }, { t: '산출 근거', w: 34 }, { t: '금액(원)', w: 18 }, { t: '비고', w: 16 }]];
+    bud.forEach((b, i) => { const amt = b.unit * b.qty * b.times; total += amt; const calc = won(b.unit) + '원×' + b.qty + b.u + (b.times > 1 ? '×' + b.times + '회' : '') + '='; brows.push([{ t: i + 1, w: 8 }, { t: b.mok, w: 8 }, { t: b.item, w: 16 }, { t: calc, w: 34, left: true }, { t: won(amt), w: 18 }, { t: b.note, w: 16 }]); });
+    brows.push([{ t: '총계', w: 66, span: 4 }, { t: won(total), w: 18 }, { t: '', w: 16 }]);
+    B.push({ k: 'table', rows: brows });
+    // 현수막
+    B.push({ k: 'h', text: '4. 현수막 제작 계획' });
+    B.push({ k: 'banner', lines: [t === 'coach' ? ORG + ' ' + name : ORG, '“ ' + $('slogan').value + ' ”', $('sloganSub').value || $('theme').value, '♣일시: ' + fmtD(s0.date) + ' ' + s0.start + '~  ♣장소: ' + s0.place] });
+    // 행정
+    B.push({ k: 'h', text: '5. 행정 사항' });
+    if (t === 'coach') {
+      B.push({ k: 'p', text: '가. 개인적인 사정으로 불참 시 담당자에게 사전 유선 연락', in: 1 });
+      B.push({ k: 'p', text: '나. 청도기초학력지원센터 담당 기초학력 전담교사 참석 가능(필요시 수업 일정 조정)', in: 1 });
+    } else {
+      const due = [[{ t: '청도', w: 50 }, { t: '경산', w: 50 }], [{ t: fmtD($('dueCd').value), w: 50 }, { t: fmtD($('dueGs').value), w: 50 }]];
+      if (t === 'parent') {
+        B.push({ k: 'p', text: '가. 학부모 연수 참여를 위한 안내장 발송 및 신청서 제출', in: 1 });
+        B.push({ k: 'p', text: '1) 신청 인원: 교당 ' + $('perSchool').value, in: 2 });
+        B.push({ k: 'p', text: '2) 신청 기한 ※기한 엄수', in: 2 }); B.push({ k: 'table', rows: due, narrow: true });
+        B.push({ k: 'p', text: '3) 제출 서류: [붙임2] 엑셀 파일 (공문 제출 시 참석 확정, 별도 참석자 명단 발송하지 않음)', in: 2 });
+        B.push({ k: 'p', text: '4) 제출 방법: 경산교육지원청 교육지원과로 공문 제출', in: 2 });
+        B.push({ k: 'p', text: '※ 청도지역 학교도 경산교육지원청 교육지원과로 제출', in: 2 });
+        B.push({ k: 'p', text: '5) 참가신청서 및 개인정보 제공 동의서는 학교 보관 후 학부모 연수가 끝나고 난 후 폐기', in: 2 });
+        B.push({ k: 'p', text: '6) 참석 대상자(학부모)에게 센터에서 문자로 통보 예정', in: 2 });
+        B.push({ k: 'p', text: '※ 반드시 연락할 수 있는 번호 입력', in: 2 });
+        B.push({ k: 'p', text: '나. 문의: ' + ORG + ' 학습상담교사, 학습상담사 ☎ ' + $('tel').value, in: 1 });
+      } else {
+        B.push({ k: 'p', text: '가. 신청 기간 ※기한 엄수', in: 1 }); B.push({ k: 'table', rows: due, narrow: true });
+        B.push({ k: 'p', text: '나. 제출 서류: [붙임2] 엑셀 파일 (공문 제출 시 참석 확정, 별도 참석자 명단 발송하지 않음)', in: 1 });
+        B.push({ k: 'p', text: '다. 제출 방법: 경산교육지원청 교육지원과로 공문 제출', in: 1 });
+      }
+    }
+    B.push({ k: 'h', text: '6. 기대 효과' }); E.forEach((p, i) => B.push({ k: 'p', text: ga[i] + '. ' + p, in: 1 }));
+    return { blocks: B, fileName: y + '학년도 ' + name + ' 운영 계획.docx' };
   }
 
-  function render() {
-    const d = build();
-    let h = '<h1>' + esc(d.y + ' ' + ORG) + '<br>학습코칭단 ' + esc(d.m + '월 ' + d.title) + ' 운영 계획</h1><div class="org">' + esc(ORG) + '</div>';
-    h += '<h2>1. 목적</h2>' + d.purposes.map((p, i) => '<p>' + ga[i] + '. ' + esc(p) + '</p>').join('');
-    h += '<h2>2. 세부 추진 계획</h2><p>가. 일시: ' + esc(d.dateStr) + '</p><p>나. 장소: ' + esc(d.place) + '</p><p>다. 대상: ' + esc(d.target) + '</p><p>라. 세부 운영 일정(단, 사정에 따라 변경될 수 있음)</p>';
-    h += '<table><tr><th style="width:7%">순</th><th style="width:20%">시간</th><th style="width:8%">분</th><th>내  용</th><th style="width:22%">담당</th></tr>';
-    d.sched.forEach((s, i) => { h += '<tr><td>' + (i + 1) + '</td><td>' + esc(s.t) + '</td><td>' + esc(s.min) + '</td><td class="l">' + s.c.map(esc).join('<br>') + '</td><td>' + esc(s.who).replace(/ \/ /g, '<br>') + '</td></tr>'; });
-    h += '</table>';
-    h += '<h2>3. 예산 집행 계획</h2><table><tr><th style="width:8%">연번</th><th style="width:8%">목</th><th style="width:16%">지출내역</th><th>산출 근거</th><th style="width:18%">금액(원)</th><th style="width:16%">비고</th></tr>';
-    d.budget.forEach((b, i) => { h += '<tr><td>' + (i + 1) + '</td><td>' + b.mok + '</td><td>' + esc(b.item) + '</td><td class="l">' + esc(b.calc) + '</td><td>' + won(b.amt) + '</td><td>' + esc(b.note) + '</td></tr>'; });
-    h += '<tr><td colspan="4">총계</td><td>' + won(d.total) + '</td><td></td></tr></table>';
-    h += '<h2>4. 현수막 제작 계획</h2><div class="banner"><div class="t1">' + esc(ORG + ' 학습코칭단 ' + d.m + '월 ' + d.title) + '</div><div class="t2">“ ' + esc(d.slogan) + ' ”</div><div class="t3">' + esc(d.theme) + '</div><div class="t1">♣일시: ' + esc(d.dateStr) + '  ♣장소: ' + esc(d.place) + '</div></div>';
-    h += '<h2>5. 행정 사항</h2><p>가. 개인적인 사정으로 불참 시 담당자에게 사전 유선 연락</p><p>나. 청도기초학력지원센터 담당 기초학력 전담교사 참석 가능(필요시 수업 일정 조정)</p>';
-    h += '<h2>6. 기대 효과</h2>' + d.effects.map((p, i) => '<p>' + ga[i] + '. ' + esc(p) + '</p>').join('');
-    $('doc').innerHTML = h;
-  }
-  render();
-  $('applyBtn').addEventListener('click', () => { render(); makeDocx(); });
-
-  const showMsg = (t, err) => { const m = $('msg'); m.hidden = false; m.className = 'msg' + (err ? ' err' : ''); m.textContent = t; };
-  // 글 복사: 표는 탭으로 구분해 한글에 붙여넣으면 표로 바뀌기 쉽게
-  function docText() {
-    const doc = $('doc').cloneNode(true); const out = [];
-    doc.childNodes.forEach(n => {
-      if (n.nodeName === 'TABLE') { n.querySelectorAll('tr').forEach(tr => out.push(Array.from(tr.children).map(c => c.innerText.replace(/\n/g, ' / ')).join('\t'))); out.push(''); }
-      else if (n.nodeName === 'DIV' && n.classList.contains('banner')) out.push(...Array.from(n.children).map(c => c.innerText));
-      else out.push(n.innerText);
-    });
-    return out.join('\n');
-  }
-  $('copyBtn').addEventListener('click', async () => { try { await navigator.clipboard.writeText(docText()); showMsg('복사했습니다. 한글에서 Ctrl+V로 붙여 넣으세요. (표 부분은 블록 지정 후 "문자열을 표로"를 쓰면 표가 됩니다)'); } catch (e) { showMsg('복사가 안 됩니다. 아래 글을 직접 블록 지정해 복사하세요.', true); } });
-  $('printBtn').addEventListener('click', () => window.print());
-  async function makeDocx() {
-    if (!window.docx) { showMsg('워드 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.', true); return; }
-    const d = build();
-    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel } = docx;
-    const P = (t, o) => new Paragraph(Object.assign({ children: [new TextRun({ text: t, size: 22, font: '바탕', bold: !!(o && o.bold) })], spacing: { after: 60 } }, o && o.align ? { alignment: o.align } : {}, o && o.indent ? { indent: { left: 360 } } : {}));
-    const H = t => new Paragraph({ children: [new TextRun({ text: t, size: 26, bold: true, font: '바탕' })], spacing: { before: 240, after: 80 } });
-    const cell = (c, head) => new TableCell({ width: { size: c.w, type: WidthType.PERCENTAGE }, columnSpan: c.span || 1, shading: head ? { fill: 'E7E6E6' } : undefined, verticalAlign: 'center', children: String(c.t).split('\n').map(x => new Paragraph({ alignment: (c.left && !head) ? AlignmentType.LEFT : AlignmentType.CENTER, children: [new TextRun({ text: x, size: 20, bold: !!head, font: '바탕' })] })) });
-    const tbl = rows => new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: rows.map((r, i) => new TableRow({ tableHeader: i === 0, children: r.map(c => cell(c, i === 0)) })) });
-    const kids = [
-      new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: d.y + ' ' + ORG, size: 32, bold: true, font: '바탕' })] }),
-      new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '학습코칭단 ' + d.m + '월 ' + d.title + ' 운영 계획', size: 32, bold: true, font: '바탕' })], spacing: { after: 120 } }),
-      new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: ORG, size: 22, font: '바탕' })], spacing: { after: 240 } }),
-      H('1. 목적'), ...d.purposes.map((p, i) => P(ga[i] + '. ' + p, { indent: true })),
-      H('2. 세부 추진 계획'), P('가. 일시: ' + d.dateStr, { indent: true }), P('나. 장소: ' + d.place, { indent: true }), P('다. 대상: ' + d.target, { indent: true }), P('라. 세부 운영 일정(단, 사정에 따라 변경될 수 있음)', { indent: true }),
-      tbl([[{ t: '순', w: 7 }, { t: '시간', w: 20 }, { t: '분', w: 8 }, { t: '내  용', w: 43 }, { t: '담당', w: 22 }]].concat(d.sched.map((s, i) => [{ t: i + 1, w: 7 }, { t: s.t, w: 20 }, { t: s.min, w: 8 }, { t: s.c.join('\n'), w: 43, left: true }, { t: s.who.replace(/ \/ /g, '\n'), w: 22 }]))),
-      H('3. 예산 집행 계획'),
-      tbl([[{ t: '연번', w: 8 }, { t: '목', w: 8 }, { t: '지출내역', w: 16 }, { t: '산출 근거', w: 34 }, { t: '금액(원)', w: 18 }, { t: '비고', w: 16 }]].concat(d.budget.map((b, i) => [{ t: i + 1, w: 8 }, { t: b.mok, w: 8 }, { t: b.item, w: 16 }, { t: b.calc, w: 34, left: true }, { t: won(b.amt), w: 18 }, { t: b.note, w: 16 }])).concat([[{ t: '총계', w: 66, span: 4 }, { t: won(d.total), w: 18 }, { t: '', w: 16 }]])),
-      H('4. 현수막 제작 계획'),
-      P(ORG + ' 학습코칭단 ' + d.m + '월 ' + d.title, { align: AlignmentType.CENTER }), P('“ ' + d.slogan + ' ”', { align: AlignmentType.CENTER, bold: true }), P(d.theme, { align: AlignmentType.CENTER, bold: true }), P('♣일시: ' + d.dateStr + '  ♣장소: ' + d.place, { align: AlignmentType.CENTER }),
-      H('5. 행정 사항'), P('가. 개인적인 사정으로 불참 시 담당자에게 사전 유선 연락', { indent: true }), P('나. 청도기초학력지원센터 담당 기초학력 전담교사 참석 가능(필요시 수업 일정 조정)', { indent: true }),
-      H('6. 기대 효과'), ...d.effects.map((p, i) => P(ga[i] + '. ' + p, { indent: true }))
+  function pressBlocks() {
+    const t = type(), N = TYPE_NAME[t];
+    const sub = '-' + ORG + ' ' + (t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value) + ' 개최-';
+    const B = [
+      { k: 'table', rows: [[{ t: '보도자료', w: 22, big: true, span: 1, rows: 2 }, { t: fmtD($('pressDate').value), w: 28 }, { t: '기 관 명', w: 15 }, { t: '경상북도경산교육지원청', w: 35 }], [{ t: '', w: 22 }, { t: '', w: 28 }, { t: '자료문의', w: 15 }, { t: '담당자 ' + $('officer').value + '\n(☎' + $('officerTel').value + ')', w: 35 }]], plain: true },
+      { k: 'p', text: '￭총 2쪽    ￭사진: ' + $('photos').value + '매(16:00 제공)' },
+      { k: 'blank' },
+      { k: 'title', text: '“ ' + $('pTitle').value + ' ”' },
+      { k: 'center', text: sub, bold: true, after: 240 }
     ];
-    const docFile = new Document({ sections: [{ properties: { page: { margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 } } }, children: kids }] });
-    const blob = await Packer.toBlob(docFile);
-    const name = d.y + '학년도 학습코칭단 ' + d.m + '월 ' + d.title + ' 운영 계획.docx';
-    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-    showMsg('적용했습니다. 파일 저장: ' + name + ' — 한글에서 열어 「다른 이름으로 저장 → *.hwp」로 저장하세요.');
+    ['p1', 'p2', 'p3'].forEach(id => $(id).value.split('\n').map(s => s.trim()).filter(Boolean).forEach((p, i) => B.push({ k: 'p', text: (i === 0 ? '□ ' : '   ') + p, after: 200 })));
+    return { blocks: B, fileName: fmtD($('pressDate').value).replace(/[.\s]/g, '').replace(/\(.\)/, '') + ' 보도자료 ' + ORG + ' ' + N + ' 연수.docx' };
   }
+
+  // ---------- HTML 렌더 ----------
+  function renderHTML(B, el) {
+    let h = '';
+    B.forEach(b => {
+      if (b.k === 'title') h += '<div class="ttl">' + esc(b.text) + '</div>';
+      else if (b.k === 'center') h += '<div class="c' + (b.bold ? ' b' : '') + '">' + esc(b.text) + '</div>';
+      else if (b.k === 'h') h += '<div class="h2">' + esc(b.text) + '</div>';
+      else if (b.k === 'p') h += '<p class="' + (b.in === 1 ? 'in' : b.in === 2 ? 'in2' : '') + '">' + esc(b.text) + '</p>';
+      else if (b.k === 'blank') h += '<p>&nbsp;</p>';
+      else if (b.k === 'banner') h += '<div class="banner">' + b.lines.map((l, i) => '<div class="' + (i === 1 ? 'big b' : i === 2 ? 'mid b' : '') + '">' + esc(l) + '</div>').join('') + '</div>';
+      else if (b.k === 'table') {
+        h += '<table' + (b.narrow ? ' style="width:50%;margin-left:32px"' : '') + '>';
+        b.rows.forEach((r, ri) => { h += '<tr>' + r.map(c => { if (c.skip) return ''; const tag = (ri === 0 && !b.plain && !c.noHead) || c.head ? 'th' : 'td'; return '<' + tag + (c.span ? ' colspan="' + c.span + '"' : '') + (c.rows ? ' rowspan="' + c.rows + '"' : '') + ' style="width:' + c.w + '%"' + (c.left ? ' class="l"' : '') + '>' + (c.big ? '<span class="big b">' : '') + esc(c.t).replace(/\n/g, '<br>') + (c.big ? '</span>' : '') + '</' + tag + '>'; }).join('') + '</tr>'; });
+        h += '</table>';
+      }
+    });
+    el.innerHTML = h;
+  }
+
+  // ---------- DOCX ----------
+  async function buildDocx(B, fileName) {
+    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle } = docx;
+    const run = (t, o = {}) => new TextRun({ text: t, size: o.size || 22, bold: !!o.bold, font: '바탕' });
+    const kids = [];
+    B.forEach(b => {
+      if (b.k === 'title') kids.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [run(b.text, { size: 32, bold: true })] }));
+      else if (b.k === 'center') kids.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [run(b.text, { bold: b.bold })], spacing: { after: b.after || 60 } }));
+      else if (b.k === 'h') kids.push(new Paragraph({ children: [run(b.text, { size: 26, bold: true })], spacing: { before: 240, after: 80 } }));
+      else if (b.k === 'p') kids.push(new Paragraph({ children: [run(b.text)], spacing: { after: b.after || 60, line: 320 }, indent: b.in ? { left: 360 * b.in } : undefined }));
+      else if (b.k === 'blank') kids.push(new Paragraph({ children: [run('')] }));
+      else if (b.k === 'banner') {
+        const border = { style: BorderStyle.SINGLE, size: 12, color: '000000' };
+        kids.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [new TableRow({ children: [new TableCell({ borders: { top: border, bottom: border, left: border, right: border }, children: b.lines.map((l, i) => new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 80, after: 80 }, children: [run(l, { size: i === 1 ? 32 : i === 2 ? 26 : 22, bold: i === 1 || i === 2 })] })) })] })] }));
+      } else if (b.k === 'table') {
+        const rows = b.rows.map((r, ri) => new TableRow({ children: r.filter(c => !c.skip).map(c => {
+          const head = (ri === 0 && !b.plain) || c.head;
+          const opts = { width: { size: c.w, type: WidthType.PERCENTAGE }, columnSpan: c.span || 1, verticalAlign: 'center', children: String(c.t).split('\n').map(x => new Paragraph({ alignment: c.left && !head ? AlignmentType.LEFT : AlignmentType.CENTER, children: [run(x, { size: c.big ? 36 : 20, bold: head || c.big })] })) };
+          if (head) opts.shading = { fill: 'E7E6E6' };
+          if (c.rows) opts.rowSpan = c.rows;
+          return new TableCell(opts);
+        }) }));
+        kids.push(new Table({ width: { size: b.narrow ? 50 : 100, type: WidthType.PERCENTAGE }, indent: b.narrow ? { size: 720, type: WidthType.DXA } : undefined, rows }));
+        kids.push(new Paragraph({ children: [run('', { size: 8 })], spacing: { after: 0 } }));
+      }
+    });
+    const d = new Document({ sections: [{ properties: { page: { margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 } } }, children: kids }] });
+    const blob = await Packer.toBlob(d);
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return fileName;
+  }
+
+  // ---------- 버튼 ----------
+  const showMsg = (t, err) => { const m = $('msg'); m.hidden = false; m.className = 'msg'; m.style.color = err ? 'var(--err)' : ''; m.textContent = t; };
+  function renderAll() { const p = planBlocks(), r = pressBlocks(); renderHTML(p.blocks, $('docPlan')); renderHTML(r.blocks, $('docPress')); return { p, r }; }
+  async function make(which) {
+    const { p, r } = renderAll();
+    if (!window.docx) { showMsg('파일 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.', true); return; }
+    const names = [];
+    if (which !== 'press') names.push(await buildDocx(p.blocks, p.fileName));
+    if (which !== 'plan') { await new Promise(r => setTimeout(r, 600)); names.push(await buildDocx(r.blocks, r.fileName)); }
+    showMsg('적용했습니다. 저장한 파일: ' + names.join(' / ') + ' — 한글에서 열어 「다른 이름으로 저장 → *.hwp」로 저장하세요.');
+  }
+  $('applyBtn').onclick = () => make('both'); $('planBtn').onclick = () => make('plan'); $('pressBtn').onclick = () => make('press');
+  $('printBtn').onclick = () => window.print();
+  $('copyBtn').onclick = async () => {
+    const el = $('docPlan').hidden ? $('docPress') : $('docPlan'); const out = [];
+    el.childNodes.forEach(n => { if (n.nodeName === 'TABLE') { n.querySelectorAll('tr').forEach(tr => out.push(Array.from(tr.children).map(c => c.innerText.replace(/\n/g, ' / ')).join('\t'))); out.push(''); } else out.push(n.innerText); });
+    try { await navigator.clipboard.writeText(out.join('\n')); showMsg('복사했습니다. 한글에서 Ctrl+V로 붙여 넣으세요.'); } catch (e) { showMsg('복사가 안 됩니다. 아래 글을 직접 블록 지정해 복사하세요.', true); }
+  };
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); $('docPlan').hidden = b.dataset.v !== 'plan'; $('docPress').hidden = b.dataset.v !== 'press'; renderAll(); });
+
+  applyType(); renderAll();
 })();
 </script>
 </body>

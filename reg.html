@@ -14,7 +14,7 @@
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--fg); font-family: "Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; font-size: 15px; line-height: 1.5; }
   .wrap { display: grid; grid-template-columns: minmax(360px, 520px) minmax(0, 1fr); gap: 20px; align-items: start; padding: 16px 16px 48px; }
-  .docs { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; min-width: 0; }
+  .docs { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; min-width: 0; display: flex; justify-content: center; }
   .docs .scale { transform-origin: 0 0; }
   @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } .docs { position: static; max-height: none; } }
   h1 { font-size: 20px; margin: 0 0 4px; } .sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
@@ -205,7 +205,8 @@
       const f = findCols(rows, [[/지역/], [/학교명|학교|소속/], [/^성명$|성명|보호자|참여자|이름/]]); if (!f) return;
       rows.slice(f.hdrIdx + 1).forEach(r => { const name = (r[f.cols[2]] || '').trim(), school = (r[f.cols[1]] || '').trim(); if (!name || !school) return; list.push({ region: normRegion(f.cols[0] >= 0 ? r[f.cols[0]] : sheet), school, name }); });
     });
-    return list;
+    // 학교 이름 가나다순(같은 학교는 이름순)
+    return list.sort((a, b) => a.school.localeCompare(b.school, 'ko') || a.name.localeCompare(b.name, 'ko'));
   }
   $('xDrop').onclick = () => $('xFile').click();
   $('xFile').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { XLS = await parseAttendees(f); if (!XLS.length) throw new Error('지역·학교명·성명 열을 찾지 못했습니다'); const g = XLS.filter(r => r.region === '경산').length, c = XLS.filter(r => r.region === '청도').length; $('xState').textContent = f.name + ' — ' + XLS.length + '명 (청도 ' + c + ', 경산 ' + g + (XLS.length - g - c ? ', 기타 ' + (XLS.length - g - c) : '') + ')'; render(); showMsg('명단을 읽었습니다. 미리보기를 확인하세요.'); } catch (err) { showMsg('엑셀을 읽지 못했습니다: ' + err.message, true); } e.target.value = ''; };

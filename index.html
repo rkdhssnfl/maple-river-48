@@ -173,7 +173,7 @@
     <button class="btn primary" id="kakaoText" type="button" style="margin-top:12px;background:#1f4e9c;border-color:#1f4e9c">제출하기 (글 복사 → 양식에 붙여넣기)</button>
     <p class="foot">누르면 입력한 날짜가 글로 <b>복사</b>되고 제출 양식이 열려요. 양식에서 지역·이름을 적고, 코칭일자 칸에 <b>붙여넣기</b>(휴대폰은 길게 누르기, 컴퓨터는 Ctrl+V) → 응답 제출. 입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
     <button id="pcSubmit" type="button" hidden></button>
-    <a id="wallaOpen" href="https://walla.my/v/R6PEMy65GJN5Lo2Ygy8X" target="_blank" rel="noopener" class="btn" style="display:block;text-align:center;text-decoration:none;margin-top:8px">제출 양식만 다시 열기</a>
+    <a id="wallaOpen" href="https://walla.my/v/R6PEMy65GJN5Lo2Ygy8X" target="_blank" rel="noopener" hidden>제출 양식 열기</a>
     <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
       <a id="journalSubmit" href="https://walla.my/v/JCVUXo3ZR92bs2yEiujD" target="_blank" rel="noopener" class="btn primary" style="display:block;text-align:center;text-decoration:none;background:#6a4fb3;border-color:#6a4fb3">학습서비스 일지 제출 (파일 첨부)</a>
       <div class="foot" style="margin-top:6px">매달 작성한 <b>학습서비스 일지(한글 파일)</b>를 내는 양식이 열려요. 이름을 적고 파일을 첨부해 응답 제출하면 끝. 코칭일자 제출과는 별개로 한 번 더 내는 거예요.</div>
@@ -444,10 +444,10 @@
     let copied = false;
     try { await navigator.clipboard.writeText(text); copied = true; } catch (e) {}
     if (copied) {
-      showMsg('글을 복사했습니다. 열리는 제출 양식의 내용 칸을 길게 눌러 "붙여넣기" 하고 제출하세요. 양식이 안 열리면 아래 "제출 양식만 다시 열기"를 누르세요.\n\n' + text);
+      showMsg('글을 복사했습니다. 열리는 제출 양식의 내용 칸을 길게 눌러 "붙여넣기" 하고 제출하세요. 양식이 안 열리면 제출하기를 한 번 더 누르세요.\n\n' + text);
       window.open('https://walla.my/v/R6PEMy65GJN5Lo2Ygy8X', '_blank', 'noopener');
     } else {
-      showMsg('복사가 안 되는 기기예요. 아래 글을 길게 눌러 복사한 뒤 "제출 양식만 다시 열기"를 눌러 붙여넣으세요.\n\n' + text, true);
+      showMsg('복사가 안 되는 기기예요. 아래 글을 길게 눌러 복사한 뒤 제출하기를 한 번 더 눌러 양식을 열고 붙여넣으세요.\n\n' + text, true);
     }
   });
   $('pcSubmit').addEventListener('click', async () => {
@@ -455,7 +455,7 @@
     try {
       const file = await makeFile(); if (!file) return;
       downloadFile(file);
-      showMsg('엑셀 파일을 내려받았습니다: ' + file.name + '  (다운로드 폴더)\n\n열리는 제출 양식에서 지역·이름을 적고, 마지막 "파일 업로드" 칸에 이 파일을 올린 뒤 응답 제출하세요. 양식이 안 열리면 아래 "제출 양식만 다시 열기"를 누르세요.');
+      showMsg('엑셀 파일을 내려받았습니다: ' + file.name + '  (다운로드 폴더)\n\n열리는 제출 양식에서 지역·이름을 적고, 마지막 "파일 업로드" 칸에 이 파일을 올린 뒤 응답 제출하세요. 양식이 안 열리면 제출하기를 한 번 더 누르세요.');
       window.open('https://walla.my/v/R6PEMy65GJN5Lo2Ygy8X', '_blank', 'noopener');
     } catch (e) {
       showMsg('파일을 만들지 못했습니다. 다시 시도해 주세요. (오류: ' + ((e && e.message) || '알 수 없음') + ')', true);

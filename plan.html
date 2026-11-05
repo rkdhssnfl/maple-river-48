@@ -269,12 +269,12 @@
     $('sessions').innerHTML = ''; P.sessions.forEach((s, i) => $('sessions').appendChild(sessRow(s, i)));
     $('targetNote').value = P.note || '';
     $('bud').innerHTML = ''; P.budget.forEach(r => $('bud').appendChild(budRow(r)));
-    SEL = t === 'coach' ? KW.교구.slice(0, 2).map(k => Object.assign({}, k)) : []; renderKw(); $('adminCard').hidden = t === 'coach'; $('monthWrap').hidden = t !== 'coach'; $('noteWrap').hidden = t === 'coach';
+    SEL = []; autoKw(); $('adminCard').hidden = t === 'coach'; $('monthWrap').hidden = t !== 'coach'; $('noteWrap').hidden = t === 'coach';
     $('dueCd').value = addDays(today, -7); $('dueGs').value = today;
     regenText(); regenPress();
   }
   document.querySelectorAll('input[name=type]').forEach(r => r.addEventListener('change', applyType));
-  ['theme', 'title'].forEach(id => $(id).addEventListener('change', () => { regenText(); regenPress(); }));
+  $('title').addEventListener('change', () => { regenText(); regenPress(); });
 
   // ---------- 자동 문구 ----------
   const PURPOSE = { case: '교구 활용 사례를 공유하여 영역별 지도 노하우를 상호 확산하고, 기초학력 지도의 실천적 전문성을 신장', material: '학습코칭 자료의 실제 적용 방법 습득을 통한 현장 실천 역량 강화', emotion: '정서 지원 활동의 이해와 적용을 통해 학생의 정서·학습 동기를 함께 돌보는 역량 함양', lecture: '전문가 특강을 통해 기초학력 지도에 필요한 최신 이론과 실제를 습득', group: '영역별 소모임 협의를 통해 지도 경험을 나누고 공동의 지도 방안을 마련', lend: '교구 대여와 활용 안내를 통한 수업 현장의 교구 활용도 제고' };
@@ -408,7 +408,19 @@
   $('selKw').addEventListener('click', e => { const c = e.target.closest('.chip'); if (!c) return; SEL.splice(+c.dataset.i, 1); renderKw(); regenText(); regenPress(); });
   const addTyped = () => { const w = $('kwIn').value.trim(); if (!w) return; const all = [].concat(...Object.values(KW)); addKw(all.find(k => k.w === w) || customKw(w)); $('kwIn').value = ''; };
   $('kwAdd').onclick = addTyped; $('kwIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addTyped(); } });
+  // 주제에 맞춰 단어 3개를 자동으로 고름(직접 입력한 단어는 유지)
+  function autoKw() {
+    const th = $('theme').value.trim(); const words = th.split(/[\s·,/()]+/).filter(w => w.length >= 2 && !/^(및|을|를|의|위한|통한|활용|방법|방안|연수|지도|학생|자녀|우리|아이|향상|강화)$/.test(w));
+    const matched = Object.keys(KW_TOPIC).some(k => KW_TOPIC[k].test(th));
+    let cands = []; if (matched) Object.keys(KW_TOPIC).forEach(k => { if (KW_TOPIC[k].test(th)) cands = cands.concat(KW[k]); });
+    cands.sort((a, b) => (th.includes(a.w) ? -1 : 0) - (th.includes(b.w) ? -1 : 0)); // 주제에 그대로 들어간 단어 먼저
+    const keep = SEL.filter(k => k.custom);
+    let picked = cands.slice(0, 3);
+    if (picked.length < 3) words.slice(0, 3 - picked.length).forEach(w => { if (!picked.some(k => k.w === w)) picked.push(customKw(w)); });
+    SEL = keep.concat(picked.filter(k => !keep.some(x => x.w === k.w))).slice(0, 4); renderKw();
+  }
   $('theme').addEventListener('input', renderKw);
+  $('theme').addEventListener('change', () => { autoKw(); regenText(); regenPress(); });
 
   let SCHED_SUB = [];
   function regenText() {

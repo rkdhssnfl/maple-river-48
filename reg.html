@@ -82,7 +82,7 @@
   <section class="card" id="coachCard">
     <h2><span class="step">3</span>코칭단 명단 <span class="small">(이 브라우저에만 저장됩니다)</span></h2>
     <div id="rosterState" class="small" style="margin-bottom:8px"></div>
-    <div class="drop" id="rDrop">명단 엑셀 파일을 여기에 놓거나 클릭해서 선택 (교통비 양식, 코칭일자 왈라 응답 등 지역·이름 열이 있는 파일)<input type="file" id="rFile" accept=".xlsx" hidden></div>
+    <div class="drop" id="rDrop">명단 파일을 여기에 놓거나 클릭해서 선택 (엑셀·한글 — 교통비 양식, 코칭일자 왈라 응답, 등록부 등 지역·이름 열이 있는 파일)<input type="file" id="rFile" accept=".xlsx,.hwpx,.hwp" hidden></div>
     <details style="margin-top:8px"><summary class="small">또는 글로 붙여넣기 (한 줄에 "지역 이름")</summary>
       <textarea id="rText" placeholder="경산 홍길동&#10;청도 김철수"></textarea>
       <div class="row" style="margin-top:6px"><button class="btn sm" type="button" id="rTextBtn">이 명단으로 저장</button></div>
@@ -91,8 +91,8 @@
   </section>
 
   <section class="card" id="xlsCard" hidden>
-    <h2><span class="step">3</span>참석자 명단 엑셀 올리기</h2>
-    <div class="drop" id="xDrop">참석자 명단 엑셀(붙임2)을 여기에 놓거나 클릭해서 선택<br><span class="small">지역·학교명(소속)·성명 열을 자동으로 찾습니다. 시트가 여러 개면 연수 종류에 맞는 시트를 씁니다.</span><input type="file" id="xFile" accept=".xlsx" hidden></div>
+    <h2><span class="step">3</span>참석자 명단 파일 올리기 (엑셀·한글)</h2>
+    <div class="drop" id="xDrop">참석자 명단 파일을 여기에 놓거나 클릭해서 선택 (엑셀 .xlsx / 한글 .hwpx·.hwp)<br><span class="small">표에서 지역·학교명(소속)·성명 열을 자동으로 찾습니다. 엑셀 시트가 여러 개면 연수 종류에 맞는 시트를 씁니다.</span><input type="file" id="xFile" accept=".xlsx,.hwpx,.hwp" hidden></div>
     <div id="xState" class="small" style="margin-top:8px"></div>
   </section>
 
@@ -170,7 +170,69 @@
   }
   rosterState();
   const normRegion = v => { const s = String(v || '').trim(); return /청도/.test(s) ? '청도' : /경산/.test(s) ? '경산' : s; };
+  // ----- 한글 파일 읽기 (.hwpx: XML 표 / .hwp: 본문 문단을 표 모양으로 복원) -----
+  async function readHwpxRows(file) {
+    const zip = await JSZip.loadAsync(await file.arrayBuffer()); const out = [];
+    const names = Object.keys(zip.files).filter(n => /^Contents\/section\d+\.xml$/.test(n)).sort();
+    for (const n of names) {
+      const doc = new DOMParser().parseFromString(await zip.file(n).async('string'), 'application/xml');
+      Array.from(doc.getElementsByTagName('hp:tbl')).forEach((tb, i) => {
+        const rows = Array.from(tb.childNodes).filter(x => x.nodeName === 'hp:tr').map(tr => Array.from(tr.childNodes).filter(x => x.nodeName === 'hp:tc').map(tc => Array.from(tc.getElementsByTagName('hp:t')).map(t => t.textContent).join(' ').replace(/\s+/g, ' ').trim()));
+        out.push({ sheet: '표' + (i + 1), rows });
+      });
+    }
+    return out;
+  }
+  async function inflateRaw(u8) { // 뒤에 덧붙은 바이트 때문에 오류가 나도 그때까지 푼 내용은 사용
+    if (!window.DecompressionStream) throw new Error('이 브라우저는 .hwp 읽기를 지원하지 않습니다(최신 크롬·엣지 필요). 한글에서 .hwpx로 저장해 올려 주세요');
+    const ds = new DecompressionStream('deflate-raw'); const w = ds.writable.getWriter(); w.write(u8).catch(() => {}); w.close().catch(() => {});
+    const rd = ds.readable.getReader(); const parts = []; let len = 0;
+    try { while (true) { const { done, value } = await rd.read(); if (done) break; parts.push(value); len += value.length; } } catch (e) { /* 끝부분 잡음 무시 */ }
+    const o = new Uint8Array(len); let pos = 0; parts.forEach(x => { o.set(x, pos); pos += x.length; }); return o;
+  }
+  function oleStreams(buf) { // 간단한 OLE(CFB) 읽기 → {이름: Uint8Array}
+    const dv = new DataView(buf), u8 = new Uint8Array(buf); const ssz = 1 << dv.getUint16(0x1e, true), mssz = 1 << dv.getUint16(0x20, true);
+    const ndifat = dv.getUint32(0x48, true), firstDir = dv.getUint32(0x30, true), firstMini = dv.getUint32(0x3c, true);
+    let difat = []; for (let i = 0; i < 109; i++) difat.push(dv.getUint32(0x4c + i * 4, true)); let nx = dv.getUint32(0x44, true);
+    for (let k = 0; k < ndifat; k++) { const base = (nx + 1) * ssz; for (let i = 0; i < ssz / 4 - 1; i++) difat.push(dv.getUint32(base + i * 4, true)); nx = dv.getUint32(base + ssz - 4, true); }
+    const fat = []; difat.forEach(sct => { if (sct >= 0xFFFFFFFE) return; const base = (sct + 1) * ssz; for (let i = 0; i < ssz / 4; i++) fat.push(dv.getUint32(base + i * 4, true)); });
+    const chain = start => { const parts = []; let sct = start, guard = 0; while (sct < 0xFFFFFFFE && guard++ < 1e6) { parts.push(u8.subarray((sct + 1) * ssz, (sct + 2) * ssz)); sct = fat[sct]; } const o = new Uint8Array(parts.length * ssz); parts.forEach((p, i) => o.set(p, i * ssz)); return o; };
+    const dir = chain(firstDir); const entries = [];
+    for (let i = 0; i < dir.length / 128; i++) { const e = dir.subarray(i * 128, (i + 1) * 128); const edv = new DataView(e.buffer, e.byteOffset, 128); const nlen = edv.getUint16(64, true); let name = ''; for (let j = 0; j < Math.max(nlen - 2, 0); j += 2) name += String.fromCharCode(edv.getUint16(j, true)); entries.push({ name, type: e[66], start: edv.getUint32(116, true), size: edv.getUint32(120, true) }); }
+    const root = entries[0]; const mini = chain(root.start); let minifat = []; if (firstMini < 0xFFFFFFFE) { const mf = chain(firstMini); const mdv = new DataView(mf.buffer, mf.byteOffset, mf.byteLength); for (let i = 0; i < mf.length / 4; i++) minifat.push(mdv.getUint32(i * 4, true)); }
+    const minichain = (start, size) => { const o = new Uint8Array(size); let sct = start, pos = 0, guard = 0; while (sct < 0xFFFFFFFE && pos < size && guard++ < 1e6) { const part = mini.subarray(sct * mssz, (sct + 1) * mssz); o.set(part.subarray(0, Math.min(mssz, size - pos)), pos); pos += mssz; sct = minifat[sct]; } return o; };
+    const res = {}; entries.forEach(e => { if (e.type !== 2) return; res[e.name] = e.size >= 4096 ? chain(e.start).subarray(0, e.size) : minichain(e.start, e.size); }); return res;
+  }
+  async function readHwpRows(file) {
+    const st = oleStreams(await file.arrayBuffer()); const fh = st['FileHeader']; if (!fh) throw new Error('한글 파일 구조를 읽지 못했습니다');
+    const compressed = !!(fh[36] & 1); const paras = [];
+    const secs = Object.keys(st).filter(k => /^Section\d+$/.test(k)).sort((a, b) => +a.slice(7) - +b.slice(7));
+    for (const k of secs) {
+      let raw = st[k]; if (compressed) raw = await inflateRaw(raw);
+      const dv = new DataView(raw.buffer, raw.byteOffset, raw.byteLength); let pos = 0, cur = null;
+      while (pos + 4 <= raw.length) {
+        const h = dv.getUint32(pos, true); pos += 4; const tag = h & 0x3FF; let size = (h >> 20) & 0xFFF; if (size === 0xFFF) { size = dv.getUint32(pos, true); pos += 4; }
+        if (tag === 66) { cur = ''; paras.push(cur); } // 문단 머리
+        else if (tag === 67) { let txt = '', i = 0; while (i + 2 <= size) { const c = dv.getUint16(pos + i, true); if (c === 9 || c === 10 || c === 13) { txt += ' '; i += 2; } else if (c < 32) { i += (c === 0 || c === 24 || c === 25 || c === 26 || c === 27 || c === 28 || c === 29 || c === 30 || c === 31) ? 2 : 16; } else { txt += String.fromCharCode(c); i += 2; } } paras[paras.length - 1] = txt.replace(/\s+/g, ' ').trim(); }
+        pos += size;
+      }
+    }
+    // 문단 나열에서 표 복원: 머리글(순/지역/학교명/성명…) 뒤로 같은 칸 수의 줄을 묶음
+    const HEAD = /^(순|연번|번호|지역|소속|학교명|학교|직책|성명|이름|서명|비고|담당업무|학년|반|학생명|연락처|학생 성명)$/;
+    const out = []; let i = 0;
+    while (i < paras.length) {
+      if (HEAD.test(paras[i]) && paras.slice(i, i + 10).some(x => /^(성명|이름)$/.test(x))) {
+        let n = 0; while (i + n < paras.length && HEAD.test(paras[i + n])) n++;
+        if (n >= 3) { const rows = [paras.slice(i, i + n)]; let j = i + n; while (j + n <= paras.length && /^\d+$/.test(paras[j])) { rows.push(paras.slice(j, j + n)); j += n; } out.push({ sheet: '표' + (out.length + 1), rows }); i = j; continue; }
+      }
+      i++;
+    }
+    if (!out.length) throw new Error('한글 파일에서 명단 표를 찾지 못했습니다');
+    return out;
+  }
+  async function readAnyRows(file) { const n = file.name.toLowerCase(); if (n.endsWith('.hwpx')) return readHwpxRows(file); if (n.endsWith('.hwp')) return readHwpRows(file); return readSheetRows(file); }
   async function readSheetRows(file) { // [{sheet, rows:[[...]]}]
+    if (!window.ExcelJS) throw new Error('엑셀 읽기 라이브러리를 불러오지 못했습니다');
     const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer()); const out = [];
     wb.eachSheet(ws => { const rows = []; ws.eachRow({ includeEmpty: true }, (row, n) => { const vals = []; for (let c = 1; c <= ws.columnCount; c++) { let v = row.getCell(c).value; if (v && typeof v === 'object') v = v.richText ? v.richText.map(x => x.text).join('') : (v.result != null ? v.result : v.text != null ? v.text : v instanceof Date ? v.toISOString().slice(0, 10) : ''); vals.push(v == null ? '' : String(v).trim()); } rows.push(vals); }); out.push({ sheet: ws.name, rows }); });
     return out;
@@ -183,10 +245,11 @@
     return null;
   }
   async function parseRosterFile(file) {
-    const sheets = await readSheetRows(file); const list = [];
+    const sheets = await readAnyRows(file); const list = [];
     sheets.forEach(({ sheet, rows }) => {
-      const f = findCols(rows, [[/지역/], [/^이름$|^성명$|이름|성명/]]); if (!f) return;
-      rows.slice(f.hdrIdx + 1).forEach(r => { const name = (r[f.cols[1]] || '').trim(); if (!name || /합계|계$/.test(name)) return; if (list.some(x => x.name === name)) return; list.push({ region: normRegion(f.cols[0] >= 0 ? r[f.cols[0]] : sheet), name }); });
+      const f = findCols(rows, [[/지역|소속/], [/^이름$|^성명$|이름|성명/]]); if (!f) return;
+      const jc = rows[f.hdrIdx].findIndex(v => /^직책$/.test(v));
+      rows.slice(f.hdrIdx + 1).forEach(r => { const name = (r[f.cols[1]] || '').trim(); if (!name || /합계|계$/.test(name)) return; if (jc >= 0 && r[jc] && !/코칭/.test(r[jc])) return; const rg = f.cols[0] >= 0 ? r[f.cols[0]] : sheet; if (/교육지원청|교육청/.test(rg)) return; if (list.some(x => x.name === name)) return; list.push({ region: normRegion(rg), name }); });
     });
     return list;
   }
@@ -199,18 +262,21 @@
   // ---------- 참석자 엑셀 (교사·학부모) ----------
   let XLS = [];
   async function parseAttendees(file) {
-    const t = type(); const sheets = await readSheetRows(file); const list = [];
+    const t = type(); const sheets = await readAnyRows(file); const list = [];
     const want = t === 'teacher' ? /교사|교원/ : /학부모/;
     let use = sheets.filter(s => want.test(s.sheet)); if (!use.length) use = sheets;
-    use.forEach(({ sheet, rows }) => {
-      const f = findCols(rows, [[/지역/], [/학교명|학교|소속/], [/^성명$|성명|보호자|참여자|이름/]]); if (!f) return;
-      rows.slice(f.hdrIdx + 1).forEach(r => { const name = (r[f.cols[2]] || '').trim(), school = (r[f.cols[1]] || '').trim(); if (!name || !school) return; list.push({ region: normRegion(f.cols[0] >= 0 ? r[f.cols[0]] : sheet), school, name }); });
+    const found = use.map(({ sheet, rows }) => ({ sheet, rows, f: findCols(rows, [[/지역/], [/학교명|학교|소속/], [/^성명$|성명|보호자|참여자|이름/]]) })).filter(x => x.f);
+    const anyRegion = found.some(x => x.f.cols[0] >= 0);
+    found.forEach(({ sheet, rows, f }) => {
+      if (anyRegion && f.cols[0] < 0) return; // 지역 열이 있는 표가 있으면 없는 표(내빈 등)는 건너뜀
+      const jc = rows[f.hdrIdx].findIndex(v => /^직책$/.test(v));
+      rows.slice(f.hdrIdx + 1).forEach(r => { const name = (r[f.cols[2]] || '').trim(), school = (r[f.cols[1]] || '').trim(); if (!name || !school) return; if (jc >= 0 && r[jc] && !/교사|교원|학부모|보호자/.test(r[jc])) return; if (/교육지원청|교육청|지원센터/.test(school)) return; list.push({ region: normRegion(f.cols[0] >= 0 ? r[f.cols[0]] : sheet), school, name }); });
     });
     // 학교 이름 가나다순(같은 학교는 이름순)
     return list.sort((a, b) => a.school.localeCompare(b.school, 'ko') || a.name.localeCompare(b.name, 'ko'));
   }
   $('xDrop').onclick = () => $('xFile').click();
-  $('xFile').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { XLS = await parseAttendees(f); if (!XLS.length) throw new Error('지역·학교명·성명 열을 찾지 못했습니다'); const g = XLS.filter(r => r.region === '경산').length, c = XLS.filter(r => r.region === '청도').length; $('xState').textContent = f.name + ' — ' + XLS.length + '명 (청도 ' + c + ', 경산 ' + g + (XLS.length - g - c ? ', 기타 ' + (XLS.length - g - c) : '') + ')'; render(); showMsg('명단을 읽었습니다. 미리보기를 확인하세요.'); } catch (err) { showMsg('엑셀을 읽지 못했습니다: ' + err.message, true); } e.target.value = ''; };
+  $('xFile').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { XLS = await parseAttendees(f); if (!XLS.length) throw new Error('지역·학교명·성명 열을 찾지 못했습니다'); const g = XLS.filter(r => r.region === '경산').length, c = XLS.filter(r => r.region === '청도').length; const nr = XLS.filter(r => !r.region).length; $('xState').textContent = f.name + ' — ' + XLS.length + '명 (청도 ' + c + ', 경산 ' + g + (nr ? ', 지역 표시 없음 ' + nr + '명 → 1회차에 넣음' : '') + (XLS.length - g - c - nr ? ', 기타 ' + (XLS.length - g - c - nr) : '') + ')'; render(); showMsg('명단을 읽었습니다. 미리보기를 확인하세요.'); } catch (err) { showMsg('엑셀을 읽지 못했습니다: ' + err.message, true); } e.target.value = ''; };
   ['dragover', 'dragleave', 'drop'].forEach(ev => $('xDrop').addEventListener(ev, e => { e.preventDefault(); $('xDrop').classList.toggle('on', ev === 'dragover'); if (ev === 'drop' && e.dataTransfer.files[0]) { $('xFile').files = e.dataTransfer.files; $('xFile').dispatchEvent(new Event('change')); } }));
 
   // ---------- 모델 ----------
@@ -227,9 +293,9 @@
       const level = sc => /초등|초교|초$|초\(/.test(sc) ? 0 : /중학|중$|중\(|고등|고$/.test(sc) ? 1 : 2;
       const mkRows = ppl => t === 'teacher' ? ppl.map(r => [r.region, r.school, '교사', r.name, '', '']) : ppl.map(r => [r.school, r.name, '', '']);
       const HEAD = t === 'teacher' ? ['순', '지역', '소속', '직책', '성명', '서명', '비고'] : ['순', '소속', '성명', '서명', '비고'];
-      ss.forEach(s => { const rg = normRegion(s.region); const ppl = XLS.filter(r => r.region === rg); if (!ppl.length) return;
+      ss.forEach((s, si) => { const rg = normRegion(s.region); const ppl = XLS.filter(r => r.region === rg || (!r.region && si === 0)); if (!ppl.length) return;
         [0, 1, 2].forEach(lv => { const grp = ppl.filter(r => level(r.school) === lv); if (grp.length) blocks.push({ dateStr: dstr(s), place: s.place, cols: t === 'teacher' ? 7 : 5, rows: mkRows(grp), head: HEAD, note: rg + ' ' + ['초등학교', '중학교', '기타'][lv] }); }); });
-      const other = XLS.filter(r => !ss.some(s => normRegion(s.region) === r.region)); if (other.length && ss[0]) blocks.push({ dateStr: dstr(ss[0]), place: ss[0].place, cols: t === 'teacher' ? 7 : 5, rows: other.map(r => t === 'teacher' ? [r.region, r.school, '교사', r.name, '', ''] : [r.school, r.name, '', '']), head: t === 'teacher' ? ['순', '지역', '소속', '직책', '성명', '서명', '비고'] : ['순', '소속', '성명', '서명', '비고'] });
+      const other = XLS.filter(r => r.region && !ss.some(s => normRegion(s.region) === r.region)); if (other.length && ss[0]) blocks.push({ dateStr: dstr(ss[0]), place: ss[0].place, cols: t === 'teacher' ? 7 : 5, rows: other.map(r => t === 'teacher' ? [r.region, r.school, '교사', r.name, '', ''] : [r.school, r.name, '', '']), head: t === 'teacher' ? ['순', '지역', '소속', '직책', '성명', '서명', '비고'] : ['순', '소속', '성명', '서명', '비고'] });
       if (vip.length && ss[0]) blocks.push({ dateStr: dstr(ss[0]), place: ss[0].place, cols: 6, rows: vip.map(a => [a[0], a[1], a[2], '', '']), head: ['순', '소속', '직책', '성명', '서명', '비고'] });
     }
     return { title: $('title').value.trim(), blocks };

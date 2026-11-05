@@ -57,7 +57,7 @@
 <body>
 <div class="wrap">
   <div class="noprint">
-  <a href="home.html" class="homebtn">⌂ 관리 모음</a>
+  <a href="training.html" class="homebtn">‹ 연수 관리</a> <a href="home.html" class="homebtn" style="background:#55606b">⌂ 관리 모음</a>
   <h1>연수 등록부 만들기</h1>
   <p class="sub">코칭단 연수는 일시·장소만 넣으면, 교사·학부모 연수는 참석자 명단 엑셀을 올리면 등록부가 한글 양식 그대로 만들어집니다. 명단은 이 페이지(서버)에 올라가지 않고 내 브라우저 안에서만 처리됩니다.</p>
 
@@ -337,7 +337,7 @@
     if (!window.JSZip || !window.HWPX) { showMsg('파일 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.', true); return; }
     try {
       const m = current(); if (!m.blocks.length) throw new Error('명단이 없습니다');
-      if (!TPL[t]) { const r = await fetch('tpl/reg_' + t + '.hwpx?v=2'); if (!r.ok) throw new Error('양식 파일을 찾을 수 없습니다'); TPL[t] = await r.arrayBuffer(); }
+      if (!TPL[t]) { const r = await fetch('tpl/reg_' + t + '.hwpx?v=1'); if (!r.ok) throw new Error('양식 파일을 찾을 수 없습니다'); TPL[t] = await r.arrayBuffer(); }
       const blob = await HWPX.buildReg(TPL[t], m);
       const name = m.title + '.hwpx';
       const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);

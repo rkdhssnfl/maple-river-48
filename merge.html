@@ -119,7 +119,8 @@
     <div class="row">
       <label class="f">연도<select id="year"></select></label>
       <label class="f">월<select id="month"></select></label>
-      <span class="small">파일을 올리면 파일 이름의 월로 자동 선택됩니다.</span>
+      <label class="f">이달 사례회의 날짜<input type="date" id="meetDate"></label>
+      <span class="small">파일을 올리면 파일 이름의 월로 자동 선택됩니다. 코칭단이 "사례회의: 참석"으로 낸 경우 이 날짜가 참석일로 들어갑니다.</span>
     </div>
     <label class="drop" id="drop" style="margin-top:10px">
       <input type="file" id="files" multiple accept=".xlsx">
@@ -289,6 +290,12 @@
   for (let m = 1; m <= 12; m++) monthSel.add(new Option(m + '월', m));
   yearSel.value = now.getFullYear(); monthSel.value = now.getMonth() + 1;
   yearSel.addEventListener('change', render); monthSel.addEventListener('change', render);
+  const meetDateEl = document.getElementById('meetDate');
+  const meetDate = () => { const v = meetDateEl.value; if (!v) return null; const [y, mo, d] = v.split('-').map(Number); return new Date(y, mo - 1, d); };
+  // "사례회의: 참석"으로 낸 사람은 이달 사례회의 날짜를 참석일로
+  function applyMeetDate() { const d = meetDate(); files.forEach(p => { if (p.meetAttend === true) p.meet = d ? [d] : []; }); }
+  meetDateEl.addEventListener('change', () => { applyMeetDate(); render(); });
+  const parseMeetWord = (p, text) => { if (/참석/.test(text) && !/불참/.test(text)) { p.meetAttend = true; const d = meetDate(); if (d) p.meet.push(d); return true; } if (/불참/.test(text)) { p.meetAttend = false; return true; } return false; };
 
   const files = new Map(); // name -> parsed {name, fileName, rows:[{group, dates:[Date]}], meet:[Date]}
   const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -367,7 +374,7 @@
     for (let r = 1; r <= 15; r++) if (norm(ws.getCell(r, 1).text) === '코칭단') { hdr = r; break; }
     if (!hdr) throw new Error('코칭일자 확인 양식이 아닙니다');
     let name = '';
-    const rows = [], meet = [];
+    const rows = [], meet = []; const res = { meet: [] };
     for (let r = hdr + 1; r <= hdr + 40; r++) {
       const a = String(ws.getCell(r, 1).text || '').trim();
       if (a && !name) name = a;
@@ -376,11 +383,11 @@
       const mk = [];
       for (let c = 3; c <= 2 + 8; c++) { const cell = ws.getCell(r, c); const d = toDate(cell.value); if (d) { dates.push(d); const col = cell.font && cell.font.color && cell.font.color.argb ? String(cell.font.color.argb).toUpperCase() : ''; mk.push(col.endsWith('1F4E9C') || col.endsWith('1E5FA8')); } }
       if (!group && !dates.length) { if (r > hdr + MIN_BLOCK_ROWS) break; else continue; }
-      if (norm(group) === MEET_LABEL) meet.push(...dates);
+      if (norm(group) === MEET_LABEL) { if (dates.length) meet.push(...dates); else { let noteTxt = ''; for (let c = 3; c <= 14; c++) noteTxt += ' ' + String(ws.getCell(r, c).text || ''); parseMeetWord(res, noteTxt); } }
       else rows.push({ group, dates, mk });
     }
     if (!name) throw new Error('코칭단 이름이 비어 있습니다');
-    return { name, fileName: file.name, rows, meet };
+    res.name = name; res.fileName = file.name; res.rows = rows; if (!res.meetAttend) res.meet = meet; return res;
   }
 
   // 왈라 응답 파일: 한 줄 = 한 사람의 제출. 같은 이름이 여러 번이면 가장 나중(응답시간) 것만 씀
@@ -502,6 +509,7 @@
       const firstDate = l.search(/\d{1,2}\s*(?:[\/.]|월)\s*\d{1,2}/);
       let label = (firstDate >= 0 ? l.slice(0, firstDate) : l).replace(/[:：\-–—]\s*$/, '').trim();
       if (!dates.length) {
+        if (cur && /사례\s*회의/.test(l) && parseMeetWord(cur, l)) return;
         // 날짜가 없는 짧은 한글 줄 = 이름 줄 (명단에 있는 이름이면 확실)
         const nm = label.replace(/^(이름|코칭단)\s*[:：]?\s*/, '').replace(/\s*(선생님|쌤|코치)$/, '').trim();
         if (nm && (masterNames.has(norm(nm)) || (/^[가-힣]{2,5}$/.test(nm) && !/(초|중|고|학교|사례회의)$/.test(nm)))) { start(nm); return; }

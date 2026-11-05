@@ -168,7 +168,11 @@
 
   <section class="card meet" style="margin-top:14px">
     <h2>사례회의 참석 <span class="count" id="meetCnt"></span></h2>
-    <div class="cal"><div class="cal-head"><span>참석한 날을 탭하세요</span><span id="meetHint"></span></div><div class="cal-grid" id="meetCal"></div></div>
+    <div class="small" style="margin-bottom:8px">이달 사례회의(역량 강화 연수)에 참석했으면 "참석"을 누르세요. 날짜는 선생님이 정리할 때 넣습니다.</div>
+    <div class="row" style="display:flex;gap:10px">
+      <button class="btn" id="meetYes" type="button" style="flex:1;font-size:17px;padding:14px">참석</button>
+      <button class="btn" id="meetNo" type="button" style="flex:1;font-size:17px;padding:14px">불참</button>
+    </div>
     <div class="sel-list" id="meetSel"></div>
   </section>
 
@@ -225,6 +229,7 @@
   const state = load() || { name: '', region: '', year: now.getFullYear(), month: now.getMonth() + 1, students: [], meet: [], meetNote: '' };
   if (!state.students.length) state.students.push(newStudent());
   if (!Array.isArray(state.meet)) state.meet = [];
+  if (state.meetAttend !== true && state.meetAttend !== false) state.meetAttend = null;
   state.students.forEach(s => { if (!Array.isArray(s.makeup)) s.makeup = []; });
   if (typeof state.meetNote !== 'string') state.meetNote = '';
 
@@ -259,7 +264,7 @@
   const ymKey = () => state.year + '-' + String(state.month).padStart(2, '0');
   function stashMonth() {
     state.archive = state.archive || {};
-    state.archive[ymKey()] = { students: state.students.map(s => ({ group: s.group, school: s.school, student: s.student, dates: s.dates.slice(), makeup: s.makeup.slice(), note: s.note || '' })), meet: state.meet.slice() };
+    state.archive[ymKey()] = { students: state.students.map(s => ({ group: s.group, school: s.school, student: s.student, dates: s.dates.slice(), makeup: s.makeup.slice(), note: s.note || '' })), meet: state.meet.slice(), meetAttend: state.meetAttend };
   }
   function onPeriodChange() {
     stashMonth();
@@ -267,11 +272,11 @@
     const saved = state.archive && state.archive[ymKey()];
     if (saved) {
       state.students = saved.students.map(s => ({ group: s.group, school: s.school, student: s.student, dates: s.dates.slice(), makeup: s.makeup.slice(), note: s.note || '' }));
-      state.meet = saved.meet.slice();
+      state.meet = saved.meet.slice(); state.meetAttend = saved.meetAttend == null ? null : saved.meetAttend;
       if (!state.students.length) state.students.push(newStudent());
     } else {
       state.students.forEach(s => { s.dates = []; s.makeup = []; }); // 학교(학생)는 유지, 날짜만 새로
-      state.meet = [];
+      state.meet = []; state.meetAttend = null;
     }
     save(); renderAll();
   }
@@ -401,17 +406,16 @@
   /* ---------- 사례회의 카드 ---------- */
   function renderMeet() {
     const selEl = $('meetSel'), cntEl = $('meetCnt');
-    function updateSel() {
-      const list = state.meet.slice().sort().map(x => md(fromIso(x)));
-      selEl.innerHTML = list.length ? '참석일: <b>' + list.join(', ') + '</b>' : '선택한 날짜 없음';
-      cntEl.textContent = list.length + '회';
+    function paint() {
+      const v = state.meetAttend;
+      $('meetYes').style.background = v === true ? 'var(--meet)' : ''; $('meetYes').style.color = v === true ? '#fff' : '';
+      $('meetNo').style.background = v === false ? 'var(--muted)' : ''; $('meetNo').style.color = v === false ? '#fff' : '';
+      selEl.innerHTML = v === true ? '사례회의: <b>참석</b>' : v === false ? '사례회의: <b>불참</b>' : '아직 고르지 않았어요';
+      cntEl.textContent = v === true ? '참석' : v === false ? '불참' : '';
     }
-    buildCalendar($('meetCal'), {
-      selected: state.meet, colorFor: () => 'var(--meet)',
-      onToggle() { updateSel(); renderPreview(); },
-    });
-    $('meetHint').textContent = '참석하지 않았으면 비워 두세요';
-    updateSel();
+    $('meetYes').onclick = () => { state.meetAttend = state.meetAttend === true ? null : true; save(); paint(); renderPreview(); };
+    $('meetNo').onclick = () => { state.meetAttend = state.meetAttend === false ? null : false; save(); paint(); renderPreview(); };
+    paint();
   }
 
   $('addStudent').addEventListener('click', () => {
@@ -422,7 +426,7 @@
   const XFER_PREFIX = 'KCJ1.';
   function encodeState() {
     stashMonth();
-    const json = JSON.stringify({ name: state.name, year: state.year, month: state.month, students: state.students, meet: state.meet, archive: state.archive || {} });
+    const json = JSON.stringify({ name: state.name, year: state.year, month: state.month, students: state.students, meet: state.meet, meetAttend: state.meetAttend, archive: state.archive || {} });
     const bytes = new TextEncoder().encode(json); let bin = ''; bytes.forEach(b => { bin += String.fromCharCode(b); });
     return XFER_PREFIX + btoa(bin);
   }
@@ -444,7 +448,7 @@
       const mk = new Set(s.makeup);
       out.push(s.group.trim() + ': ' + all.map(x => md(x) + (mk.has(x) ? '*' : '')).join(', '));
     });
-    if (state.meet.length) out.push(MEET_LABEL + ': ' + state.meet.slice().sort().map(md).join(', '));
+    if (state.meetAttend === true) out.push(MEET_LABEL + ': 참석'); else if (state.meetAttend === false) out.push(MEET_LABEL + ': 불참'); else if (state.meet.length) out.push(MEET_LABEL + ': ' + state.meet.slice().sort().map(md).join(', '));
     out.push('(*표시는 보강)');
     return out.join('\n');
   }
@@ -485,7 +489,7 @@
       const o = decodeState($('xferBox').value);
       state.name = o.name || ''; state.year = o.year || state.year; state.month = o.month || state.month;
       state.students = (o.students.length ? o.students : [newStudent()]).map(s => ({ group: s.group || '', school: s.school, student: s.student, dates: s.dates || [], makeup: s.makeup || [], note: s.note || '' }));
-      state.meet = o.meet || []; state.archive = o.archive || {};
+      state.meet = o.meet || []; state.meetAttend = o.meetAttend == null ? null : o.meetAttend; state.archive = o.archive || {};
       $('name').value = state.name; yearSel.value = state.year; monthSel.value = state.month;
       save(); renderAll(); $('xferBox').value = '';
       showXfer('불러왔습니다: ' + (state.name || '(이름 없음)') + ' ' + state.month + '월, 학생 ' + state.students.filter(s => s.group).length + '명. 이 기기에서 이어서 입력하면 됩니다.');
@@ -493,7 +497,7 @@
   });
 
   $('resetAll').addEventListener('click', () => {
-    state.name = ''; state.region = ''; state.students = [newStudent()]; state.meet = []; state.meetNote = '';
+    state.name = ''; state.region = ''; state.students = [newStudent()]; state.meet = []; state.meetNote = ''; state.meetAttend = null;
     $('name').value = '';
     save(); renderAll();
   });
@@ -520,7 +524,8 @@
       chunks.forEach((c, ci) => lines.push({ group: ci ? '' : group, weekday: ci ? '' : weekday, dates: c[0], mk: c[1], note: ci ? '' : note, meet: !!meet }));
     };
     students.forEach(s => push(s.group.trim(), weekdayOf(s), s.dates, s.note.trim(), false, s.makeup));
-    if (state.meet.length) push(MEET_LABEL, '', state.meet, state.meetNote.trim(), true);
+    if (state.meetAttend !== null) lines.push({ group: MEET_LABEL, weekday: '', dates: [], mk: [], note: state.meetAttend ? '참석' : '불참', meet: true });
+    else if (state.meet.length) push(MEET_LABEL, '', state.meet, state.meetNote.trim(), true);
     return lines;
   }
   const coachCount = () => state.students.reduce((n, s) => n + s.dates.length + s.makeup.length, 0);
@@ -544,7 +549,7 @@
     }
     $('pv').innerHTML = html;
     $('statCount').textContent = coachCount() + '회';
-    $('statMeet').textContent = state.meet.length + '회';
+    $('statMeet').textContent = state.meetAttend === true ? '참석' : state.meetAttend === false ? '불참' : (state.meet.length ? state.meet.length + '회' : '-');
     $('fname').textContent = fileName();
   }
   function renderAll() { renderStudents(); renderMeet(); renderPreview(); }
@@ -559,7 +564,7 @@
     const errs = [];
     if (!state.name.trim()) errs.push('이름을 입력하세요.');
     const filled = state.students.filter(s => s.group.trim() || s.dates.length || s.makeup.length);
-    if (!filled.length && !state.meet.length) errs.push('학생을 1명 이상 입력하세요.');
+    if (!filled.length && !state.meet.length && state.meetAttend !== true) errs.push('학생을 1명 이상 입력하세요.');
     filled.forEach(s => {
       if (!s.group.trim()) errs.push('학교가 비어 있는 학생이 있습니다.');
       if (!s.dates.length && !s.makeup.length) errs.push(s.group.trim() + ': 코칭한 날짜를 선택하세요.');
@@ -654,7 +659,7 @@
     const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
-  const summary = () => '(코칭 ' + coachCount() + '회, 사례회의 ' + state.meet.length + '회)';
+  const summary = () => '(코칭 ' + coachCount() + '회, 사례회의 ' + (state.meetAttend === true ? '참석' : state.meetAttend === false ? '불참' : '-') + ')';
   $('blankXlsx').addEventListener('click', async () => {
     if (!window.ExcelJS) { showMsg('엑셀 생성 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.', true); return; }
     const btn = $('blankXlsx'); btn.disabled = true;

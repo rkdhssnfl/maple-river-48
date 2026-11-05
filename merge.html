@@ -198,6 +198,16 @@
     </div>
     <div class="tbl"><table id="jTbl"></table></div>
     <div class="small" style="margin-top:6px">명단은 3번 교통비 양식(명단)이 있으면 그 명단, 없으면 1번에 제출한 사람 + 일지를 낸 사람으로 잡습니다.</div>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)">
+      <h3 style="font-size:15px;margin:0 0 8px">코칭일자 · 학습서비스 일지 제출 현황 <span class="small" id="cState"></span></h3>
+      <div class="stats">
+        <div class="ok"><div class="k">둘 다 제출</div><div class="v" id="cBoth">0</div></div>
+        <div class="warn"><div class="k">코칭일자만</div><div class="v" id="cOnlyA">0</div></div>
+        <div class="warn"><div class="k">일지만</div><div class="v" id="cOnlyB">0</div></div>
+        <div class="warn"><div class="k">둘 다 미제출</div><div class="v" id="cNone">0</div></div>
+      </div>
+      <div class="tbl"><table id="cTbl"></table></div>
+    </div>
   </section>
 
   <section class="card">
@@ -946,6 +956,26 @@
     JOURNAL.forEach(j => { if (!used.has(norm(j.name))) rows.push({ name: j.name, region: j.region, j, unknown: true }); });
     return rows;
   }
+  function renderCombined() {
+    const { blocks } = buildBlocks();
+    const jrows = journalRows();
+    const jmap = new Map(jrows.map(r => [norm(r.name), r]));
+    // 명단: 교통비 블록(명단 순서) + 일지만 낸 사람
+    const rows = blocks.map(b => ({ name: b.coach.name, region: b.coach.region, a: !!b.sub, j: (jmap.get(norm(b.coach.name)) || {}).j }));
+    const seen = new Set(rows.map(r => norm(r.name)));
+    jrows.forEach(r => { if (!seen.has(norm(r.name))) rows.push({ name: r.name, region: r.region, a: false, j: r.j, unknown: true }); });
+    const has = r => !!(r.j && r.j.link);
+    const both = rows.filter(r => r.a && has(r)).length, onlyA = rows.filter(r => r.a && !has(r)).length, onlyB = rows.filter(r => !r.a && has(r)).length, none = rows.filter(r => !r.a && !has(r)).length;
+    $('cBoth').textContent = both; $('cOnlyA').textContent = onlyA; $('cOnlyB').textContent = onlyB; $('cNone').textContent = none;
+    $('cState').textContent = rows.length ? '(' + rows.length + '명)' : '';
+    let html = '<tr><th>순</th><th>지역</th><th>이름</th><th>코칭일자</th><th>학습서비스 일지</th></tr>';
+    if (!rows.length) html += '<tr><td colspan="5" class="small">1번·4번에 파일을 올리면 표시됩니다.</td></tr>';
+    rows.forEach((r, i) => {
+      html += '<tr><td>' + (i + 1) + '</td><td>' + esc(r.region) + '</td><td>' + esc(r.name) + (r.unknown ? ' <span class="small">(명단 없음)</span>' : '') + '</td>' +
+        '<td class="' + (r.a ? 'ok">제출' : 'warn">미제출') + '</td><td class="' + (has(r) ? 'ok">제출' : 'warn">미제출') + '</td></tr>';
+    });
+    $('cTbl').innerHTML = html;
+  }
   function dlLink(link) { const a = document.createElement('a'); a.href = link; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); }
   function renderJournal() {
     const rows = journalRows();
@@ -963,6 +993,7 @@
     });
     $('jTbl').innerHTML = html;
     $('jTbl').querySelectorAll('button[data-j]').forEach(b => b.addEventListener('click', () => { const j = JOURNAL.get(b.dataset.j); if (j) dlLink(j.link); }));
+    renderCombined();
   }
   $('jAll').addEventListener('click', () => {
     const sub = journalRows().filter(r => r.j && r.j.link);

@@ -149,13 +149,13 @@
     <h2><span class="step">7</span>보도자료</h2>
     <div class="grid">
       <label class="f">배포일<input type="date" id="pressDate"></label>
-      <label class="f">담당자<input type="text" id="officer" value="권태우"></label>
+      <label class="f">담당자<input type="text" id="officer" value="" placeholder="이름"></label>
       <label class="f">담당자 전화<input type="text" id="officerTel" value="053-819-7626"></label>
       <label class="f">사진(매)<input type="number" id="photos" value="2"></label>
-      <label class="f">경산 교육장<input type="text" id="eduGs" value="정영석"></label>
-      <label class="f">센터장(경산 교육지원과장)<input type="text" id="headGs" value="허영선"></label>
-      <label class="f">청도 교육지원과장<input type="text" id="headCd" value="신운식"></label>
-      <label class="f">청도 교육장<input type="text" id="eduCd" value="오홍현"></label>
+      <label class="f">경산 교육장<input type="text" id="eduGs" value="" placeholder="이름"></label>
+      <label class="f">센터장(경산 교육지원과장)<input type="text" id="headGs" value="" placeholder="이름"></label>
+      <label class="f">청도 교육지원과장<input type="text" id="headCd" value="" placeholder="이름"></label>
+      <label class="f">청도 교육장<input type="text" id="eduCd" value="" placeholder="이름"></label>
       <label class="f wide">제목(큰따옴표 안 문구)<input type="text" id="pTitle"></label>
       <label class="f wide">본문 1 (개최 사실)<textarea id="p1"></textarea></label>
       <label class="f wide">본문 2 (연수 내용)<textarea id="p2"></textarea></label>
@@ -334,8 +334,10 @@
   // 공통 재료 (주제 핵심어를 끼워 넣음)
   const TITLE_T = ['{n}로 여는 배움의 문', '아이의 {n}가 자라는 시간', '{n}에서 시작하는 성장', '손에 잡히는 {n}, 눈에 보이는 성장', '함께 배우는 {n}, 함께 자라는 아이', '{n}가 바꾸는 배움의 시간', '한 아이도 놓치지 않는 {n}', '{n}로 다시 세우는 배움의 기초', '{n}, 배움의 든든한 뿌리', '학교와 가정이 함께 세우는 {n}', '{n}의 힘, 배움의 시작', '{n} 하나가 아이를 바꾼다', '오늘의 {n}, 내일의 자신감', '{n}로 채우는 배움의 빈칸', '천천히, 그러나 단단하게 자라는 {n}', '{n}에 담은 성장의 약속', '{n}로 만나는 아이의 가능성', '배움이 즐거워지는 {n}', '{n}가 열어 주는 새로운 배움', '작은 {n}, 큰 성장'];
   const SUB_T = ['학교와 가정이 함께하는 {n} 지원', '{n}로 함께 만드는 성장', '{n} 중심 기초학력 지원', '아이의 {n}를 함께 돌보는 시간', '{n}로 여는 배움의 길', '{n}와 기초학력, 함께 자라는 아이', '{n}를 살리는 학습코칭', '현장에서 바로 쓰는 {n} 지원', '{n}로 다시 시작하는 배움', '한 아이도 놓치지 않는 {n} 지원'];
-  const P1_T = ['경산교육지원청(교육장 {edu}) {org}는 {where}에서 {aud}을 대상으로 ‘{th}’{을} 주제로 {name}를 진행하였다.', '{org}(경산교육지원청 교육장 {edu})는 {where}에서 {aud}을 대상으로 {name}를 열고 ‘{th}’{을} 주제로 강의와 실습을 진행하였다.', '경산교육지원청(교육장 {edu}) {org}는 ‘{th}’{을} 주제로 한 {name}를 {where}에서 {aud}을 대상으로 개최하였다.', '{aud}을 대상으로 한 {org}의 {name}가 {where}에서 열렸다. 경산교육지원청(교육장 {edu})이 운영하는 센터는 이번 연수에서 ‘{th}’{을} 주제로 다루었다.'];
+  const P1_T = ['경산교육지원청{edu} {org}는 {where}에서 {aud}을 대상으로 ‘{th}’{을} 주제로 {name}를 진행하였다.', '{org}(경산교육지원청{edu2})는 {where}에서 {aud}을 대상으로 {name}를 열고 ‘{th}’{을} 주제로 강의와 실습을 진행하였다.', '경산교육지원청{edu} {org}는 ‘{th}’{을} 주제로 한 {name}를 {where}에서 {aud}을 대상으로 개최하였다.', '{aud}을 대상으로 한 {org}의 {name}가 {where}에서 열렸다. 경산교육지원청{edu}이 운영하는 센터는 이번 연수에서 ‘{th}’{을} 주제로 다루었다.'];
   let p1Idx = 0;
+  const nm = (x, title) => (x && x.trim() ? x.trim() + ' ' : '') + title; // 이름이 비면 직함만
+  const eduP = x => x && x.trim() ? '(교육장 ' + x.trim() + ')' : '';
   const PUR_PRE = ['', '', '학생 맞춤형 지도를 위한 ', '현장 적용을 위한 ', '기초학력 향상을 위한 ', '학생의 성장을 돕는 ', '실천 중심의 ', '사례 중심의 '];
   const PUR_END = ['습득', '습득을 통한 지도 역량 강화', '이해와 적용', '습득 및 현장 실천 역량 강화', '공유를 통한 전문성 신장', '습득을 통한 실천적 전문성 신장', '이해를 바탕으로 한 지도 방안 모색', '익힘을 통한 지도의 질 제고'];
   const EFF_OBJ = ['학생 맞춤형 지도의 실천력 향상', '지도 전문성 신장', '학생 지원의 질 제고', '현장 실천 역량 강화', '학생의 학습 참여도와 자신감 향상', '지도 역량 신장', '기초학력 지원의 질 제고', '학생의 자기주도 학습 능력 증진', '지도의 내실화', '실천적 지도 역량 함양', '학생 이해를 바탕으로 한 맞춤형 지원 강화', '우수 사례 확산'];
@@ -373,7 +375,7 @@
     const where = ss.map(s => fmtLong(s.date) + ' ' + s.place.replace(/\s*\d*층?\s*(대회의실|2강당|201호|강당).*$/, '')).join(', ');
     const aud = t === 'coach' ? '학습코칭단' : '경산·청도 지역 ' + audWord[t] + ' ' + total + '여명';
     const name = t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value;
-    return P1_T[p1Idx % P1_T.length].replace(/\{edu\}/g, $('eduGs').value).replace(/\{org\}/g, ORG).replace(/\{where\}/g, where).replace(/\{aud\}/g, aud).replace(/\{th\}/g, th).replace(/\{을\}/g, eul(th)).replace(/\{name\}/g, name);
+    return P1_T[p1Idx % P1_T.length].replace(/\{edu\}/g, eduP($('eduGs').value)).replace(/\{edu2\}/g, $('eduGs').value.trim() ? ' 교육장 ' + $('eduGs').value.trim() : '').replace(/\{org\}/g, ORG).replace(/\{where\}/g, where).replace(/\{aud\}/g, aud).replace(/\{th\}/g, th).replace(/\{을\}/g, eul(th)).replace(/\{name\}/g, name);
   }
   function makeTitle(th) { const ts = topicOf(th); const n = pick(ts.flatMap(t => t.nouns)); return nounJosa(pick(TITLE_T), n).replace('아이의 아이의', '아이의'); }
   const makePurpose = (th, t) => { const c = pick(pool('core', th)); return fixAud((c.length < 22 ? pick(PUR_PRE) : '') + c + ' ' + pick(PUR_END), t); };
@@ -412,7 +414,7 @@
     const aud = t === 'coach' ? '학습코칭단' : '경산·청도 지역 ' + audWord[t] + ' ' + total + '여명';
     p1Idx = Math.floor(rnd() * P1_T.length); if (P1_T.length > 1 && $('p1').value === computeP1()) p1Idx = (p1Idx + 1) % P1_T.length; const p1 = computeP1(); $('p1').dataset.edited = '';
     const p2 = fresh('p2', () => pick(INTRO[t]).replace('{what}', what).replace('{을}', eul(what)) + ' ' + pick(BODY[t]).replace('{did}', did) + ' ' + pick(CLOSE[t]));
-    const speaker = (s, i) => t === 'coach' ? ORG + '장 ' + headGs + ' 교육지원과장은' : s.region === '청도' ? '청도교육지원청 ' + (t === 'parent' ? eduCd + ' 교육장은' : headCd + ' 교육지원과장은') : (t === 'parent' ? '경산교육지원청 ' + eduGs + ' 교육장은' : ORG + '장 ' + headGs + ' 교육지원과장은');
+    const speaker = (s, i) => t === 'coach' ? ORG + '장 ' + nm(headGs, '교육지원과장은') : s.region === '청도' ? '청도교육지원청 ' + (t === 'parent' ? nm(eduCd, '교육장은') : nm(headCd, '교육지원과장은')) : (t === 'parent' ? '경산교육지원청 ' + nm(eduGs, '교육장은') : ORG + '장 ' + nm(headGs, '교육지원과장은'));
     const q2 = picks(Q2[t], 2);
     const p3 = fresh('p3', () => t === 'coach' ? speaker({}) + ' “' + qs[0] + rami(qs[0]) + q2[0] + '”고 밝혔다.'
       : ss.map((s, i) => fmtShort(s.date) + (s.region ? ' ' + s.region : '') + ' 연수에서 ' + speaker(s, i) + ' “' + (qs[i % qs.length]) + rami(qs[i % qs.length]) + (q2[i % q2.length]) + '”고 ' + (i === ss.length - 1 ? '밝혔다.' : '말했다.')).join('\n'));
@@ -537,7 +539,7 @@
     const t = type(), N = TYPE_NAME[t];
     const sub = '-' + ORG + ' ' + (t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value) + ' 개최-';
     const B = [
-      { k: 'pressHead', date: fmtD($('pressDate').value), officer: $('officer').value, tel: $('officerTel').value, pages: $('pages').value || 2, photos: $('photos').value,
+      { k: 'pressHead', date: fmtD($('pressDate').value), officer: $('officer').value.trim() || '○○○', tel: $('officerTel').value, pages: $('pages').value || 2, photos: $('photos').value,
         rows: [[{ t: '보도자료\n' + fmtD($('pressDate').value), w: 30 }, { t: '기 관 명', w: 14 }, { t: '경상북도경산교육지원청', w: 56 }], [{ t: '', w: 30, vm: true }, { t: '자료문의', w: 14 }, { t: '담당자 ' + $('officer').value + '\n(☎' + $('officerTel').value + ')', w: 56 }], [{ t: '', w: 30, vm: true }, { t: '￭총 ' + ($('pages').value || 2) + '쪽   ￭사진: ' + $('photos').value + '매(16:00 제공)', w: 70, span: 2 }]] },
       { k: 'ptitle', text: '“ ' + $('pTitle').value + ' ”', sub },
       { k: 'blank' }
@@ -684,7 +686,7 @@
       const t = type(), N = TYPE_NAME[t]; const Bp = current().r.blocks;
       const hd = Bp.find(b => b.k === 'pressHead') || {}, pt = Bp.find(b => b.k === 'ptitle') || {};
       const paras = []; Bp.filter(b => b.k === 'p').forEach(b => { const tx = b.text.trim(); if (/^□/.test(tx) || !paras.length) paras.push(tx.replace(/^□\s*/, '')); else paras[paras.length - 1] += '\n' + tx; });
-      const m = { dateStr: hd.date || fmtD($('pressDate').value), officer: hd.officer || $('officer').value, officerTel: hd.tel || $('officerTel').value, pages: hd.pages || $('pages').value || 2, photos: hd.photos || $('photos').value, title: (pt.text || '').replace(/^“\s*|\s*”$/g, '') || $('pTitle').value, sub: pt.sub || '-' + ORG + ' ' + (t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value) + ' 개최-', paras };
+      const m = { dateStr: hd.date || fmtD($('pressDate').value), officer: hd.officer || $('officer').value.trim() || '○○○', officerTel: hd.tel || $('officerTel').value, pages: hd.pages || $('pages').value || 2, photos: hd.photos || $('photos').value, title: (pt.text || '').replace(/^“\s*|\s*”$/g, '') || $('pTitle').value, sub: pt.sub || '-' + ORG + ' ' + (t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value) + ' 개최-', paras };
       const blob = await HWPX.buildPress(TPL.press, m);
       const name = fmtD($('pressDate').value).replace(/[.\s]/g, '').replace(/\(.\)/, '') + ' 보도자료 ' + ORG + ' ' + N + ' 연수.hwpx';
       const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);

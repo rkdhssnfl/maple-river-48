@@ -143,7 +143,7 @@ window.HWPX = (() => {
     all.forEach(t => { let v = t.textContent; map.forEach(([a, b]) => { if (a) v = v.split(a).join(b); }); if (v !== t.textContent) t.textContent = v; });
     // 서식1 안의 일정표·일시표
     ps.slice(s).forEach(p => { const tb = tblOf(p); if (!tb) return; const rs = rows(tb); const c0 = cellText(cells(rs[0])[0]).trim();
-      if (c0 === '순' && map.sched) fillTable(tb, 1, rs[1], map.sched.map((r, i) => [String(i + 1), r.t, r.min === '' ? '' : String(r.min), r.c.map(x => x.startsWith('◦') ? x : '◦ ' + x).join('\n'), r.who || '']));
+      if (c0 === '순' && map.sched) fillTable(tb, 1, rs[1], map.sched.map((r, i) => [String(i + 1), r.t, r.min === '' ? '' : String(r.min), r.c.map(x => /^\s*[◦-]/.test(x) ? x.trim().replace(/^-/, '   -') : '◦ ' + x).join('\n'), r.who || '']));
       if (c0 === '일자' && map.sessions && map.sessions.length === 2) map.sessions.forEach((x, k) => { setCell(cells(rs[0])[k + 1], x.dateStr); setCell(cells(rs[1])[k + 1], x.start + '~' + x.end); setCell(cells(rs[2])[k + 1], (x.region ? x.region + ' 지역 ' : '') + x.target.replace(/초·중등 /, '') + ' ' + x.n + '명'); setCell(cells(rs[3])[k + 1], x.place); });
     });
   }

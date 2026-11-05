@@ -380,8 +380,10 @@
   const makeEffect = (th, t) => fixAud(pick(pool('core', th)) + ' 습득을 통한 ' + pick(EFF_OBJ), t);
   const rami = q => (bat(q) ? '”이라며, “' : '”라며, “');
 
+  let SCHED_SUB = [];
   function regenText() {
     const t = type(), th = kw(); let P = [], E = [];
+    SCHED_SUB = picks(pool('did', th), 2).map(x => fixAud(x, t));
     if (t === 'coach') {
       const a = acts(); P = a.map(k => PURPOSE[k]); if (!P.length) P = [makePurpose(th, t), makePurpose(th, t)];
       P.splice(1, 0, pick(COMMON_P.coach)); P = P.slice(0, 4);
@@ -432,12 +434,12 @@
     const lectCell = $('lect').value.trim() ? $('lect').value.trim() + ($('lectOrg').value.trim() ? '\n(' + $('lectOrg').value.trim() + ')' : '') : '';
     const st = toMin(s0.start), en = toMin(s0.end); let sched;
     if (t === 'coach') {
-      const a = acts(); const main = a.filter(k => k !== 'lend').map(k => AGENDA[k]); if (!main.length) main.push($('theme').value);
+      const a = acts(); const main = a.filter(k => k !== 'lend').map(k => AGENDA[k]); if (!main.length) main.push($('theme').value); SCHED_SUB.forEach(x => main.push(' - ' + x));
       sched = [{ t: fromMin(st - 30) + '~' + fromMin(st), min: 30, c: ['등록'], who: '' }, { t: fromMin(st) + '~' + fromMin(st + 10), min: 10, c: ['개회식', '인사말씀'], who: '담당 장학사\n교육지원과장(센터장)' },
         { t: fromMin(st + 10) + '~' + fromMin(en), min: en - st - 10, c: main, who: lectCell || '학습코칭단' }, { t: fromMin(en) + '~', min: '', c: ['업무 협의 및 정보 공유' + (a.includes('lend') ? ', 교구 대여' : ''), '종합 정리 및 폐회'], who: '' }];
     } else {
       sched = [{ t: fromMin(st - 30) + '~' + fromMin(st), min: 30, c: ['등록 및 자료 배부'], who: '' }, { t: fromMin(st) + '~' + fromMin(st + 10), min: 10, c: ['개회식', '인사 말씀'], who: '담당 장학사\n교육지원과장\n(센터장)' },
-        { t: fromMin(st + 10) + '~' + fromMin(en - 10), min: en - st - 20, c: [$('theme').value], who: lectCell }, { t: fromMin(en - 10) + '~' + fromMin(en), min: 10, c: [ORG + ' 소개 및 사업 안내'], who: '학습상담교사' }, { t: fromMin(en), min: '', c: ['종합정리 및 폐회'], who: '' }];
+        { t: fromMin(st + 10) + '~' + fromMin(en - 10), min: en - st - 20, c: [$('theme').value].concat(SCHED_SUB.map(x => ' - ' + x)), who: lectCell }, { t: fromMin(en - 10) + '~' + fromMin(en), min: 10, c: [ORG + ' 소개 및 사업 안내'], who: '학습상담교사' }, { t: fromMin(en), min: '', c: ['종합정리 및 폐회'], who: '' }];
     }
     const raw = readBudget(); let total = 0;
     const budget = raw.map(b => { const amt = b.unit * b.qty * b.times; total += amt; return { mok: b.mok, item: b.item, calc: won(b.unit) + '원×' + b.qty + b.u + (b.times > 1 ? '×' + b.times + '회' : '') + '=', amt, amtStr: won(amt), note: b.note }; });
@@ -481,27 +483,9 @@
       if (lectStr) B.push({ k: 'p', text: '다. 연수 강사: ' + lectStr, in: 1 });
       B.push({ k: 'p', text: (lectStr ? '라' : '다') + '. 세부 운영 일정(단, 사정에 따라 변경될 수 있음)', in: 1 });
     }
-    // 일정표 (1회차 시간 기준)
-    const st = toMin(s0.start), en = toMin(s0.end);
+    // 일정표 (planModel과 동일)
     const hdr = [{ t: '순', w: 7 }, { t: '시간', w: 20 }, { t: '분', w: 8 }, { t: '내  용', w: 43 }, { t: '담당', w: 22 }];
-    let sch;
-    if (t === 'coach') {
-      const a = acts(); const main = a.filter(k => k !== 'lend').map(k => '◦ ' + AGENDA[k]); if (!main.length) main.push('◦ ' + $('theme').value);
-      sch = [
-        ['1', fromMin(st - 30) + '~' + fromMin(st), 30, '◦ 등록', ''],
-        ['2', fromMin(st) + '~' + fromMin(st + 10), 10, '◦ 개회식\n◦ 인사말씀', '담당 장학사\n교육지원과장(센터장)'],
-        ['3', fromMin(st + 10) + '~' + fromMin(en), en - st - 10, main.join('\n'), lectCell || '학습코칭단'],
-        ['4', fromMin(en) + '~', '', '◦ 업무 협의 및 정보 공유' + (a.includes('lend') ? ', 교구 대여' : '') + '\n◦ 종합 정리 및 폐회', '']
-      ];
-    } else {
-      sch = [
-        ['1', fromMin(st - 30) + '~' + fromMin(st), 30, '◦ 등록 및 자료 배부', ''],
-        ['2', fromMin(st) + '~' + fromMin(st + 10), 10, '◦ 개회식\n◦ 인사 말씀', '담당 장학사\n교육지원과장\n(센터장)'],
-        ['3', fromMin(st + 10) + '~' + fromMin(en - 10), en - st - 20, '◦ ' + $('theme').value, lectCell],
-        ['4', fromMin(en - 10) + '~' + fromMin(en), 10, '◦ ' + ORG + ' 소개 및 사업 안내', '학습상담교사'],
-        ['5', fromMin(en), '', '◦ 종합정리 및 폐회', '']
-      ];
-    }
+    const sch = planModel().sched.map((r, i) => [String(i + 1), r.t, r.min, r.c.map(x => /^\s*-/.test(x) ? '   ' + x.trim() : '◦ ' + x).join('\n'), r.who]);
     B.push({ k: 'table', rows: [hdr].concat(sch.map(r => [{ t: r[0], w: 7 }, { t: r[1], w: 20 }, { t: r[2], w: 8 }, { t: r[3], w: 43, left: true }, { t: r[4], w: 22 }])) });
     // 예산
     B.push({ k: 'h', text: '3. 예산 집행 계획' });

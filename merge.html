@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<title>코칭일지·교통비·월간출석</title>
+<title>코칭일지·교통비·학습서비스일지·월간출석</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -111,7 +111,7 @@
 
 <div class="wrap">
   <a href="home.html" class="homebtn">⌂ 관리 모음</a>
-  <h1>코칭일지·교통비·월간출석</h1>
+  <h1>코칭일지·교통비·학습서비스일지·월간출석</h1>
   <p class="sub">① 왈라에서 내려받은 응답 엑셀(또는 코칭단 파일·카톡 글)을 올리고 ② 코칭일자를 확인하고 ③ 교통비 지급 내역서를 내려받고 ④ 학습서비스 일지 첨부를 모아 받고 ⑤ 월간 출석부(월간 일지)를 내려받습니다. 연말에 월간 일지들을 올리면 연간 일지로 통합됩니다. 교통비 양식(명단)은 선택입니다. 지역은 양식 파일의 "지역" 칸을 따르며, 경산 사례회의 → 관내연수, 청도 사례회의 → 관외연수로 계산됩니다. 올린 파일은 이 기기 안에서만 처리되고 어디에도 전송되지 않습니다.</p>
 
   <section class="card">
@@ -128,7 +128,7 @@
       <span class="small">같은 이름의 파일을 다시 올리면 새 파일로 바뀝니다.</span>
     </label>
     <div id="parseMsg" hidden></div>
-    <details style="margin-top:12px">
+    <details style="margin-top:12px" hidden>
       <summary style="cursor:pointer;font-weight:700;font-size:14px">엑셀 파일 대신 카톡·문자로 받은 글 넣기</summary>
       <div class="small" style="margin-top:6px">첫 줄에 이름, 그 아래에 "학교(학생) 날짜, 날짜…" 줄을 적으면 됩니다. 날짜는 5/4, 5.4, 5월 4일 모두 되고, 사례회의는 "사례회의 5/15"처럼 적습니다. 여러 명을 이어서 붙여넣어도 됩니다.</div>
       <textarea id="pasteBox" placeholder="박서연&#10;푸른솔초(김하늘) 5/4, 5/11, 5/18&#10;푸른솔초(이도윤) 5/6, 5/13&#10;사례회의 5/15&#10;&#10;김민준&#10;하늘초(정우진) 5/7, 5/14" style="width:100%;margin-top:8px;font:inherit;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--input);color:var(--fg);min-height:110px"></textarea>

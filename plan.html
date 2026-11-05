@@ -41,7 +41,7 @@
   .tabs { display:flex; gap:6px; margin:10px 0; } .tabs button { flex:1; }
   .tabs button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
   /* 문서 미리보기 — 한글 양식(A4, 여백 20mm, 휴먼명조/HY울릉도M)과 같게 */
-  .docs .scale { transform-origin: 0 0; }
+  .docs .scale { transform-origin: 0 0; width: 210mm; max-width: 100%; margin: 0 auto; flex: none; }
   .doc { width: 210mm; min-height: 297mm; padding: 20mm; background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,.18); box-sizing: border-box; color: #000; font-family: "휴먼명조","HY울릉도M","함초롬바탕","Batang","바탕","Noto Serif KR",serif; font-size: 12pt; line-height: 1.6; }
   .doc p, .doc div { white-space: pre-wrap; }
   .doc .tbar { display: flex; height: 2.2pt; margin: 2pt 0; } .doc .tbar i { flex: 1; }

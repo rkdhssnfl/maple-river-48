@@ -408,8 +408,8 @@
     const selEl = $('meetSel'), cntEl = $('meetCnt');
     function paint() {
       const v = state.meetAttend;
-      $('meetYes').style.background = v === true ? 'var(--meet)' : ''; $('meetYes').style.color = v === true ? '#fff' : '';
-      $('meetNo').style.background = v === false ? 'var(--muted)' : ''; $('meetNo').style.color = v === false ? '#fff' : '';
+      $('meetYes').style.background = v === true ? '#2e7d32' : ''; $('meetYes').style.color = v === true ? '#fff' : ''; $('meetYes').style.borderColor = v === true ? '#2e7d32' : '';
+      $('meetNo').style.background = v === false ? '#c62828' : ''; $('meetNo').style.color = v === false ? '#fff' : ''; $('meetNo').style.borderColor = v === false ? '#c62828' : '';
       selEl.innerHTML = v === true ? '사례회의: <b>참석</b>' : v === false ? '사례회의: <b>불참</b>' : '아직 고르지 않았어요';
       cntEl.textContent = v === true ? '참석' : v === false ? '불참' : '';
     }

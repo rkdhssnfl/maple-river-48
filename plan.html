@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <title>연수 운영 계획·보도자료 만들기</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="plan-hwpx.js?v=1"></script>
+<script src="plan-hwpx.js?v=2"></script>
 <style>
   html, body { margin: 0; } [hidden] { display: none !important; }
   :root { --bg:#f4f5f7; --surface:#fff; --fg:#1c2430; --muted:#66707d; --line:#d9dee5; --accent:#1d5fa6; --accent-fg:#fff; --accent-soft:#e3edf8; --input:#fffbe6; --err:#c62828; }
@@ -57,9 +57,12 @@
   .doc table.plain { border-top-width: 0.12mm; border-left-width: 0.12mm; } .doc table.plain td { border-width: 0.12mm; }
   .doc .banner { border: 0.12mm solid #000; padding: 10pt 8pt; text-align: center; margin: 3pt 0 6pt; font-family: "맑은 고딕","Malgun Gothic",sans-serif; font-weight: 700; }
   .doc .banner .l0 { font-size: 12pt; } .doc .banner .l1 { font-size: 20pt; margin: 6pt 0 8pt; } .doc .banner .l2 { font-size: 15pt; margin-bottom: 6pt; } .doc .banner .l3 { font-size: 12pt; }
-  .doc .pttl { font-family: "HY울릉도M","휴먼명조",serif; font-size: 20pt; font-weight: 700; text-align: center; line-height: 1.4; margin: 14pt 0 2pt; }
-  .doc .psub { text-align: center; font-size: 14pt; font-weight: 700; margin-bottom: 14pt; }
-  .doc .pbody { margin: 0 0 10pt; text-align: justify; }
+  .doc table.press { border: 0.12mm solid #000; } .doc table.press td { font-family: "HY각헤드라인M","맑은 고딕",sans-serif; font-size: 12pt; }
+  .doc .ph1 { font-family: "신명조","휴먼명조",serif; font-size: 28pt; line-height: 1.3; } .doc .ph2 { font-family: "HY각헤드라인M","맑은 고딕",sans-serif; font-size: 14pt; font-weight: 700; }
+  .doc .ptbox { border: 0.12mm solid #000; padding: 6pt 4pt; margin: 4pt 0; }
+  .doc .pttl { font-family: "HY헤드라인M","HY울릉도M","맑은 고딕",sans-serif; font-size: 20pt; font-weight: 700; text-align: center; line-height: 1.4; }
+  .doc .psub { font-family: "HY울릉도M","휴먼명조",serif; text-align: center; font-size: 15pt; line-height: 1.4; }
+  .doc .pbody { margin: 0 0 12pt; text-align: justify; font-size: 15pt; line-height: 1.6; }
   .doc .big { font-size: 20pt; }
   @media print { body { background: #fff; } .noprint { display: none !important; } .wrap { display: block; padding: 0; } .docs { position: static; max-height: none; overflow: visible; } .docs .scale { transform: none !important; height: auto !important; } .doc { box-shadow: none; } }
 </style>
@@ -164,13 +167,15 @@
     <div class="row" style="margin-bottom:10px">
       <span class="small">내려받기:</span>
       <button class="btn primary" id="hwpxBtn" type="button">운영 계획 한글 파일(.hwpx)</button>
-      <button class="btn" id="pressBtn" type="button">보도자료(.docx)</button>
+      <button class="btn primary" id="pressHwpxBtn" type="button">보도자료 한글 파일(.hwpx)</button>
       <button class="btn" id="planBtn" type="button">운영 계획 워드(.docx)</button>
+      <button class="btn" id="pressBtn" type="button">보도자료 워드(.docx)</button>
       <button class="btn" id="copyBtn" type="button">보이는 글 복사</button>
       <button class="btn" id="printBtn" type="button">인쇄 / PDF</button>
     </div>
     <div id="msg" hidden></div>
     <div class="small" style="margin:6px 0 4px">한글 파일(.hwpx)은 보내주신 예시 양식 파일에 내용만 바꿔 넣은 것이라 서식이 똑같습니다. 한글에서 바로 열리고, 필요하면 「다른 이름으로 저장 → *.hwp」로 바꾸면 됩니다.</div>
+    <div class="grid" style="margin-top:6px"><label class="f">보도자료 총 쪽수<input type="number" id="pages" value="2"></label></div>
     <div class="tabs"><button class="btn on" type="button" data-v="plan">운영 계획 미리보기</button><button class="btn" type="button" data-v="press">보도자료 미리보기</button></div>
   </div>
   <div class="docs"><div class="scale" id="scale">
@@ -543,11 +548,14 @@
     const t = type(), N = TYPE_NAME[t];
     const sub = '-' + ORG + ' ' + (t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value) + ' 개최-';
     const B = [
-      { k: 'table', rows: [[{ t: '보도자료', w: 22, big: true, span: 1, rows: 2 }, { t: fmtD($('pressDate').value), w: 28, rows: 2 }, { t: '기 관 명', w: 15 }, { t: '경상북도경산교육지원청', w: 35 }], [{ t: '', w: 22, vm: true }, { t: '', w: 28, vm: true }, { t: '자료문의', w: 15 }, { t: '담당자 ' + $('officer').value + '\n(☎' + $('officerTel').value + ')', w: 35 }]], plain: true },
-      { k: 'p', text: '￭총 2쪽    ￭사진: ' + $('photos').value + '매(16:00 제공)' },
+      { k: 'table', plain: true, press: true, rows: [
+        [{ t: '', w: 18, rows: 4 }, { t: '보도자료\n' + fmtD($('pressDate').value), w: 26, rows: 4, pressHead: true }, { t: '', w: 56, span: 2 }],
+        [{ t: '', vm: true, w: 18 }, { t: '', vm: true, w: 26 }, { t: '기 관 명', w: 12 }, { t: '경상북도경산교육지원청', w: 44, bold: true }],
+        [{ t: '', vm: true, w: 18 }, { t: '', vm: true, w: 26 }, { t: '자료문의', w: 12 }, { t: '담당자 ' + $('officer').value + '\n(☎' + $('officerTel').value + ')', w: 44 }],
+        [{ t: '', vm: true, w: 18 }, { t: '', vm: true, w: 26 }, { t: '   ￭총 ' + ($('pages').value || 2) + '쪽    ￭사진: ' + $('photos').value + '매(16:00 제공)', w: 56, span: 2, left: true }]] },
       { k: 'blank' },
-      { k: 'ptitle', text: '“ ' + $('pTitle').value + ' ”' },
-      { k: 'center', text: sub, bold: true, after: 240, sub: true }
+      { k: 'ptitle', text: '“ ' + $('pTitle').value + ' ”', sub },
+      { k: 'blank' }
     ];
     ['p1', 'p2', 'p3'].forEach(id => $(id).value.split('\n').map(s => s.trim()).filter(Boolean).forEach((p, i) => B.push({ k: 'p', text: (i === 0 ? '□ ' : '   ') + p, after: 200, body: true })));
     return { blocks: B, fileName: fmtD($('pressDate').value).replace(/[.\s]/g, '').replace(/\(.\)/, '') + ' 보도자료 ' + ORG + ' ' + N + ' 연수.docx' };
@@ -560,14 +568,14 @@
     B.forEach(b => {
       if (b.k === 'title') { if (nt === 0) h += bars('#000', '#006ddb'); h += '<div class="' + (nt === 0 ? 'ttl1' : 'ttl2') + '">' + esc(b.text) + '</div>'; nt++; if (nt === 2 || b.last) h += bars('#ea0000', '#000'); }
       else if (b.k === 'center') h += '<div class="' + (b.org ? 'org' : b.sub ? 'psub' : 'c' + (b.bold ? ' b' : '')) + '">' + esc(b.text) + '</div>';
-      else if (b.k === 'ptitle') h += '<div class="pttl">' + esc(b.text) + '</div>';
+      else if (b.k === 'ptitle') h += '<div class="ptbox"><div class="pttl">' + esc(b.text) + '</div>' + (b.sub ? '<div class="psub">' + esc(b.sub) + '</div>' : '') + '</div>';
       else if (b.k === 'h') h += '<div class="h2">' + esc(b.text) + '</div>';
       else if (b.k === 'p') h += '<p class="' + (b.in === 1 ? 'in' : b.in === 2 ? 'in2' : b.body ? 'pbody' : '') + '">' + esc(b.text) + '</p>';
       else if (b.k === 'blank') h += '<p>&nbsp;</p>';
       else if (b.k === 'banner') h += '<div class="banner">' + b.lines.map((l, i) => '<div class="l' + i + '">' + esc(l) + '</div>').join('') + '</div>';
       else if (b.k === 'table') {
-        h += '<table' + (b.plain ? ' class="plain"' : '') + (b.narrow ? ' style="width:45%;margin-left:3.2em"' : '') + '>';
-        b.rows.forEach((r, ri) => { h += '<tr>' + r.map(c => { if (c.skip || c.vm) return ''; const tag = (ri === 0 && !b.plain && !c.noHead) || c.head ? 'th' : 'td'; return '<' + tag + (c.span ? ' colspan="' + c.span + '"' : '') + (c.rows ? ' rowspan="' + c.rows + '"' : '') + ' style="width:' + c.w + '%"' + (c.left ? ' class="l"' : '') + '>' + (c.big ? '<span class="big b">' : '') + esc(c.t) + (c.big ? '</span>' : '') + '</' + tag + '>'; }).join('') + '</tr>'; });
+        h += '<table' + (b.press ? ' class="plain press"' : b.plain ? ' class="plain"' : '') + (b.narrow ? ' style="width:45%;margin-left:3.2em"' : '') + '>';
+        b.rows.forEach((r, ri) => { h += '<tr>' + r.map(c => { if (c.skip || c.vm) return ''; const tag = (ri === 0 && !b.plain && !c.noHead) || c.head ? 'th' : 'td'; return '<' + tag + (c.span ? ' colspan="' + c.span + '"' : '') + (c.rows ? ' rowspan="' + c.rows + '"' : '') + (c.w ? ' style="width:' + c.w + '%"' : '') + ' class="' + (c.left ? 'l ' : '') + (c.pressHead ? 'ph ' : '') + (c.bold ? 'b' : '') + '">' + (c.pressHead ? '<span class="ph1">' + esc(c.t.split('\n')[0]) + '</span>\n<span class="ph2">' + esc(c.t.split('\n')[1] || '') + '</span>' : (c.big ? '<span class="big b">' : '') + esc(c.t) + (c.big ? '</span>' : '')) + '</' + tag + '>'; }).join('') + '</tr>'; });
         h += '</table>';
       }
     });
@@ -609,7 +617,7 @@
   function blocksToXml(B) {
     let body = '';
     B.forEach(b => {
-      if (b.k === 'title' || b.k === 'ptitle') body += wP(b.text, { center: true, size: b.k === 'ptitle' ? 40 : 32, bold: true, after: b.k === 'ptitle' ? 120 : 0 });
+      if (b.k === 'title' || b.k === 'ptitle') { body += wP(b.text, { center: true, size: b.k === 'ptitle' ? 40 : 32, bold: true, after: b.k === 'ptitle' ? 120 : 0 }); if (b.sub) body += wP(b.sub, { center: true, size: 30, after: 120 }); }
       else if (b.k === 'center') body += wP(b.text, { center: true, bold: b.bold, after: b.after || 60 });
       else if (b.k === 'h') body += wP(b.text, { size: 26, bold: true, before: 240, after: 80 });
       else if (b.k === 'p') body += wP(b.text, { after: b.after || 60, indent: b.in ? 360 * b.in : 0 });
@@ -667,7 +675,20 @@
       showMsg('저장한 파일: ' + name + ' — 한글에서 열어 확인하세요.');
     } catch (e) { showMsg('한글 파일을 만들지 못했습니다: ' + e.message, true); console.error(e); }
   }
-  $('hwpxBtn').onclick = makeHwpx; $('planBtn').onclick = () => make('plan'); $('pressBtn').onclick = () => make('press');
+  async function makePressHwpx() {
+    if (!window.JSZip || !window.HWPX) { showMsg('파일 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.', true); return; }
+    try {
+      if (!TPL.press) { const r = await fetch('tpl/press.hwpx?v=1'); if (!r.ok) throw new Error('양식 파일을 찾을 수 없습니다'); TPL.press = await r.arrayBuffer(); }
+      if (!$('p1').dataset.edited) $('p1').value = computeP1(); renderAll();
+      const t = type(), N = TYPE_NAME[t];
+      const m = { dateStr: fmtD($('pressDate').value), officer: $('officer').value, officerTel: $('officerTel').value, pages: $('pages').value || 2, photos: $('photos').value, title: $('pTitle').value, sub: '-' + ORG + ' ' + (t === 'coach' ? '학습코칭단 역량 강화 연수' : N + ' ' + $('title').value) + ' 개최-', paras: [$('p1').value, $('p2').value, $('p3').value] };
+      const blob = await HWPX.buildPress(TPL.press, m);
+      const name = fmtD($('pressDate').value).replace(/[.\s]/g, '').replace(/\(.\)/, '') + ' 보도자료 ' + ORG + ' ' + N + ' 연수.hwpx';
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+      showMsg('저장한 파일: ' + name + ' — 한글에서 열어 확인하세요.');
+    } catch (e) { showMsg('보도자료 한글 파일을 만들지 못했습니다: ' + e.message, true); console.error(e); }
+  }
+  $('hwpxBtn').onclick = makeHwpx; $('pressHwpxBtn').onclick = makePressHwpx; $('planBtn').onclick = () => make('plan'); $('pressBtn').onclick = () => make('press');
   $('printBtn').onclick = () => window.print();
   $('copyBtn').onclick = async () => {
     const el = $('docPlan').hidden ? $('docPress') : $('docPlan'); const out = [];

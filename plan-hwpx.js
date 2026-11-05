@@ -185,5 +185,35 @@ window.HWPX = (() => {
     names.filter(n => n !== 'mimetype').forEach(n => z2.file(n, files[n], { compression: 'DEFLATE', createFolders: false }));
     return z2.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip' });
   }
-  return { build };
+  // ---------- 보도자료 ----------
+  async function buildPress(templateBuf, m) {
+    const zip = await JSZip.loadAsync(templateBuf);
+    const xml = await zip.file('Contents/section0.xml').async('string');
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    const sec = doc.documentElement; const ps = paras(sec);
+    // 머리표
+    const ht = tblOf(ps[0]); const byAddr = {}; rows(ht).forEach(tr => cells(tr).forEach(c => { const a = attr(c, 'hp:cellAddr'); byAddr[a.getAttribute('colAddr') + ',' + a.getAttribute('rowAddr')] = c; }));
+    if (byAddr['1,0']) { const cp = cellPs(byAddr['1,0']); if (cp[1]) setP(cp[1], m.dateStr); else setCell(byAddr['1,0'], '보도자료\n' + m.dateStr); }
+    if (byAddr['3,2']) setCell(byAddr['3,2'], '담당자 ' + m.officer + '\n(☎' + m.officerTel + ')');
+    if (byAddr['2,3']) setP(cellPs(byAddr['2,3'])[0], '   ￭총 ' + m.pages + '쪽    ￭사진: ' + m.photos + '매(16:00 제공)');
+    // 제목 상자
+    const tt = tblOf(ps[1]); const tp = cellPs(cells(rows(tt)[0])[0]); setP(tp[0], '“ ' + m.title + ' ”'); if (tp[1]) setP(tp[1], m.sub);
+    // 본문: 기존 본문 문단을 본으로 삼아 다시 만듦
+    const body = ps.slice(2); const tplFirst = body.find(p => /^□/.test(ptext(p))) || body[1];
+    const tplNext = body.find(p => /^\s[^□\s]/.test(ptext(p)) && p !== tplFirst) || tplFirst; const tplBlank = body.find(p => ptext(p).trim() === '') || body[0];
+    const blank0 = body[0].cloneNode(true), f0 = tplFirst.cloneNode(true), n0 = tplNext.cloneNode(true), b0 = tplBlank.cloneNode(true);
+    body.forEach(removeP);
+    const add = (tpl, text) => { const c = tpl.cloneNode(true); setP(c, text); sec.appendChild(c); };
+    add(blank0, '');
+    m.paras.forEach((blk, i) => { if (i) add(b0, ''); blk.split('\n').map(s => s.trim()).filter(Boolean).forEach((line, k) => add(k ? n0 : f0, k ? ' ' + line : '□ ' + line)); });
+    let out = new XMLSerializer().serializeToString(doc);
+    if (!/^<\?xml/.test(out)) out = '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>' + out;
+    zip.file('Contents/section0.xml', out); zip.remove('Preview/PrvText.txt'); zip.remove('Preview/PrvImage.png');
+    const files = {}; const names = Object.keys(zip.files).filter(n => !zip.files[n].dir);
+    for (const n of names) files[n] = await zip.file(n).async('uint8array');
+    const z2 = new JSZip(); z2.file('mimetype', files['mimetype'], { compression: 'STORE', createFolders: false });
+    names.filter(n => n !== 'mimetype').forEach(n => z2.file(n, files[n], { compression: 'DEFLATE', createFolders: false }));
+    return z2.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip' });
+  }
+  return { build, buildPress };
 })();

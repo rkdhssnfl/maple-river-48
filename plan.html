@@ -70,8 +70,8 @@
       <label class="f" id="monthWrap">월(제목에 들어감)<select id="month"></select></label>
       <label class="f">연수 이름<input type="text" id="title"></label>
       <label class="f wide">연수 주제 (한 줄)<input type="text" id="theme"></label>
-      <label class="f" id="lectWrap1">강사 이름<input type="text" id="lect" value="유병훈"></label>
-      <label class="f" id="lectWrap2">강사 소속·직위<input type="text" id="lectOrg" value="행복한 교육 이야기 대표"></label>
+      <label class="f" id="lectWrap1">강사 이름 (외부 강사가 있을 때)<input type="text" id="lect" value="" placeholder="예) 홍길동"></label>
+      <label class="f" id="lectWrap2">강사 소속·직위<input type="text" id="lectOrg" value="" placeholder="예) ○○연구소 대표"></label>
     </div>
   </section>
 
@@ -245,7 +245,6 @@
     $('targetNote').value = P.note || '';
     $('bud').innerHTML = ''; P.budget.forEach(r => $('bud').appendChild(budRow(r)));
     $('actCard').hidden = t !== 'coach'; $('adminCard').hidden = t === 'coach'; $('monthWrap').hidden = t !== 'coach'; $('noteWrap').hidden = t === 'coach';
-    $('lectWrap1').hidden = $('lectWrap2').hidden = t === 'coach';
     $('dueCd').value = addDays(today, -7); $('dueGs').value = today;
     regenText(); regenPress();
   }
@@ -406,12 +405,15 @@
     B.push({ k: 'h', text: '1. 목적' }); P.forEach((p, i) => B.push({ k: 'p', text: ga[i] + '. ' + p, in: 1 }));
     B.push({ k: 'h', text: '2. 세부 추진 계획' });
     const s0 = ss[0] || {};
+    const lectStr = $('lect').value.trim() ? $('lect').value.trim() + ($('lectOrg').value.trim() ? '(' + $('lectOrg').value.trim() + ')' : '') : '';
+    const lectCell = $('lect').value.trim() ? $('lect').value.trim() + ($('lectOrg').value.trim() ? '\n(' + $('lectOrg').value.trim() + ')' : '') : '';
     if (t === 'coach') {
       const nOther = s0.other || 0;
       B.push({ k: 'p', text: '가. 일시: ' + fmtD(s0.date) + ' ' + s0.start + '~', in: 1 });
       B.push({ k: 'p', text: '나. 장소: ' + s0.place, in: 1 });
       B.push({ k: 'p', text: '다. 대상: ' + s0.target + ' ' + s0.n + '명(총 ' + (s0.n + nOther) + '명)', in: 1 });
-      B.push({ k: 'p', text: '라. 세부 운영 일정(단, 사정에 따라 변경될 수 있음)', in: 1 });
+      if (lectStr) B.push({ k: 'p', text: '라. 연수 강사: ' + lectStr, in: 1 });
+      B.push({ k: 'p', text: (lectStr ? '마' : '라') + '. 세부 운영 일정(단, 사정에 따라 변경될 수 있음)', in: 1 });
     } else {
       B.push({ k: 'p', text: '가. 일시·대상·장소', in: 1 });
       const rows = [[{ t: '일시', w: 14, head: true }].concat(ss.map(s => ({ t: fmtD(s.date) + ' ' + s.start + '~' + s.end, w: 86 / ss.length })))];
@@ -420,8 +422,8 @@
       B.push({ k: 'table', rows });
       if ($('targetNote').value.trim()) B.push({ k: 'p', text: '※ ' + $('targetNote').value.trim(), in: 1 });
       B.push({ k: 'p', text: '나. 연수 주제: ' + $('theme').value, in: 1 });
-      B.push({ k: 'p', text: '다. 연수 강사: ' + $('lect').value + '(' + $('lectOrg').value + ')', in: 1 });
-      B.push({ k: 'p', text: '라. 세부 운영 일정(단, 사정에 따라 변경될 수 있음)', in: 1 });
+      if (lectStr) B.push({ k: 'p', text: '다. 연수 강사: ' + lectStr, in: 1 });
+      B.push({ k: 'p', text: (lectStr ? '라' : '다') + '. 세부 운영 일정(단, 사정에 따라 변경될 수 있음)', in: 1 });
     }
     // 일정표 (1회차 시간 기준)
     const st = toMin(s0.start), en = toMin(s0.end);
@@ -432,14 +434,14 @@
       sch = [
         ['1', fromMin(st - 30) + '~' + fromMin(st), 30, '◦ 등록', ''],
         ['2', fromMin(st) + '~' + fromMin(st + 10), 10, '◦ 개회식\n◦ 인사말씀', '담당 장학사\n교육지원과장(센터장)'],
-        ['3', fromMin(st + 10) + '~' + fromMin(en), en - st - 10, main.join('\n'), '학습코칭단'],
+        ['3', fromMin(st + 10) + '~' + fromMin(en), en - st - 10, main.join('\n'), lectCell || '학습코칭단'],
         ['4', fromMin(en) + '~', '', '◦ 업무 협의 및 정보 공유' + (a.includes('lend') ? ', 교구 대여' : '') + '\n◦ 종합 정리 및 폐회', '']
       ];
     } else {
       sch = [
         ['1', fromMin(st - 30) + '~' + fromMin(st), 30, '◦ 등록 및 자료 배부', ''],
         ['2', fromMin(st) + '~' + fromMin(st + 10), 10, '◦ 개회식\n◦ 인사 말씀', '담당 장학사\n교육지원과장\n(센터장)'],
-        ['3', fromMin(st + 10) + '~' + fromMin(en - 10), en - st - 20, '◦ ' + $('theme').value, $('lect').value + '\n(' + $('lectOrg').value + ')'],
+        ['3', fromMin(st + 10) + '~' + fromMin(en - 10), en - st - 20, '◦ ' + $('theme').value, lectCell],
         ['4', fromMin(en - 10) + '~' + fromMin(en), 10, '◦ ' + ORG + ' 소개 및 사업 안내', '학습상담교사'],
         ['5', fromMin(en), '', '◦ 종합정리 및 폐회', '']
       ];

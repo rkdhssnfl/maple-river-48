@@ -44,6 +44,8 @@
   .off { font-size:13px; color:var(--muted); background:#fff8e1; border:1px solid #f1deaa; border-radius:10px; padding:8px 10px; margin-top:10px; }
   a.back { display:inline-block; margin-top:20px; color:var(--green); font-weight:700; text-decoration:none; }
   details summary { cursor:pointer; font-weight:700; margin:16px 0 6px; font-size:14px; color:var(--muted); }
+  a.go { display:block; text-align:center; text-decoration:none; background:#2e7d32; color:#fff; font-weight:700; font-size:16px; padding:13px; border-radius:12px; }
+  .hint { font-size:12px; color:var(--muted); margin-top:6px; }
   .ref { font:inherit; font-size:13px; border:1px solid var(--line); background:#fff; border-radius:8px; padding:4px 10px; margin-top:6px; }
 </style>
 </head>
@@ -64,7 +66,7 @@
 <script>
 (function () {
   const $ = id => document.getElementById(id);
-  const API = (window.CENTER_API || '').trim();
+  const FORM = (window.CENTER_FORM || '').trim();
   const DOW = ['일', '월', '화', '수', '목', '금', '토'];
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const today = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })();
@@ -103,62 +105,25 @@
 
   function sortKo(a, b) { return a.localeCompare(b, 'ko'); }
 
+  // 참석·불참은 왈라 양식으로 받고, 이름별 현황은 센터가 응답을 정리해 올립니다(data.json).
   function drawRsvp(e) {
     const box = $('rs-' + e.id); if (!box) return;
-    if (!API) { box.innerHTML = '<div class="off">참석 조사는 아직 연결되지 않았어요. 센터에서 준비 중입니다.</div>'; return; }
-    const c = cache[e.id];
-    const roster = c ? c.roster : [];
-    const resp = {}; (c ? c.responses : []).forEach(r => resp[r.name] = r);
-    const names = roster.slice().sort(sortKo); Object.keys(resp).forEach(n => { if (names.indexOf(n) < 0) names.push(n); });
-    const my = lsGet('center.name');
-    const mine = resp[my];
-    let y = 0, n = 0, w = 0; names.forEach(x => { const s = resp[x] && resp[x].status; if (s === '참석') y++; else if (s === '불참') n++; else w++; });
-    let h = '<label>내 이름</label>';
-    if (roster.length) h += '<select class="nm"><option value="">이름을 골라 주세요</option>' + roster.slice().sort(sortKo).map(x => '<option' + (x === my ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select>';
-    else h += '<input class="nm" type="text" placeholder="이름을 입력" value="' + esc(my) + '">';
-    h += '<div class="btns"><button type="button" class="yes' + (mine && mine.status === '참석' ? ' on' : '') + '" data-s="참석">참석</button><button type="button" class="no' + (mine && mine.status === '불참' ? ' on' : '') + '" data-s="불참">불참</button></div>';
-    h += '<input class="mm" type="text" maxlength="40" placeholder="한마디(선택) 예: 30분 늦게 도착" style="margin-top:8px" value="' + esc(mine ? mine.memo : '') + '">';
-    h += '<div class="msg" hidden></div>';
-    h += '<div class="sum"><span class="s-y">참석 ' + y + '</span><span class="s-n">불참 ' + n + '</span><span class="s-w">미응답 ' + w + '</span></div>';
-    h += '<table class="st">' + names.map(x => { const r = resp[x]; const cls = !r ? 'w' : (r.status === '참석' ? 'y' : 'x'); return '<tr><td class="n">' + esc(x) + '</td><td class="' + cls + '">' + (r ? r.status : '미응답') + (r && r.memo ? '<span class="memo">' + esc(r.memo) + '</span>' : '') + '</td></tr>'; }).join('') + '</table>';
-    h += '<button class="ref" type="button">새로고침</button>';
-    box.innerHTML = h;
-    const nm = box.querySelector('.nm'), msg = box.querySelector('.msg');
-    nm.addEventListener('change', () => { lsSet('center.name', nm.value.trim()); drawRsvp(e); });
-    box.querySelector('.ref').addEventListener('click', () => loadResp(e));
-    box.querySelectorAll('.btns button').forEach(b => b.addEventListener('click', async () => {
-      const name = nm.value.trim();
-      if (!name) { msg.hidden = false; msg.className = 'msg err'; msg.textContent = '먼저 내 이름을 골라 주세요.'; return; }
-      lsSet('center.name', name);
-      msg.hidden = false; msg.className = 'msg'; msg.textContent = '저장 중...';
-      try {
-        await fetch(API, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ event: e.id, name: name, status: b.dataset.s, memo: box.querySelector('.mm').value.trim() }) });
-      } catch (err) { msg.className = 'msg err'; msg.textContent = '보내지 못했어요. 인터넷을 확인하고 다시 눌러 주세요.'; return; }
-      await loadResp(e, name, b.dataset.s);
-    }));
-  }
-
-  async function loadResp(e, expectName, expectStatus) {
-    if (!API) return;
-    try {
-      const r = await fetch(API + (API.indexOf('?') >= 0 ? '&' : '?') + 'event=' + encodeURIComponent(e.id) + '&t=' + Date.now());
-      const j = await r.json();
-      if (!j.ok) throw new Error('bad');
-      cache[e.id] = { roster: j.roster || [], responses: j.responses || [] };
-      drawRsvp(e);
-      if (expectName) {
-        const box = $('rs-' + e.id), msg = box && box.querySelector('.msg');
-        const hit = cache[e.id].responses.find(x => x.name === expectName && x.status === expectStatus);
-        if (msg) { msg.hidden = false; msg.className = hit ? 'msg' : 'msg err'; msg.textContent = hit ? expectName + ' 선생님 "' + expectStatus + '"으로 저장했어요.' : '저장이 확인되지 않았어요. 명단에 있는 이름인지 보고 다시 눌러 주세요.'; }
-      }
-    } catch (err) {
-      const box = $('rs-' + e.id);
-      if (box && !cache[e.id]) box.innerHTML = '<div class="off">참석 현황을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</div>';
+    const form = e.form || FORM;
+    const st = e.status || {};
+    const names = (e.roster || []).slice().sort(sortKo); Object.keys(st).forEach(n => { if (names.indexOf(n) < 0) names.push(n); });
+    let y = 0, n = 0, w = 0; names.forEach(x => { const s = st[x] && st[x].s; if (s === '참석') y++; else if (s === '불참') n++; else w++; });
+    let h = '<a class="go" href="' + esc(form) + '" target="_blank" rel="noopener">✍️ 참석·불참 응답하기 (왈라 양식 열기)</a>';
+    h += '<div class="hint">양식에서 이름과 참석 또는 불참을 골라 제출하면 끝이에요. 다시 내면 마지막 응답으로 정리돼요.</div>';
+    if (names.length) {
+      h += '<div class="sum"><span class="s-y">참석 ' + y + '</span><span class="s-n">불참 ' + n + '</span><span class="s-w">미응답 ' + w + '</span></div>';
+      h += '<table class="st">' + names.map(x => { const r = st[x]; const cls = !r ? 'w' : (r.s === '참석' ? 'y' : 'x'); return '<tr><td class="n">' + esc(x) + '</td><td class="' + cls + '">' + (r ? esc(r.s) : '미응답') + (r && r.memo ? '<span class="memo">' + esc(r.memo) + '</span>' : '') + '</td></tr>'; }).join('') + '</table>';
+      h += '<div class="hint">' + (e.statusAt ? esc(e.statusAt) + ' 기준 · ' : '') + '현황은 센터가 응답을 정리해 올릴 때 바뀌어요.</div>';
     }
+    box.innerHTML = h;
   }
+  function loadResp() {}
 
   fetch('data.json?t=' + Date.now()).then(r => r.json()).then(d => { DATA = d || DATA; }).catch(() => {}).then(() => { renderNotices(); renderEvents(); });
-  setInterval(() => { (DATA.events || []).filter(e => e.rsvp && e.date >= today && cache[e.id] && !document.hidden).forEach(e => { const a = document.activeElement; if (a && /INPUT|SELECT/.test(a.tagName)) return; loadResp(e); }); }, 45000);
 })();
 </script>
 </body>

@@ -101,8 +101,8 @@
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --nt: #f6b35c; --nt-soft: #2f2617; --nt-line: #6b4f1f; } }
   :root[data-theme="dark"] { --nt: #f6b35c; --nt-soft: #2f2617; --nt-line: #6b4f1f; }
   .card.notice { border: 2px solid var(--nt-line); padding: 0; overflow: hidden; }
-  .card.notice h2 { margin: 0; padding: 12px 14px; background: var(--nt); color: #fff; font-size: 17px; justify-content: flex-start; }
-  .card.notice h2 .cnt { margin-left: auto; font-size: 13px; font-weight: 700; background: rgba(255,255,255,.25); border-radius: 999px; padding: 1px 10px; }
+  .card.notice h2 { margin: 0; padding: 14px 14px 2px; color: var(--nt); font-size: 17px; justify-content: flex-start; }
+  .card.notice h2 .cnt { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--nt); background: var(--nt-soft); border: 1px solid var(--nt-line); border-radius: 999px; padding: 1px 10px; }
   #notices { padding: 12px; display: grid; gap: 10px; }
   #notices .empty { padding: 4px 2px; }
   .nt { background: var(--nt-soft); border-left: 5px solid var(--nt); border-radius: 10px; padding: 12px 14px; }

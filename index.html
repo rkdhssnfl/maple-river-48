@@ -51,6 +51,8 @@
   header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); margin: 0 0 16px; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); }
   .top-inner { max-width: 560px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
   .top-inner > div:first-child { min-width: 0; }
+  .homebtn { flex: none; font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: none; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; background: var(--surface); white-space: nowrap; }
+  .top-inner > div[style] { min-width: 0; }
   .top h1 { font-size: 15px; margin: 0; font-weight: 700; white-space: nowrap; }
   @media (min-width: 900px) {
     .wrap, .top-inner { max-width: none; margin: 0; }
@@ -145,7 +147,8 @@
 
 <header class="top">
   <div class="top-inner">
-    <div>
+    <a class="homebtn" href="coach.html" aria-label="홈 (센터 페이지 모음)">⌂ 홈</a>
+    <div style="flex:1">
       <h1>코칭일지·학습서비스일지 제출</h1>
       <div class="sub">코칭일자 입력 양식</div>
     </div>

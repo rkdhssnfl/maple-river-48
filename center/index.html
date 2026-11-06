@@ -75,7 +75,12 @@
 
   /* 일정 목록 */
   .ev { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-top: 10px; scroll-margin-top: 80px; }
-  .ev.hl { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .ev { transition: background .2s; }
+  .ev.hl { border-left-width: 5px; padding-left: 8px; }
+  .ev.hl.k-meet { background: var(--meet-soft); border-color: var(--meet); }
+  .ev.hl.k-train { background: var(--train-soft); border-color: var(--train); }
+  .ev.hl.k-etc { background: var(--etc-soft); border-color: var(--etc); }
+  .ev.hl .dt, .ev.hl .em span { background: var(--surface); }
   .ev-h { display: flex; gap: 12px; align-items: flex-start; }
   .dt { flex: none; width: 56px; text-align: center; border-radius: 10px; padding: 5px 0; }
   .dt span { display: block; font-size: 11px; font-weight: 700; } .dt b { display: block; font-size: 22px; line-height: 1.1; }
@@ -190,7 +195,7 @@
 
   function evHtml(e) {
     const [y, m, d] = e.date.split('-').map(Number), w = new Date(y, m - 1, d).getDay(), t = typeOf(e);
-    let h = '<div class="ev' + (e.date === selDay ? ' hl' : '') + '" data-d="' + e.date + '"><div class="ev-h">' +
+    let h = '<div class="ev k-' + t + (e.date === selDay ? ' hl' : '') + '" data-d="' + e.date + '"><div class="ev-h">' +
       '<div class="dt t-' + t + '"><span>' + m + '월</span><b>' + d + '</b><span>' + DOW[w] + '</span></div><div>' +
       '<div class="et">' + esc(e.title) + '' + '</div>' +
       ((e.time || e.place) ? '<div class="em">' + (e.time ? '<span>🕑 ' + esc(e.time) + '</span>' : '') + (e.place ? '<span>📍 ' + esc(e.place) + '</span>' : '') + '</div>' : '') +

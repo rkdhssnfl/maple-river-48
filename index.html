@@ -158,7 +158,7 @@
 
 <div class="wrap">
 <div class="colL">
-  <p class="intro">매일 수업 후 그날 날짜를 탭해 두면 한 달 동안 이 휴대폰에 누적됩니다. 월말에 글로 복사해 제출 양식에 붙여 넣어 주세요.<br>① 이름·연도·월 → ② 학생별로 학교와 학생 이름 입력 → ③ 달력에서 코칭한 날의 <b>위쪽(수업)</b>을 탭, 보강한 날은 <b>아래쪽(보강)</b>을 탭 → ④ 사례회의 참석일 선택 → ⑤ <b>① 내용 복사</b>를 누른 뒤 <b>② 제출하기</b>를 누르면 제출 양식이 열림 → 양식에 붙여넣기 하고 응답 제출.</p>
+  <p class="intro">매일 수업 후 그날 날짜를 탭해 두면 이 휴대폰에 누적됩니다. 달력은 지난달과 이번 달, 두 달이 함께 보여요. 월말에 글로 복사해 제출 양식에 붙여 넣어 주세요.<br>① 이름 → ② 학생별로 학교와 학생 이름 입력 → ③ 달력에서 코칭한 날의 <b>위쪽(수업)</b>을 탭, 보강한 날은 <b>아래쪽(보강)</b>을 탭 → ④ 사례회의 참석 또는 불참 선택 → ⑤ <b>내용 복사</b>를 누른 뒤 <b>제출하기</b>를 누르면 제출 양식이 열림 → 양식에 붙여넣기 하고 응답 제출.</p>
 
   <p style="margin:0 0 12px"><a href="slides.html?v=3" onclick="if(window.innerWidth>=900){window.open(this.href,'_blank');return false}" style="display:block;text-align:center;padding:12px;border:1.5px solid #1f6f5c;border-radius:12px;color:#1f6f5c;font-weight:700;text-decoration:none;background:#fff">📖 사용 안내 슬라이드 보기</a></p>
 
@@ -166,8 +166,7 @@
     <h2>코칭단</h2>
     <div class="grid2">
       <label class="f" style="grid-column:1 / -1">이름<input type="text" id="name" placeholder="예) 박서연" autocomplete="name"></label>
-      <label class="f">연도<select id="year"></select></label>
-      <label class="f">월<select id="month"></select></label>
+      <span hidden><select id="year"></select><select id="month"></select></span>
     </div>
     <div class="sel-list" id="periodInfo"></div>
     <div class="legend">
@@ -248,6 +247,14 @@
   const now = new Date();
   const TODAY = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
   const state = load() || { name: '', region: '', year: now.getFullYear(), month: now.getMonth() + 1, students: [], meet: [], meetNote: '' };
+  // 월 선택 없음: 항상 이번 달 기준 두 달(지난달+이번 달) 달력. 달이 바뀌면 사례회의 선택만 새로, 달력 범위 밖 날짜는 정리
+  (function rollover() {
+    const key = now.getFullYear() + '-' + (now.getMonth() + 1);
+    const pm = new Date(now.getFullYear(), now.getMonth() - 1, 1), lim = pm.getFullYear() + '-' + String(pm.getMonth() + 1).padStart(2, '0') + '-01';
+    if (state.stamp !== key) { state.meetAttend = null; state.meet = []; }
+    state.stamp = key; state.year = now.getFullYear(); state.month = now.getMonth() + 1;
+    (state.students || []).forEach(s => { s.dates = (s.dates || []).filter(d => d >= lim); s.makeup = (s.makeup || []).filter(d => d >= lim); });
+  })();
   if (!state.students.length) state.students.push(newStudent());
   if (!Array.isArray(state.meet)) state.meet = [];
   if (state.meetAttend !== true && state.meetAttend !== false) state.meetAttend = null;
@@ -263,6 +270,11 @@
     const first = new Date(y, m - 1, 1);
     const dow = (first.getDay() + 6) % 7; // 월=0
     return { start: new Date(y, m - 1, 1 - dow), end: new Date(y, m, 0) };
+  }
+  // 두 달 보기: (이번 달 - 1)의 1일이 속한 주의 월요일 ~ 이번 달 말일
+  function window2(y, m) {
+    const b = period(y, m);
+    return { start: period(m === 1 ? y - 1 : y, m === 1 ? 12 : m - 1).start, end: b.end };
   }
   const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   const fromIso = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -308,19 +320,24 @@
   // opts: { selected:[], colorFor(dow)->css var or null, matchDow, onToggle(key, nowSelected) }
   function buildCalendar(container, opts) {
     container.innerHTML = '';
-    const { start, end } = period(state.year, state.month);
+    const { start, end } = window2(state.year, state.month);
+    const firstReal = period(state.month === 1 ? state.year - 1 : state.year, state.month === 1 ? 12 : state.month - 1).start;
+    const realStart = new Date(firstReal.getFullYear(), firstReal.getMonth(), 1);
     WD.forEach((d, i) => {
       const h = document.createElement('div'); h.className = 'dow'; h.textContent = d;
       h.style.setProperty('--c', 'var(--wd' + i + ')');
       container.appendChild(h);
     });
+    let lastM = -1;
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const key = iso(d);
       const dow = (d.getDay() + 6) % 7;
       if (dow >= 5) continue; // 주말은 표시하지 않음
+      const newMonth = d.getMonth() !== lastM; lastM = d.getMonth();
       const color = opts.colorFor(dow);
-      const isPrev = d.getMonth() + 1 !== state.month;
-      const label = (isPrev ? '<small>' + (d.getMonth() + 1) + '월</small>' : '') + d.getDate();
+      const isPrev = d < realStart;
+      const firstCell = d.getTime() === start.getTime() || (dow === 0 && key === iso(start));
+      const label = ((isPrev || newMonth || firstCell) ? '<small>' + (d.getMonth() + 1) + '월</small>' : '') + d.getDate();
       if (opts.split) {
         const cell = document.createElement('div');
         cell.className = 'day2';
@@ -376,8 +393,8 @@
   const studentsEl = $('students');
   function renderStudents() {
     studentsEl.innerHTML = '';
-    const { start, end } = period(state.year, state.month);
-    $('periodInfo').textContent = '집계 기간: ' + md(start) + ' ~ ' + md(end) + ' (1일이 속한 주의 월요일부터)';
+    const { start, end } = window2(state.year, state.month);
+    $('periodInfo').textContent = '달력: ' + (state.month === 1 ? 12 : state.month - 1) + '월 ~ ' + state.month + '월 (두 달)';
     state.students.forEach((s, i) => studentsEl.appendChild(studentCard(s, i)));
     $('addStudent').disabled = state.students.length >= MAX_STUDENTS;
   }
@@ -463,7 +480,7 @@
   function showXfer(t, isErr) { xferMsg.hidden = false; xferMsg.className = 'msg' + (isErr ? ' err' : ''); xferMsg.textContent = t; }
   function buildText() {
     const md = iso => { const d = fromIso(iso); return (d.getMonth() + 1) + '/' + d.getDate(); };
-    const out = ['[코칭일자] ' + state.year + '년 ' + state.month + '월 ' + (state.name || '(이름)').trim()];
+    const out = ['[코칭일자] ' + (state.name || '(이름)').trim()];
     state.students.filter(s => s.group.trim() && (s.dates.length || s.makeup.length)).forEach(s => {
       const all = Array.from(new Set(s.dates.concat(s.makeup))).sort();
       const mk = new Set(s.makeup);
@@ -513,7 +530,7 @@
   $('xferLoad').addEventListener('click', () => {
     try {
       const o = decodeState($('xferBox').value);
-      state.name = o.name || ''; state.year = o.year || state.year; state.month = o.month || state.month;
+      state.name = o.name || ''; 
       state.students = (o.students.length ? o.students : [newStudent()]).map(s => ({ group: s.group || '', school: s.school, student: s.student, dates: s.dates || [], makeup: s.makeup || [], note: s.note || '' }));
       state.meet = o.meet || []; state.meetAttend = o.meetAttend == null ? null : o.meetAttend; state.archive = o.archive || {};
       $('name').value = state.name; yearSel.value = state.year; monthSel.value = state.month;

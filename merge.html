@@ -120,7 +120,7 @@
       <label class="f">연도<select id="year"></select></label>
       <label class="f">월<select id="month"></select></label>
       <label class="f">이달 사례회의 날짜<input type="date" id="meetDate"></label>
-      <span class="small">파일을 올리면 파일 이름의 월로 자동 선택됩니다. 코칭단이 "사례회의: 참석"으로 낸 경우 이 날짜가 참석일로 들어갑니다.</span>
+      <span class="small">사례회의 날짜를 고르면 연도·월이 그 날짜의 달로 자동 설정됩니다(날짜를 안 넣으면 파일·글의 월로 선택). 코칭단이 "사례회의: 참석"으로 낸 경우 이 날짜가 참석일로 들어갑니다.</span>
     </div>
     <label class="drop" id="drop" style="margin-top:10px">
       <input type="file" id="files" multiple accept=".xlsx">
@@ -294,7 +294,8 @@
   const meetDate = () => { const v = meetDateEl.value; if (!v) return null; const [y, mo, d] = v.split('-').map(Number); return new Date(y, mo - 1, d); };
   // "사례회의: 참석"으로 낸 사람은 이달 사례회의 날짜를 참석일로
   function applyMeetDate() { const d = meetDate(); files.forEach(p => { if (p.meetAttend === true) p.meet = d ? [d] : []; }); }
-  meetDateEl.addEventListener('change', () => { applyMeetDate(); render(); });
+  function monthFromMeet() { const d = meetDate(); if (d) { yearSel.value = d.getFullYear(); monthSel.value = d.getMonth() + 1; } }
+  meetDateEl.addEventListener('change', () => { monthFromMeet(); applyMeetDate(); render(); });
   const parseMeetWord = (p, text) => { if (/참석/.test(text) && !/불참/.test(text)) { p.meetAttend = true; const d = meetDate(); if (d) p.meet.push(d); return true; } if (/불참/.test(text)) { p.meetAttend = false; return true; } return false; };
 
   const files = new Map(); // name -> parsed {name, fileName, rows:[{group, dates:[Date]}], meet:[Date]}
@@ -463,7 +464,7 @@
         const m = f.name.match(/(\d{1,2})월/); if (m && !detected) detected = Number(m[1]);
       } catch (e) { errs.push(f.name + ': ' + (e.message || '읽기 실패')); }
     }
-    if (detected) monthSel.value = detected;
+    if (detected && !meetDate()) monthSel.value = detected;
     pm.className = 'msg' + (errs.length ? ' err' : '');
     // 왈라에 첨부된 파일 중 자동으로 못 읽은 것: 링크를 보여 주고 직접 올리게 안내 (이미 올린 이름은 제외)
     const pend = PENDING_LINKS.filter(x => !files.has(x.name));
@@ -502,7 +503,7 @@
     const start = name => { cur = { name, fileName: '카톡 글', rows: [], meet: [] }; out.push(cur); };
     text.split(/\r?\n/).map(x => x.trim()).filter(Boolean).forEach(l => {
       const h = l.match(/^\[?코칭일자\]?\s*(?:(\d{4})년)?\s*(?:(\d{1,2})월)?\s*(.+)$/);
-      if (h) { if (h[2]) monthSel.value = Number(h[2]); start(h[3].replace(/[:\s]+$/, '').trim()); return; }
+      if (h) { if (h[2] && !meetDate()) monthSel.value = Number(h[2]); start(h[3].replace(/[:\s]+$/, '').trim()); return; }
       if (/^\(.*\)$/.test(l) || /^\[.*\]$/.test(l)) return;           // (안내문) 줄은 건너뜀
       const dates = [], mks = []; let m; const re = new RegExp(dateRe.source, 'g');
       while ((m = re.exec(l))) { const d = new Date(Number(yearSel.value), Number(m[1]) - 1, Number(m[2])); if (!isNaN(d)) { dates.push(d); mks.push(m[3] === '*'); } }
@@ -513,7 +514,7 @@
         // 날짜가 없는 짧은 한글 줄 = 이름 줄 (명단에 있는 이름이면 확실)
         const nm = label.replace(/^(이름|코칭단)\s*[:：]?\s*/, '').replace(/\s*(선생님|쌤|코치)$/, '').trim();
         if (nm && (masterNames.has(norm(nm)) || (/^[가-힣]{2,5}$/.test(nm) && !/(초|중|고|학교|사례회의)$/.test(nm)))) { start(nm); return; }
-        if (/^\d{4}년/.test(l) || /^\d{1,2}월/.test(l)) { const mm = l.match(/(\d{1,2})월/); if (mm) monthSel.value = Number(mm[1]); return; }
+        if (/^\d{4}년/.test(l) || /^\d{1,2}월/.test(l)) { const mm = l.match(/(\d{1,2})월/); if (mm && !meetDate()) monthSel.value = Number(mm[1]); return; }
         if (!cur) errs.push('읽지 못한 줄: ' + l);
         return;
       }

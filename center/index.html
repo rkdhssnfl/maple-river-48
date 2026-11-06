@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>센터 안내·일정</title>
+<style>
+  :root { --bg:#f3f5f2; --fg:#1d2a24; --muted:#65736c; --line:#d6ddd8; --green:#1f6f5c; --ok:#2e7d32; --no:#c62828; --surface:#fff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif; }
+  header { background:var(--green); color:#fff; padding:14px 16px; }
+  header h1 { margin:0; font-size:19px; }
+  header p { margin:2px 0 0; font-size:12px; opacity:.85; }
+  main { max-width:760px; margin:0 auto; padding:14px 14px 48px; }
+  h2 { font-size:16px; margin:20px 0 8px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px; }
+  .empty { color:var(--muted); font-size:14px; padding:6px 2px; }
+  .nt { font-weight:700; font-size:15px; } .nd { font-size:12px; color:var(--muted); margin-top:2px; }
+  .nb { white-space:pre-wrap; font-size:14px; line-height:1.55; margin-top:6px; }
+  .pin { display:inline-block; font-size:11px; background:#fff3cd; border:1px solid #e6c866; border-radius:6px; padding:1px 6px; margin-right:6px; vertical-align:middle; }
+  .ev { display:flex; gap:12px; }
+  .date { flex:none; width:58px; text-align:center; border-radius:10px; background:#eef2ef; padding:6px 0; }
+  .date b { display:block; font-size:20px; line-height:1.1; } .date span { font-size:11px; color:var(--muted); }
+  .ev.meet .date { background:#e6f4e8; } .ev.meet .date span { color:var(--ok); }
+  .et { font-weight:700; font-size:15px; } .em { font-size:13px; color:var(--muted); margin-top:2px; }
+  .badge { font-size:11px; font-weight:700; color:#fff; background:var(--ok); border-radius:6px; padding:1px 6px; margin-left:6px; }
+  .rsvp { margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); }
+  .rsvp label { font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
+  .rsvp select, .rsvp input { width:100%; font:inherit; font-size:16px; padding:10px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+  .btns { display:flex; gap:8px; margin-top:8px; }
+  .btns button { flex:1; font:inherit; font-size:16px; font-weight:700; padding:12px; border-radius:12px; border:2px solid; background:#fff; }
+  .yes { color:var(--ok); border-color:var(--ok) !important; } .no { color:var(--no); border-color:var(--no) !important; }
+  .yes.on { background:var(--ok); color:#fff; } .no.on { background:var(--no); color:#fff; }
+  .sum { display:flex; gap:8px; margin:10px 0 6px; font-size:13px; flex-wrap:wrap; }
+  .sum span { padding:3px 10px; border-radius:999px; font-weight:700; }
+  .s-y { background:#e6f4e8; color:var(--ok); } .s-n { background:#fdeaea; color:var(--no); } .s-w { background:#eef2ef; color:var(--muted); }
+  table.st { width:100%; border-collapse:collapse; font-size:14px; }
+  table.st td { border:1px solid var(--line); padding:7px 8px; }
+  table.st td.n { width:45%; font-weight:600; }
+  td.y { background:#e6f4e8; color:var(--ok); font-weight:700; } td.x { background:#fdeaea; color:var(--no); font-weight:700; } td.w { color:var(--muted); }
+  .memo { font-weight:400; font-size:12px; color:var(--muted); margin-left:6px; }
+  .msg { margin-top:8px; font-size:13px; padding:8px 10px; border-radius:8px; background:#e6f4e8; } .msg.err { background:#fdeaea; color:var(--no); }
+  .off { font-size:13px; color:var(--muted); background:#fff8e1; border:1px solid #f1deaa; border-radius:10px; padding:8px 10px; margin-top:10px; }
+  a.back { display:inline-block; margin-top:20px; color:var(--green); font-weight:700; text-decoration:none; }
+  details summary { cursor:pointer; font-weight:700; margin:16px 0 6px; font-size:14px; color:var(--muted); }
+  .ref { font:inherit; font-size:13px; border:1px solid var(--line); background:#fff; border-radius:8px; padding:4px 10px; margin-top:6px; }
+</style>
+</head>
+<body>
+<header><h1>경산기초학력거점지원센터 · 센터 안내·일정</h1><p>학습코칭단 선생님용</p></header>
+<main>
+  <h2>📢 센터 안내사항</h2>
+  <div id="notices"></div>
+
+  <h2>📅 센터 일정</h2>
+  <div id="events"></div>
+  <details id="pastBox" hidden><summary>지난 일정 보기</summary><div id="past"></div></details>
+
+  <a class="back" href="../home.html">← 센터 관리 모음으로</a>
+</main>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const API = (window.CENTER_API || '').trim();
+  const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const today = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })();
+  const lsGet = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  const cache = {};            // 일정 id -> { roster, responses }
+  let DATA = { notices: [], events: [] };
+
+  function fmtDate(s) { const [y, m, d] = s.split('-').map(Number); const dt = new Date(y, m - 1, d); return { m: m + '월', d: d, w: DOW[dt.getDay()] }; }
+
+  function renderNotices() {
+    const list = (DATA.notices || []).slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.date || '').localeCompare(String(a.date || '')));
+    $('notices').innerHTML = list.length ? list.map(n =>
+      '<div class="card"><div class="nt">' + (n.pinned ? '<span class="pin">중요</span>' : '') + esc(n.title) + '</div>' +
+      (n.date ? '<div class="nd">' + esc(n.date) + '</div>' : '') + '<div class="nb">' + esc(n.body) + '</div></div>').join('')
+      : '<div class="empty">등록된 안내사항이 없어요.</div>';
+  }
+
+  function eventHtml(e) {
+    const f = fmtDate(e.date);
+    let h = '<div class="card" id="ev-' + esc(e.id) + '"><div class="ev' + (e.rsvp ? ' meet' : '') + '"><div class="date"><span>' + f.m + '</span><b>' + f.d + '</b><span>' + f.w + '</span></div><div>' +
+      '<div class="et">' + esc(e.title) + (e.rsvp ? '<span class="badge">참석 조사</span>' : '') + '</div>' +
+      '<div class="em">' + [e.time, e.place].filter(Boolean).map(esc).join(' · ') + '</div>' +
+      (e.note ? '<div class="nb" style="margin-top:4px">' + esc(e.note) + '</div>' : '') + '</div></div>';
+    if (e.rsvp) h += '<div class="rsvp" id="rs-' + esc(e.id) + '"></div>';
+    return h + '</div>';
+  }
+
+  function renderEvents() {
+    const evs = (DATA.events || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+    const up = evs.filter(e => e.date >= today), past = evs.filter(e => e.date < today).reverse();
+    $('events').innerHTML = up.length ? up.map(eventHtml).join('') : '<div class="empty">예정된 일정이 없어요.</div>';
+    $('past').innerHTML = past.map(eventHtml).join(''); $('pastBox').hidden = !past.length;
+    evs.filter(e => e.rsvp).forEach(e => { drawRsvp(e); loadResp(e); });
+  }
+
+  function sortKo(a, b) { return a.localeCompare(b, 'ko'); }
+
+  function drawRsvp(e) {
+    const box = $('rs-' + e.id); if (!box) return;
+    if (!API) { box.innerHTML = '<div class="off">참석 조사는 아직 연결되지 않았어요. 센터에서 준비 중입니다.</div>'; return; }
+    const c = cache[e.id];
+    const roster = c ? c.roster : [];
+    const resp = {}; (c ? c.responses : []).forEach(r => resp[r.name] = r);
+    const names = roster.slice().sort(sortKo); Object.keys(resp).forEach(n => { if (names.indexOf(n) < 0) names.push(n); });
+    const my = lsGet('center.name');
+    const mine = resp[my];
+    let y = 0, n = 0, w = 0; names.forEach(x => { const s = resp[x] && resp[x].status; if (s === '참석') y++; else if (s === '불참') n++; else w++; });
+    let h = '<label>내 이름</label>';
+    if (roster.length) h += '<select class="nm"><option value="">이름을 골라 주세요</option>' + roster.slice().sort(sortKo).map(x => '<option' + (x === my ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select>';
+    else h += '<input class="nm" type="text" placeholder="이름을 입력" value="' + esc(my) + '">';
+    h += '<div class="btns"><button type="button" class="yes' + (mine && mine.status === '참석' ? ' on' : '') + '" data-s="참석">참석</button><button type="button" class="no' + (mine && mine.status === '불참' ? ' on' : '') + '" data-s="불참">불참</button></div>';
+    h += '<input class="mm" type="text" maxlength="40" placeholder="한마디(선택) 예: 30분 늦게 도착" style="margin-top:8px" value="' + esc(mine ? mine.memo : '') + '">';
+    h += '<div class="msg" hidden></div>';
+    h += '<div class="sum"><span class="s-y">참석 ' + y + '</span><span class="s-n">불참 ' + n + '</span><span class="s-w">미응답 ' + w + '</span></div>';
+    h += '<table class="st">' + names.map(x => { const r = resp[x]; const cls = !r ? 'w' : (r.status === '참석' ? 'y' : 'x'); return '<tr><td class="n">' + esc(x) + '</td><td class="' + cls + '">' + (r ? r.status : '미응답') + (r && r.memo ? '<span class="memo">' + esc(r.memo) + '</span>' : '') + '</td></tr>'; }).join('') + '</table>';
+    h += '<button class="ref" type="button">새로고침</button>';
+    box.innerHTML = h;
+    const nm = box.querySelector('.nm'), msg = box.querySelector('.msg');
+    nm.addEventListener('change', () => { lsSet('center.name', nm.value.trim()); drawRsvp(e); });
+    box.querySelector('.ref').addEventListener('click', () => loadResp(e));
+    box.querySelectorAll('.btns button').forEach(b => b.addEventListener('click', async () => {
+      const name = nm.value.trim();
+      if (!name) { msg.hidden = false; msg.className = 'msg err'; msg.textContent = '먼저 내 이름을 골라 주세요.'; return; }
+      lsSet('center.name', name);
+      msg.hidden = false; msg.className = 'msg'; msg.textContent = '저장 중...';
+      try {
+        await fetch(API, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ event: e.id, name: name, status: b.dataset.s, memo: box.querySelector('.mm').value.trim() }) });
+      } catch (err) { msg.className = 'msg err'; msg.textContent = '보내지 못했어요. 인터넷을 확인하고 다시 눌러 주세요.'; return; }
+      await loadResp(e, name, b.dataset.s);
+    }));
+  }
+
+  async function loadResp(e, expectName, expectStatus) {
+    if (!API) return;
+    try {
+      const r = await fetch(API + (API.indexOf('?') >= 0 ? '&' : '?') + 'event=' + encodeURIComponent(e.id) + '&t=' + Date.now());
+      const j = await r.json();
+      if (!j.ok) throw new Error('bad');
+      cache[e.id] = { roster: j.roster || [], responses: j.responses || [] };
+      drawRsvp(e);
+      if (expectName) {
+        const box = $('rs-' + e.id), msg = box && box.querySelector('.msg');
+        const hit = cache[e.id].responses.find(x => x.name === expectName && x.status === expectStatus);
+        if (msg) { msg.hidden = false; msg.className = hit ? 'msg' : 'msg err'; msg.textContent = hit ? expectName + ' 선생님 "' + expectStatus + '"으로 저장했어요.' : '저장이 확인되지 않았어요. 명단에 있는 이름인지 보고 다시 눌러 주세요.'; }
+      }
+    } catch (err) {
+      const box = $('rs-' + e.id);
+      if (box && !cache[e.id]) box.innerHTML = '<div class="off">참석 현황을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</div>';
+    }
+  }
+
+  fetch('data.json?t=' + Date.now()).then(r => r.json()).then(d => { DATA = d || DATA; }).catch(() => {}).then(() => { renderNotices(); renderEvents(); });
+  setInterval(() => { (DATA.events || []).filter(e => e.rsvp && e.date >= today && cache[e.id] && !document.hidden).forEach(e => { const a = document.activeElement; if (a && /INPUT|SELECT/.test(a.tagName)) return; loadResp(e); }); }, 45000);
+})();
+</script>
+</body>
+</html>

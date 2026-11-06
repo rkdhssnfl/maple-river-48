@@ -116,11 +116,16 @@
 
   <section class="card">
     <h2><span class="step">1</span>왈라 양식 입력 (코칭일자 제출 올리기)</h2>
+    <div id="meetBox" style="margin:2px 0 12px;padding:12px 14px;border:2px solid #2e7d32;border-radius:12px;background:#e6f4e8">
+      <label class="f" style="font-size:15px;font-weight:700;color:#1b5e20">📅 이달 사례회의 날짜
+        <input type="date" id="meetDate" style="font-size:18px;font-weight:700;padding:10px 12px;border:2px solid #2e7d32;border-radius:10px;background:#fff;color:#1b5e20;max-width:260px">
+      </label>
+      <div class="small" style="margin-top:6px;color:#2f4f33">이 날짜를 먼저 고르면 아래 연도·월이 자동으로 정해지고, "참석"으로 낸 코칭단의 사례회의 날짜로 들어갑니다.</div>
+    </div>
     <div class="row">
       <label class="f">연도<select id="year"></select></label>
       <label class="f">월<select id="month"></select></label>
-      <label class="f">이달 사례회의 날짜<input type="date" id="meetDate"></label>
-      <span class="small">사례회의 날짜를 고르면 연도·월이 그 날짜의 달로 자동 설정됩니다(날짜를 안 넣으면 파일·글의 월로 선택). 코칭단이 "사례회의: 참석"으로 낸 경우 이 날짜가 참석일로 들어갑니다.</span>
+      <span class="small">날짜를 안 넣으면 연도·월은 파일·글의 월로 선택됩니다.</span>
     </div>
     <label class="drop" id="drop" style="margin-top:10px">
       <input type="file" id="files" multiple accept=".xlsx">

@@ -721,10 +721,13 @@
     let r = 4;
     const firstData = r;
     blocks.forEach((b, idx) => {
-      const rows = Math.max(MIN_BLOCK_ROWS, b.rows.length, b.memo.length);
+      // 한 줄(F~N, 9칸)에 다 안 들어가는 날짜는 다음 줄로 이어서 적는다 (잘려서 횟수가 줄어드는 것 방지)
+      const lines = [];
+      b.rows.forEach(ln => { for (let k = 0; k === 0 || k < ln.dates.length; k += DATE_COLS) lines.push({ group: k ? '' : ln.group, weekday: k ? '' : ln.weekday, dates: ln.dates.slice(k, k + DATE_COLS) }); });
+      const rows = Math.max(MIN_BLOCK_ROWS, lines.length, b.memo.length);
       const top = r, bot = r + rows - 1;
       for (let rr = top; rr <= bot; rr++) {
-        const ln = b.rows[rr - top];
+        const ln = lines[rr - top];
         for (let c = 1; c <= COLS; c++) {
           const cell = ws.getCell(rr, c);
           cell.font = font({ size: c >= 15 && c <= 21 ? 14 : 12 }); cell.alignment = center;
@@ -739,7 +742,7 @@
         if (!ln) continue;
         ws.getCell(rr, 4).value = ln.group;
         ws.getCell(rr, 5).value = ln.weekday || null;
-        ln.dates.slice(0, DATE_COLS).forEach((d, k) => { ws.getCell(rr, 6 + k).value = toUtc(d); });
+        ln.dates.forEach((d, k) => { ws.getCell(rr, 6 + k).value = toUtc(d); });
       }
       ws.getCell(top, 1).value = idx + 1;
       ws.getCell(top, 2).value = b.coach.region;

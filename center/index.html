@@ -79,7 +79,9 @@
   .ev-h { display: flex; gap: 12px; align-items: flex-start; }
   .dt { flex: none; width: 56px; text-align: center; border-radius: 10px; padding: 5px 0; }
   .dt span { display: block; font-size: 11px; font-weight: 700; } .dt b { display: block; font-size: 22px; line-height: 1.1; }
-  .et { font-weight: 700; font-size: 15px; } .em { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .et { font-weight: 700; font-size: 16px; }
+  .em { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .em span { font-size: 15px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 3px 9px; line-height: 1.4; }
   .nb { white-space: pre-wrap; font-size: 14px; line-height: 1.6; margin-top: 6px; }
   .badge { font-size: 11px; font-weight: 700; color: #fff; background: var(--meet); border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: 1px; }
   .rsvp { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
@@ -177,7 +179,7 @@
     let h = '<div class="ev' + (e.date === selDay ? ' hl' : '') + '" data-d="' + e.date + '"><div class="ev-h">' +
       '<div class="dt t-' + t + '"><span>' + m + '월</span><b>' + d + '</b><span>' + DOW[w] + '</span></div><div>' +
       '<div class="et">' + esc(e.title) + (e.rsvp && t === 'meet' ? '<span class="badge">참석 조사</span>' : '') + '</div>' +
-      '<div class="em">' + [e.time, e.place].filter(Boolean).map(esc).join(' · ') + '</div>' +
+      ((e.time || e.place) ? '<div class="em">' + (e.time ? '<span>🕑 ' + esc(e.time) + '</span>' : '') + (e.place ? '<span>📍 ' + esc(e.place) + '</span>' : '') + '</div>' : '') +
       (e.note ? '<div class="nb">' + esc(e.note) + '</div>' : '') + '</div></div>';
     if (e.rsvp && t === 'meet') h += rsvpHtml(e);
     return h + '</div>';

@@ -158,7 +158,7 @@
 
 <div class="wrap">
 <div class="colL">
-  <p class="intro">매일 수업 후 그날 날짜를 탭해 두면 한 달 동안 이 휴대폰에 누적됩니다. 월말에 글로 복사해 제출 양식에 붙여 넣어 주세요.<br>① 이름·연도·월 → ② 학생별로 학교와 학생 이름 입력 → ③ 달력에서 코칭한 날의 <b>위쪽(수업)</b>을 탭, 보강한 날은 <b>아래쪽(보강)</b>을 탭 → ④ 사례회의 참석일 선택 → ⑤ 맨 아래 <b>제출하기</b>를 누르면 글이 복사되고 제출 양식이 열림 → 양식에 붙여넣기 하고 응답 제출.</p>
+  <p class="intro">매일 수업 후 그날 날짜를 탭해 두면 한 달 동안 이 휴대폰에 누적됩니다. 월말에 글로 복사해 제출 양식에 붙여 넣어 주세요.<br>① 이름·연도·월 → ② 학생별로 학교와 학생 이름 입력 → ③ 달력에서 코칭한 날의 <b>위쪽(수업)</b>을 탭, 보강한 날은 <b>아래쪽(보강)</b>을 탭 → ④ 사례회의 참석일 선택 → ⑤ <b>① 내용 복사</b>를 누른 뒤 <b>② 제출하기</b>를 누르면 제출 양식이 열림 → 양식에 붙여넣기 하고 응답 제출.</p>
 
   <p style="margin:0 0 12px"><a href="slides.html?v=3" onclick="if(window.innerWidth>=900){window.open(this.href,'_blank');return false}" style="display:block;text-align:center;padding:12px;border:1.5px solid #1f6f5c;border-radius:12px;color:#1f6f5c;font-weight:700;text-decoration:none;background:#fff">📖 사용 안내 슬라이드 보기</a></p>
 
@@ -203,8 +203,9 @@
     <button id="pcSubmit" type="button" hidden></button>
     <a id="wallaOpen" href="https://walla.my/v/R6PEMy65GJN5Lo2Ygy8X" target="_blank" rel="noopener" hidden>제출 양식 열기</a>
     <div class="subRow"><div class="subA">
-    <button class="btn primary" id="kakaoText" type="button" style="margin-top:12px;background:#1f4e9c;border-color:#1f4e9c">제출하기 (글 복사 → 양식에 붙여넣기)</button>
-    <p class="foot">누르면 입력한 날짜가 글로 <b>복사</b>되고 제출 양식이 열려요. 양식에서 지역·이름을 적고, 코칭일자 칸에 <b>붙여넣기</b>(휴대폰은 길게 누르기, 컴퓨터는 Ctrl+V) → 응답 제출. 입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
+    <button class="btn primary" id="copyText" type="button" style="margin-top:12px;background:#2e7d32;border-color:#2e7d32">① 내용 복사</button>
+    <button class="btn primary" id="kakaoText" type="button" style="margin-top:8px;background:#1f4e9c;border-color:#1f4e9c">② 제출하기 (양식 열기)</button>
+    <p class="foot"><b>① 내용 복사</b>를 누른 뒤 <b>② 제출하기</b>로 양식을 열어요. (제출하기만 눌러도 자동으로 복사돼요.) 양식에서 지역·이름을 적고, 코칭일자 칸에 <b>붙여넣기</b>(휴대폰은 길게 누르기, 컴퓨터는 Ctrl+V) → 응답 제출. 입력 내용은 이 기기(브라우저)에 저장되어 다시 열어도 유지됩니다.</p>
     </div>
     <div class="subB" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
       <a id="journalSubmit" href="https://walla.my/v/JCVUXo3ZR92bs2yEiujD" target="_blank" rel="noopener" class="btn primary" style="display:block;text-align:center;text-decoration:none;background:#6a4fb3;border-color:#6a4fb3">학습서비스 일지 제출 (파일 첨부)</a>
@@ -472,6 +473,14 @@
     out.push('(*표시는 보강)');
     return out.join('\n');
   }
+  $('copyText').addEventListener('click', async () => {
+    if (!(state.name || '').trim()) { showMsg('코칭단 이름을 먼저 적어 주세요.', true); return; }
+    const text = buildText();
+    let copied = false;
+    try { await navigator.clipboard.writeText(text); copied = true; } catch (e) {}
+    if (copied) showMsg('내용을 복사했습니다. 이제 "② 제출하기"를 눌러 양식을 열고, 내용 칸을 길게 눌러 "붙여넣기" 하세요.\n\n' + text);
+    else showMsg('복사가 안 되는 기기예요. 아래 글을 길게 눌러 복사하세요.\n\n' + text, true);
+  });
   $('kakaoText').addEventListener('click', async () => {
     if (!(state.name || '').trim()) { showMsg('코칭단 이름을 먼저 적어 주세요.', true); return; }
     const text = buildText();

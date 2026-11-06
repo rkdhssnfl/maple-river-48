@@ -100,6 +100,11 @@
   :root { --nt: #b45309; --nt-soft: #fff7e6; --nt-line: #f2c97d; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --nt: #f6b35c; --nt-soft: #2f2617; --nt-line: #6b4f1f; } }
   :root[data-theme="dark"] { --nt: #f6b35c; --nt-soft: #2f2617; --nt-line: #6b4f1f; }
+  :root { --cal-line: #8cc7b5; --list-line: #9cc0ea; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --cal-line: #2f6b5a; --list-line: #2c4f75; } }
+  :root[data-theme="dark"] { --cal-line: #2f6b5a; --list-line: #2c4f75; }
+  .card.s-cal { border: 2px solid var(--cal-line); }
+  .card.s-list { border: 2px solid var(--list-line); }
   .card.notice { border: 2px solid var(--nt-line); padding: 0; overflow: hidden; }
   .card.notice h2 { margin: 0; padding: 14px 14px 2px; color: var(--nt); font-size: 17px; justify-content: flex-start; }
   .card.notice h2 .cnt { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--nt); background: var(--nt-soft); border: 1px solid var(--nt-line); border-radius: 999px; padding: 1px 10px; }

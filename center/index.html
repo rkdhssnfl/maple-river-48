@@ -111,7 +111,10 @@
   .pin { display: inline-block; font-size: 12px; font-weight: 700; color: #fff; background: var(--no); border-radius: 6px; padding: 1px 7px; margin-right: 6px; vertical-align: 2px; }
   .nd { display: inline-block; font-size: 12px; font-weight: 700; color: var(--nt); margin-top: 4px; }
   .nt .nb { font-size: 15px; line-height: 1.7; margin-top: 8px; color: var(--fg); }
-  @media (max-width: 899px) { .wrap { display: flex; flex-direction: column; } .colR { order: -1; } }
+  /* 배치: 휴대폰 = 안내 → 달력 → 일정, 컴퓨터 = 왼쪽 달력 / 오른쪽 안내·일정 */
+  .s-cal { grid-area: cal; } .s-nt { grid-area: nt; } .s-list { grid-area: list; }
+  @media (max-width: 899px) { .wrap { display: flex; flex-direction: column; } .s-nt { order: -1; } }
+  @media (min-width: 900px) { .wrap { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-areas: "cal nt" "cal list" "cal ."; grid-template-rows: auto auto 1fr; column-gap: 24px; row-gap: 0; } }
 </style>
 
 <header class="top">
@@ -123,8 +126,7 @@
 </header>
 
 <div class="wrap">
-  <div class="colL">
-    <section class="card">
+    <section class="card s-cal">
       <div class="cal-nav">
         <button type="button" id="prev" aria-label="이전 달">‹</button>
         <div><b id="ym"></b><button type="button" class="today-btn" id="toToday">오늘</button></div>
@@ -133,17 +135,14 @@
       <div class="grid" id="grid"></div>
       <div class="legend"><span><i style="background:var(--meet)"></i>사례회의</span><span><i style="background:var(--train)"></i>제출</span><span><i style="background:var(--etc)"></i>기타</span><span><i style="background:var(--today);border:1px solid #e0b400"></i>오늘</span></div>
     </section>
-    <section class="card">
+    <section class="card s-list">
       <h2><span id="listTitle">이달 일정</span></h2>
       <div id="list"></div>
     </section>
-  </div>
-  <div class="colR">
-    <section class="card notice">
+    <section class="card notice s-nt">
       <h2>📢 센터 안내사항 <span class="cnt" id="ntCnt" hidden></span></h2>
       <div id="notices"></div>
     </section>
-  </div>
 </div>
 
 <script src="config.js"></script>

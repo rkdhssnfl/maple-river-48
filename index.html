@@ -328,16 +328,21 @@
       h.style.setProperty('--c', 'var(--wd' + i + ')');
       container.appendChild(h);
     });
-    let lastM = -1;
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const pmY = state.month === 1 ? state.year - 1 : state.year, pmM = state.month === 1 ? 12 : state.month - 1;
+    [{ y: pmY, m: pmM }, { y: state.year, m: state.month }].forEach(({ y, m }) => {
+    const mh = document.createElement('div'); mh.className = 'mhead'; mh.textContent = y + '년 ' + m + '월';
+    mh.style.cssText = 'grid-column:1 / -1;margin:8px 0 2px;padding:5px 10px;border-radius:8px;background:var(--green,#1f6f5c);color:#fff;font-weight:700;font-size:14px;text-align:left';
+    container.appendChild(mh);
+    const first = new Date(y, m - 1, 1), mEnd = new Date(y, m, 0);
+    const fdow = (first.getDay() + 6) % 7;
+    for (let k = 0; k < (fdow >= 5 ? 0 : fdow); k++) { const e = document.createElement('div'); e.className = 'day empty'; container.appendChild(e); }
+    for (let d = new Date(first); d <= mEnd; d.setDate(d.getDate() + 1)) {
       const key = iso(d);
       const dow = (d.getDay() + 6) % 7;
       if (dow >= 5) continue; // 주말은 표시하지 않음
-      const newMonth = d.getMonth() !== lastM; lastM = d.getMonth();
       const color = opts.colorFor(dow);
-      const isPrev = d < realStart;
-      const firstCell = d.getTime() === start.getTime() || (dow === 0 && key === iso(start));
-      const label = ((isPrev || newMonth || firstCell) ? '<small>' + (d.getMonth() + 1) + '월</small>' : '') + d.getDate();
+      const isPrev = false;
+      const label = String(d.getDate());
       if (opts.split) {
         const cell = document.createElement('div');
         cell.className = 'day2';
@@ -383,9 +388,10 @@
       });
       container.appendChild(b);
     }
-    const endDow = (end.getDay() + 6) % 7;
+    const endDow = (mEnd.getDay() + 6) % 7;
     const tail = endDow >= 5 ? 0 : 4 - endDow;
     for (let k = 0; k < tail; k++) { const e = document.createElement('div'); e.className = 'day empty'; container.appendChild(e); }
+    });
   }
   const wdColor = dow => dow < 5 ? 'var(--wd' + dow + ')' : null;
 

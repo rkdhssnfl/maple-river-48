@@ -178,10 +178,9 @@
     const [y, m, d] = e.date.split('-').map(Number), w = new Date(y, m - 1, d).getDay(), t = typeOf(e);
     let h = '<div class="ev' + (e.date === selDay ? ' hl' : '') + '" data-d="' + e.date + '"><div class="ev-h">' +
       '<div class="dt t-' + t + '"><span>' + m + '월</span><b>' + d + '</b><span>' + DOW[w] + '</span></div><div>' +
-      '<div class="et">' + esc(e.title) + (e.rsvp && t === 'meet' ? '<span class="badge">참석 조사</span>' : '') + '</div>' +
+      '<div class="et">' + esc(e.title) + '' + '</div>' +
       ((e.time || e.place) ? '<div class="em">' + (e.time ? '<span>🕑 ' + esc(e.time) + '</span>' : '') + (e.place ? '<span>📍 ' + esc(e.place) + '</span>' : '') + '</div>' : '') +
       (e.note ? '<div class="nb">' + esc(e.note) + '</div>' : '') + '</div></div>';
-    if (e.rsvp && t === 'meet') h += rsvpHtml(e);
     return h + '</div>';
   }
 

@@ -68,6 +68,12 @@ a.nr em{display:block;font-style:normal;font-size:12px;color:var(--sub)}
 .bdg circle{fill:#e03131;stroke:#fff;stroke-width:1.5}
 .bdg text{fill:#fff;font-size:10px;font-weight:700;text-anchor:middle;dominant-baseline:central}
 .nempty{padding:16px;color:var(--sub);font-size:13.5px}
+.hub{max-width:1100px;margin:0 auto;padding:4px 16px 4px}
+.hub h2{font-size:15px;margin:6px 0 6px}
+.hubs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+a.hb{display:block;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-decoration:none;color:var(--ink)}
+a.hb b{display:block;font-size:13.5px}
+a.hb em{display:block;font-style:normal;font-size:11.5px;color:var(--sub)}
 </style>
 </head>
 <body>
@@ -75,6 +81,18 @@ a.nr em{display:block;font-style:normal;font-size:12px;color:var(--sub)}
 <h1>대구·경북 채용 링크 지도</h1>
 <p class="lead">색칠된 지역을 누르면 오른쪽에 채용 링크가 나옵니다. 매일 오전 9시·오후 6시에 새 공고를 찾아 위 칸과 지도(빨간 숫자)에 표시합니다.</p>
 </header>
+<section class="hub"><h2>통합 채용 사이트</h2><div class="hubs">
+<a class="hb" href="https://www.gojobs.go.kr" target="_blank" rel="noopener"><b>나라일터</b><em>공무원·국가기관·국립대</em></a>
+<a class="hb" href="https://job.cleaneye.go.kr" target="_blank" rel="noopener"><b>클린아이 잡플러스</b><em>지방공사·공단·출연기관</em></a>
+<a class="hb" href="https://job.alio.go.kr" target="_blank" rel="noopener"><b>잡알리오</b><em>공공기관</em></a>
+<a class="hb" href="https://www.gbe.kr/main/na/ntt/selectNttList.do?mi=3626&amp;bbsId=1887" target="_blank" rel="noopener"><b>경북교육청 구인 (경북 전 학교)</b><em>기간제·강사·교육공무직</em></a>
+<a class="hb" href="https://edurecruit.go.kr" target="_blank" rel="noopener"><b>온라인 교직원 채용</b><em>시도교육청 원서접수</em></a>
+<a class="hb" href="https://local.gosi.go.kr" target="_blank" rel="noopener"><b>지자체 원서접수센터</b><em>지방공무원·청원경찰</em></a>
+<a class="hb" href="https://www.gb.go.kr/Main/exam_info/index.do" target="_blank" rel="noopener"><b>경북도 시험정보</b><em>도·소방·도 공공기관</em></a>
+<a class="hb" href="https://www.work24.go.kr" target="_blank" rel="noopener"><b>고용24</b><em>일자리 검색</em></a>
+<a class="hb" href="https://www.hibrain.net" target="_blank" rel="noopener"><b>하이브레인넷</b><em>대학 채용</em></a>
+<a class="hb" href="https://www.jinhakpro.com" target="_blank" rel="noopener"><b>진학프로</b><em>대학 채용</em></a>
+</div></section>
 <section class="news"><div class="newsbox">
 <div class="nhead"><h2>새로 올라온 공고 <span class="cnt" id="ncnt" hidden>0</span></h2><button class="nbtn" id="nseen" hidden>모두 확인함</button><small id="nstat">불러오는 중…</small></div>
 <div class="nlist" id="nlist"></div>
@@ -108,7 +126,7 @@ common:{name:"공통 · 통합 사이트",groups:[{t:"통합 채용",items:[
 ["온라인 교직원 채용","https://edurecruit.go.kr","전국 시도교육청 원서접수"],
 ["고용24","https://www.work24.go.kr","지역별 일자리 검색"],
 ["경북도청 일자리/채용","https://www.gb.go.kr/Main/open_contents/section/job/index.do",""],
-["클린아이 잡플러스","https://job.cleaneye.go.kr","전국 지방공사·공단 채용"]]}]},
+["클린아이 잡플러스","https://job.cleaneye.go.kr","전국 지방공사·공단 채용"],["경북교육청 구인 (경북 전 학교)","https://www.gbe.kr/main/na/ntt/selectNttList.do?mi=3626&bbsId=1887","기간제·강사·교육공무직"],["지자체 인터넷원서접수센터","https://local.gosi.go.kr","지방공무원·청원경찰"],["하이브레인넷","https://www.hibrain.net","대학 채용"],["진학프로","https://www.jinhakpro.com","대학 채용"]]}]},
 daegu:{name:"대구광역시",groups:[{t:"대학",items:[["경북대학교", "https://www.knu.ac.kr", "메인 · 공지사항 > 채용"], ["계명대학교", "https://www.kmu.ac.kr", "메인 · 채용 공고"], ["대구교육대학교", "https://search.naver.com/search.naver?query=%EB%8C%80%EA%B5%AC%EA%B5%90%EC%9C%A1%EB%8C%80%ED%95%99%EA%B5%90%20%EC%B1%84%EC%9A%A9%20%EA%B3%B5%EA%B3%A0", "메인 · 공지/채용"], ["영진전문대학교", "https://search.naver.com/search.naver?query=%EC%98%81%EC%A7%84%EC%A0%84%EB%AC%B8%EB%8C%80%ED%95%99%EA%B5%90%20%EC%B1%84%EC%9A%A9%20%EA%B3%B5%EA%B3%A0", "메인"], ["영남이공대학교", "https://www.ync.ac.kr", "메인"], ["계명문화대학교", "https://www.kmcu.ac.kr", "메인"], ["대구보건대학교", "https://search.naver.com/search.naver?query=%EB%8C%80%EA%B5%AC%EB%B3%B4%EA%B1%B4%EB%8C%80%ED%95%99%EA%B5%90%20%EC%B1%84%EC%9A%A9%20%EA%B3%B5%EA%B3%A0", "메인"], ["대구과학대학교", "https://www.tsu.ac.kr", "메인"], ["수성대학교", "https://search.naver.com/search.naver?query=%EC%88%98%EC%84%B1%EB%8C%80%ED%95%99%EA%B5%90%20%EC%B1%84%EC%9A%A9%20%EA%B3%B5%EA%B3%A0", "메인"], ["대구공업대학교", "https://search.naver.com/search.naver?query=%EB%8C%80%EA%B5%AC%EA%B3%B5%EC%97%85%EB%8C%80%ED%95%99%EA%B5%90%20%EC%B1%84%EC%9A%A9%20%EA%B3%B5%EA%B3%A0", "메인"]]},{t:"국가기관 (관내)",items:[["대구소방안전본부 (중부~강북 소방서)", "https://www.daegu.go.kr/119/index.do", "메인 · 열린마당 > 채용정보"], ["남대구세무서", "https://www.nts.go.kr/namdaegu/", "메인 · 공지사항"], ["북대구세무서", "https://www.nts.go.kr/bukdaegu/", "메인 · 공지사항"], ["서대구세무서", "https://www.nts.go.kr/seodaegu/", "메인 · 공지사항"], ["동대구세무서", "https://search.naver.com/search.naver?query=%EB%8F%99%EB%8C%80%EA%B5%AC%EC%84%B8%EB%AC%B4%EC%84%9C%20%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD%20%EC%B1%84%EC%9A%A9", "메인 · 주소 추정"], ["수성세무서", "https://search.naver.com/search.naver?query=%EC%88%98%EC%84%B1%EC%84%B8%EB%AC%B4%EC%84%9C%20%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD%20%EC%B1%84%EC%9A%A9", "메인 · 주소 추정"], ["대구·경북지방중소벤처기업청 공지", "https://mss.go.kr/site/daegu/ex/bbs/List.do?cbIdx=253", "공무직·청년인턴 채용"], ["대구고용센터", "https://www.work.go.kr/daegu/main.do", "메인 · 통계조사관 등 기간제"]]},
 {t:"시청 · 교육청",items:[
 ["대구시청 기간제 및 타기관 채용소식","https://www.daegu.go.kr/eco/index.do?menu_id=00001215","구·군청 임용시험 공고도 게시"],

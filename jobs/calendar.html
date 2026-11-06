@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>채용 지원 일정 캘린더</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--ink:#1c2430;--sub:#6b7686;--line:#e3e7ee;--acc:#2f6fd6;--dl:#e03131;--iv:#7c3aed;--rs:#2f8f5b;--rg:#94a3b8;--today:#fff4e5}
+@media (prefers-color-scheme:dark){:root{--bg:#12161c;--card:#1b212b;--ink:#e8ecf2;--sub:#97a2b3;--line:#2b3340;--acc:#5b93f0;--dl:#ff6b6b;--iv:#a78bfa;--rs:#3fae75;--rg:#64748b;--today:#2a2416}}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+header{max-width:1150px;margin:0 auto;padding:16px 16px 6px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+h1{font-size:20px;margin:0;flex:1}
+@media(max-width:600px){h1{width:100%;flex:none}}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:8px 13px;font-size:14px;cursor:pointer}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.btn.sm{padding:4px 9px;font-size:13px}
+.btn.del{color:var(--dl)}
+.sync{width:100%;font-size:12px;color:var(--sub)}
+.wrap{max-width:1150px;margin:0 auto;padding:6px 16px 40px;display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:900px){.wrap{grid-template-columns:minmax(0,1fr) 340px;align-items:start}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.ch{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.ch h2{font-size:17px;margin:0;flex:1;text-align:center}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--sub);padding:8px 12px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.dow{font-size:12px;color:var(--sub);text-align:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.dow:first-child{color:var(--dl)}.dow:last-child{color:var(--acc)}
+.day{min-height:92px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:3px 3px 4px;cursor:pointer;overflow:hidden}
+.day:nth-child(7n){border-right:0}
+.day.out{opacity:.45}
+.day.today{background:var(--today)}
+.day .n{font-size:12px;font-weight:600;padding:1px 3px}
+.day.sun .n{color:var(--dl)}.day.sat .n{color:var(--acc)}
+.ev{display:block;font-size:11px;line-height:1.35;border-radius:4px;padding:1px 4px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.ev.range{background:color-mix(in srgb,var(--acc) 22%,transparent);color:var(--ink)}
+.ev.dl{background:var(--dl)}.ev.iv{background:var(--iv)}.ev.rs{background:var(--rs)}.ev.st{background:var(--acc)}
+.ev.done{opacity:.5;text-decoration:line-through}
+.more{font-size:11px;color:var(--sub);padding-left:4px}
+@media(max-width:600px){.day{min-height:64px}.ev{font-size:10px;padding:0 3px}.ch h2{font-size:15px}}
+.side .sec{padding:10px 12px;border-bottom:1px solid var(--line)}
+.side h3{margin:0 0 6px;font-size:14px}
+.up{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line);cursor:pointer}
+.up:first-of-type{border-top:0}
+.dd{flex:none;min-width:48px;text-align:center;font-weight:700;font-size:13px;border-radius:7px;padding:2px 4px;background:var(--bg)}
+.dd.hot{background:var(--dl);color:#fff}.dd.warm{background:#f59f00;color:#fff}
+.up .t{flex:1;min-width:0}.up b{display:block;font-size:13.5px}.up em{display:block;font-style:normal;font-size:12px;color:var(--sub)}
+.stat{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 9px;cursor:pointer;background:var(--card);color:var(--ink)}
+.pill.on{border-color:var(--acc);color:var(--acc);font-weight:600}
+.empty{color:var(--sub);font-size:13px;padding:6px 0}
+dialog{border:0;border-radius:16px;padding:0;width:min(560px,96vw);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+.fh{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.fh h3{margin:0;flex:1;font-size:17px}
+form{padding:12px 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;max-height:72vh;overflow:auto}
+label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--sub)}
+label.full{grid-column:1/-1}
+input,select,textarea{font:inherit;font-size:14.5px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%}
+textarea{min-height:64px;resize:vertical}
+.checks{display:flex;flex-wrap:wrap;gap:6px 12px;grid-column:1/-1;font-size:13.5px;color:var(--ink)}
+.checks label{flex-direction:row;align-items:center;gap:5px;color:var(--ink);font-size:13.5px}
+.checks input{width:auto}
+.ff{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.ff .sp{flex:1}
+.detail{padding:12px 16px 16px;font-size:14px}
+.detail .row{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)}
+.detail .row span:first-child{flex:none;width:76px;color:var(--sub);font-size:13px}
+.daylist .it{padding:8px 0;border-top:1px solid var(--line);cursor:pointer}
+.tag{display:inline-block;font-size:11px;font-weight:700;border-radius:4px;padding:0 5px;color:#fff;margin-right:5px;vertical-align:1px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1c2430;color:#fff;padding:8px 14px;border-radius:9px;font-size:13.5px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+<h1>채용 지원 일정 캘린더 <a href="./" style="font-size:13px;font-weight:400;margin-left:6px">채용 지도 ›</a></h1>
+<button class="btn" id="expBtn">백업 저장</button><label class="btn" style="display:inline-block">불러오기<input type="file" id="impFile" accept=".json,application/json" hidden></label><button class="btn pri" id="addBtn">+ 공고 추가</button>
+<div class="sync" id="sync">불러오는 중…</div>
+</header>
+<div class="wrap">
+<section class="card">
+<div class="ch"><button class="btn sm" id="prev" aria-label="이전 달">‹</button><h2 id="mtitle"></h2><button class="btn sm" id="next" aria-label="다음 달">›</button><button class="btn sm" id="todayBtn">오늘</button></div>
+<div class="legend"><span><i style="background:color-mix(in srgb,var(--acc) 30%,transparent)"></i>접수기간</span><span><i style="background:var(--dl)"></i>접수 마감</span><span><i style="background:var(--iv)"></i>면접·시험</span><span><i style="background:var(--rs)"></i>합격 발표</span></div>
+<div class="grid" id="dows"></div>
+<div class="grid" id="days"></div>
+</section>
+<aside class="card side">
+<div class="sec"><h3>다가오는 마감·일정</h3><div id="upcoming"></div></div>
+<div class="sec"><h3>지원 현황</h3><div class="stat" id="stats"></div></div>
+<div class="sec"><h3>목록</h3><div id="list"></div></div>
+</aside>
+</div>
+
+<dialog id="dlg"><div class="fh"><h3 id="ftitle">공고 추가</h3><button class="btn sm" id="fclose" type="button">닫기</button></div>
+<form id="f">
+<label class="full">공고 제목 *<input name="title" required placeholder="예: 경산중앙초 교육공무직(특수교육실무사) 대체인력"></label>
+<label>기관 *<input name="org" required placeholder="예: 경산교육지원청"></label>
+<label>지역<select name="region"><option value="">선택</option><option>경산</option><option>대구</option><option>영천</option><option>청도</option><option>구미</option><option>칠곡</option><option>성주</option><option>고령</option><option>경주</option><option>포항</option><option>달성</option><option>군위</option><option>기타</option></select></label>
+<label class="full">공고 링크<input name="url" type="url" placeholder="https://"></label>
+<label>접수 시작<input name="start" type="date"></label>
+<label>접수 마감 *<input name="deadline" type="date" required></label>
+<label>마감 시각<input name="deadlineTime" type="time"></label>
+<label>접수 방법<select name="method"><option value="">선택</option><option>방문</option><option>우편(등기)</option><option>이메일</option><option>온라인</option><option>방문·우편</option></select></label>
+<label>서류 발표<input name="docResult" type="date"></label>
+<label>면접·시험<input name="interview" type="date"></label>
+<label>면접 시각<input name="interviewTime" type="time"></label>
+<label>최종 발표<input name="final" type="date"></label>
+<label class="full">진행 상태<select name="status"><option>관심</option><option>준비중</option><option>제출완료</option><option>서류합격</option><option>면접완료</option><option>최종합격</option><option>불합격</option><option>포기</option></select></label>
+<div class="checks"><span style="width:100%;font-size:12.5px;color:var(--sub)">제출 서류 준비</span>
+<label><input type="checkbox" name="d_app">응시원서</label><label><input type="checkbox" name="d_intro">자기소개서</label><label><input type="checkbox" name="d_cert">자격증 사본</label><label><input type="checkbox" name="d_career">경력증명서</label><label><input type="checkbox" name="d_grad">졸업증명서</label><label><input type="checkbox" name="d_privacy">개인정보동의서</label><label><input type="checkbox" name="d_crime">성범죄 조회 동의서</label></div>
+<label class="full">메모<textarea name="memo" placeholder="준비할 것, 문의 전화, 근무조건 등"></textarea></label>
+<div class="ff"><button class="btn del" type="button" id="fdel" hidden>삭제</button><span class="sp"></span><button class="btn" type="button" id="fcancel">취소</button><button class="btn pri" type="submit">저장</button></div>
+</form></dialog>
+
+<dialog id="dd"><div class="fh"><h3 id="dtitle"></h3><button class="btn sm" id="dclose" type="button">닫기</button></div><div class="detail" id="dbody"></div></dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+var APPS={},DB=null,UID=null,MODE='local',view=new Date(),FILTER='';
+var STATUS_DONE={'최종합격':1,'불합격':1,'포기':1};
+var DOCS=[['d_app','응시원서'],['d_intro','자기소개서'],['d_cert','자격증 사본'],['d_career','경력증명서'],['d_grad','졸업증명서'],['d_privacy','개인정보동의서'],['d_crime','성범죄 조회 동의서']];
+function $(i){return document.getElementById(i)}
+function pad(n){return n<10?'0'+n:''+n}
+function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function parse(s){if(!s)return null;var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
+function dday(s){var t=parse(s);if(!t)return null;var n=new Date();n=new Date(n.getFullYear(),n.getMonth(),n.getDate());return Math.round((t-n)/864e5)}
+function ddTxt(n){return n===0?'D-day':(n>0?'D-'+n:'D+'+(-n))}
+function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(function(){t.classList.remove('show')},1800)}
+function loadLocal(){try{APPS=JSON.parse(localStorage.getItem('jobcal_apps')||'{}')}catch(e){APPS={}}}
+function saveLocal(){try{localStorage.setItem('jobcal_apps',JSON.stringify(APPS))}catch(e){}}
+
+function events(){
+  var ev=[];
+  Object.keys(APPS).forEach(function(id){var a=APPS[id];var done=!!STATUS_DONE[a.status];
+    if(a.deadline)ev.push({d:a.deadline,k:'dl',id:id,label:'마감 '+(a.deadlineTime?a.deadlineTime+' ':'')+a.title,done:done||a.status==='제출완료'});
+    if(a.docResult)ev.push({d:a.docResult,k:'rs',id:id,label:'서류발표 '+a.title,done:done});
+    if(a.interview)ev.push({d:a.interview,k:'iv',id:id,label:'면접 '+(a.interviewTime?a.interviewTime+' ':'')+a.title,done:done});
+    if(a.final)ev.push({d:a.final,k:'rs',id:id,label:'최종발표 '+a.title,done:done});
+    if(a.start&&a.start!==a.deadline)ev.push({d:a.start,k:'st',id:id,label:'접수시작 '+a.title,done:done});
+  });return ev;
+}
+function inRange(a,ds){return a.start&&a.deadline&&ds>a.start&&ds<a.deadline}
+
+function renderCal(){
+  var y=view.getFullYear(),m=view.getMonth();
+  $('mtitle').textContent=y+'년 '+(m+1)+'월';
+  var first=new Date(y,m,1),startD=new Date(y,m,1-first.getDay());
+  var ev=events(),byDay={};ev.forEach(function(e){(byDay[e.d]=byDay[e.d]||[]).push(e)});
+  var box=$('days');box.textContent='';var today=ymd(new Date());
+  for(var i=0;i<42;i++){
+    var d=new Date(startD.getFullYear(),startD.getMonth(),startD.getDate()+i),ds=ymd(d);
+    if(i>=35&&d.getMonth()!==m)break;
+    var c=document.createElement('div');c.className='day'+(d.getMonth()!==m?' out':'')+(ds===today?' today':'')+(d.getDay()===0?' sun':d.getDay()===6?' sat':'');
+    var n=document.createElement('div');n.className='n';n.textContent=d.getDate();c.appendChild(n);
+    var items=[];
+    Object.keys(APPS).forEach(function(id){var a=APPS[id];if(inRange(a,ds)&&!STATUS_DONE[a.status]&&a.status!=='제출완료')items.push({k:'range',id:id,label:a.title})});
+    (byDay[ds]||[]).forEach(function(e){items.unshift(e)});
+    items.slice(0,3).forEach(function(e){var s=document.createElement('span');s.className='ev '+e.k+(e.done?' done':'');s.textContent=e.label;s.title=e.label;s.addEventListener('click',function(ev2){ev2.stopPropagation();showDetail(e.id)});c.appendChild(s)});
+    if(items.length>3){var mo=document.createElement('div');mo.className='more';mo.textContent='+'+(items.length-3)+'건';c.appendChild(mo)}
+    (function(ds,items){c.addEventListener('click',function(){showDay(ds,items)})})(ds,items);
+    box.appendChild(c);
+  }
+}
+function renderSide(){
+  var ev=events().filter(function(e){return !e.done&&dday(e.d)>=0}).sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});
+  var up=$('upcoming');up.textContent='';
+  if(!ev.length){up.innerHTML='<div class="empty">다가오는 일정이 없습니다. "+ 공고 추가"로 지원할 공고를 넣어 보세요.</div>'}
+  ev.slice(0,12).forEach(function(e){var a=APPS[e.id];var n=dday(e.d);
+    var r=document.createElement('div');r.className='up';
+    var b=document.createElement('span');b.className='dd'+(e.k==='dl'&&n<=2?' hot':e.k==='dl'&&n<=5?' warm':'');b.textContent=ddTxt(n);r.appendChild(b);
+    var t=document.createElement('span');t.className='t';var bb=document.createElement('b');bb.textContent=e.label;t.appendChild(bb);var em=document.createElement('em');em.textContent=a.org+' · '+e.d.slice(5).replace('-','/')+(a.status?' · '+a.status:'');t.appendChild(em);r.appendChild(t);
+    r.addEventListener('click',function(){showDetail(e.id)});up.appendChild(r)});
+  var cnt={};Object.keys(APPS).forEach(function(id){var s=APPS[id].status||'관심';cnt[s]=(cnt[s]||0)+1});
+  var st=$('stats');st.textContent='';
+  ['','관심','준비중','제출완료','서류합격','면접완료','최종합격','불합격','포기'].forEach(function(s){if(s&&!cnt[s])return;var p=document.createElement('button');p.className='pill'+(FILTER===s?' on':'');p.textContent=(s||'전체')+' '+(s?cnt[s]:Object.keys(APPS).length);p.addEventListener('click',function(){FILTER=s;renderSide()});st.appendChild(p)});
+  var L=$('list');L.textContent='';
+  var ids=Object.keys(APPS).filter(function(id){return !FILTER||APPS[id].status===FILTER}).sort(function(a,b){return (APPS[a].deadline||'')<(APPS[b].deadline||'')?-1:1});
+  if(!ids.length)L.innerHTML='<div class="empty">없음</div>';
+  ids.forEach(function(id){var a=APPS[id];var r=document.createElement('div');r.className='up';var n=dday(a.deadline);
+    var b=document.createElement('span');b.className='dd';b.textContent=n===null?'-':ddTxt(n);r.appendChild(b);
+    var t=document.createElement('span');t.className='t';var bb=document.createElement('b');bb.textContent=a.title;t.appendChild(bb);var em=document.createElement('em');var need=DOCS.filter(function(d){return !a[d[0]]&&a['need_'+d[0]]}).length;em.textContent=a.org+' · 마감 '+(a.deadline||'-')+' · '+(a.status||'관심');t.appendChild(em);r.appendChild(t);
+    r.addEventListener('click',function(){showDetail(id)});L.appendChild(r)});
+}
+function render(){renderCal();renderSide()}
+
+function openForm(id,preDate){
+  var f=$('f');f.reset();f.dataset.id=id||'';$('fdel').hidden=!id;$('ftitle').textContent=id?'공고 수정':'공고 추가';
+  var a=id?APPS[id]:{status:'관심',deadline:preDate||''};
+  Array.prototype.forEach.call(f.elements,function(el){if(!el.name)return;if(el.type==='checkbox')el.checked=!!a[el.name];else el.value=a[el.name]||''});
+  if(!id&&!a.status)f.status.value='관심';
+  $('dlg').showModal();
+}
+$('f').addEventListener('submit',function(e){e.preventDefault();var f=e.target;var a={};
+  Array.prototype.forEach.call(f.elements,function(el){if(!el.name)return;a[el.name]=el.type==='checkbox'?el.checked:el.value.trim()});
+  if(a.url&&!/^https?:\/\//.test(a.url))a.url='https://'+a.url;
+  var id=f.dataset.id||('a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+  a.updated=Date.now();APPS[id]=a;$('dlg').close();render();persist(id,a);toast('저장했습니다');});
+$('fdel').addEventListener('click',function(){var id=$('f').dataset.id;if(!id)return;if(!confirm('이 공고를 삭제할까요?'))return;delete APPS[id];$('dlg').close();render();persist(id,null);toast('삭제했습니다')});
+$('fcancel').addEventListener('click',function(){$('dlg').close()});$('fclose').addEventListener('click',function(){$('dlg').close()});
+$('dclose').addEventListener('click',function(){$('dd').close()});
+$('addBtn').addEventListener('click',function(){openForm(null)});
+$('prev').addEventListener('click',function(){view=new Date(view.getFullYear(),view.getMonth()-1,1);renderCal()});
+$('next').addEventListener('click',function(){view=new Date(view.getFullYear(),view.getMonth()+1,1);renderCal()});
+$('todayBtn').addEventListener('click',function(){view=new Date();renderCal()});
+
+function row(k,v){var r=document.createElement('div');r.className='row';var a=document.createElement('span');a.textContent=k;var b=document.createElement('span');if(v instanceof Node)b.appendChild(v);else b.textContent=v;r.appendChild(a);r.appendChild(b);return r}
+function showDetail(id){var a=APPS[id];if(!a)return;$('dtitle').textContent=a.title;var b=$('dbody');b.textContent='';
+  b.appendChild(row('기관',a.org+(a.region?' ('+a.region+')':'')));
+  if(a.url){var l=document.createElement('a');l.href=a.url;l.target='_blank';l.rel='noopener';l.textContent='공고 열기';b.appendChild(row('링크',l))}
+  b.appendChild(row('접수',(a.start||'?')+' ~ '+(a.deadline||'?')+(a.deadlineTime?' '+a.deadlineTime:'')+(a.deadline?' ('+ddTxt(dday(a.deadline))+')':'')));
+  if(a.method)b.appendChild(row('접수 방법',a.method));
+  if(a.docResult)b.appendChild(row('서류 발표',a.docResult));
+  if(a.interview)b.appendChild(row('면접·시험',a.interview+(a.interviewTime?' '+a.interviewTime:'')));
+  if(a.final)b.appendChild(row('최종 발표',a.final));
+  b.appendChild(row('상태',a.status||'관심'));
+  var ok=DOCS.filter(function(d){return a[d[0]]}).map(function(d){return d[1]});b.appendChild(row('준비 완료',ok.length?ok.join(', '):'-'));
+  if(a.memo)b.appendChild(row('메모',a.memo));
+  var bar=document.createElement('div');bar.className='ff';bar.style.marginTop='12px';
+  ['제출완료','서류합격','최종합격','불합격'].forEach(function(s){var x=document.createElement('button');x.className='btn sm';x.textContent=s;x.addEventListener('click',function(){a.status=s;a.updated=Date.now();render();persist(id,a);showDetail(id);toast('상태: '+s)});bar.appendChild(x)});
+  var sp=document.createElement('span');sp.className='sp';bar.appendChild(sp);
+  var e=document.createElement('button');e.className='btn pri sm';e.textContent='수정';e.addEventListener('click',function(){$('dd').close();openForm(id)});bar.appendChild(e);
+  b.appendChild(bar);if(!$('dd').open)$('dd').showModal();}
+function showDay(ds,items){$('dtitle').textContent=ds.replace(/-/g,'.')+' 일정';var b=$('dbody');b.textContent='';
+  var box=document.createElement('div');box.className='daylist';
+  if(!items.length){var e=document.createElement('div');e.className='empty';e.textContent='일정이 없습니다.';box.appendChild(e)}
+  items.forEach(function(it){var a=APPS[it.id];var r=document.createElement('div');r.className='it';var tg=document.createElement('span');tg.className='tag';tg.style.background=it.k==='dl'?'var(--dl)':it.k==='iv'?'var(--iv)':it.k==='rs'?'var(--rs)':'var(--acc)';tg.textContent=it.k==='dl'?'마감':it.k==='iv'?'면접':it.k==='rs'?'발표':it.k==='st'?'시작':'접수중';r.appendChild(tg);r.appendChild(document.createTextNode(a.title+' · '+a.org));r.addEventListener('click',function(){showDetail(it.id)});box.appendChild(r)});
+  b.appendChild(box);var bar=document.createElement('div');bar.className='ff';bar.style.marginTop='12px';var add=document.createElement('button');add.className='btn pri sm';add.textContent='이 날 마감 공고 추가';add.addEventListener('click',function(){$('dd').close();openForm(null,ds)});bar.appendChild(add);b.appendChild(bar);
+  $('dd').showModal();}
+
+var pending=Promise.resolve();
+function persist(id,a){saveLocal();if(MODE!=='db')return;
+  pending=pending.then(function(){var ref=DB.collection('data/users/'+UID).doc(id);return a?ref.set(a):ref.delete()}).catch(function(){$('sync').textContent='저장 실패 — 이 기기에만 저장되었습니다. 인터넷 연결을 확인해 주세요.'});}
+
+loadLocal();render();
+$('sync').textContent='이 기기(브라우저)에 자동 저장됩니다. 다른 기기로 옮기려면 백업 → 불러오기를 쓰세요.';
+
+$('expBtn').addEventListener('click',function(){var blob=new Blob([JSON.stringify(APPS,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='채용일정_백업_'+ymd(new Date())+'.json';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);toast('백업 파일을 저장했습니다')});
+$('impFile').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(typeof d!=='object'||!d)throw 0;var n=0;Object.keys(d).forEach(function(k){if(d[k]&&d[k].title){APPS[k]=d[k];n++}});saveLocal();render();toast(n+'건을 불러왔습니다')}catch(x){toast('올바른 백업 파일이 아닙니다')}e.target.value=''};r.readAsText(f)});
+(function(){var r=$('dows');['일','월','화','수','목','금','토'].forEach(function(d){var x=document.createElement('div');x.className='dow';x.textContent=d;r.appendChild(x)})})();
+</script>
+</body>
+</html>

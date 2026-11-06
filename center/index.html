@@ -97,11 +97,21 @@
   .memo { font-weight: 400; font-size: 12px; color: var(--muted); margin-left: 6px; }
 
   /* 안내사항 */
-  .nt { border-top: 1px solid var(--line); padding: 12px 0 2px; }
-  .nt:first-of-type { border-top: 0; padding-top: 0; }
-  .nt-h { font-weight: 700; font-size: 15px; }
-  .pin { display: inline-block; font-size: 11px; font-weight: 700; color: #8a5a00; background: #fff3cd; border: 1px solid #e6c866; border-radius: 6px; padding: 0 6px; margin-right: 6px; vertical-align: 1px; }
-  .nd { font-size: 12px; color: var(--muted); }
+  :root { --nt: #b45309; --nt-soft: #fff7e6; --nt-line: #f2c97d; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --nt: #f6b35c; --nt-soft: #2f2617; --nt-line: #6b4f1f; } }
+  :root[data-theme="dark"] { --nt: #f6b35c; --nt-soft: #2f2617; --nt-line: #6b4f1f; }
+  .card.notice { border: 2px solid var(--nt-line); padding: 0; overflow: hidden; }
+  .card.notice h2 { margin: 0; padding: 12px 14px; background: var(--nt); color: #fff; font-size: 17px; justify-content: flex-start; }
+  .card.notice h2 .cnt { margin-left: auto; font-size: 13px; font-weight: 700; background: rgba(255,255,255,.25); border-radius: 999px; padding: 1px 10px; }
+  #notices { padding: 12px; display: grid; gap: 10px; }
+  #notices .empty { padding: 4px 2px; }
+  .nt { background: var(--nt-soft); border-left: 5px solid var(--nt); border-radius: 10px; padding: 12px 14px; }
+  .nt.pinned { border-left-color: var(--no); background: var(--no-soft); }
+  .nt-h { font-weight: 700; font-size: 17px; line-height: 1.45; }
+  .pin { display: inline-block; font-size: 12px; font-weight: 700; color: #fff; background: var(--no); border-radius: 6px; padding: 1px 7px; margin-right: 6px; vertical-align: 2px; }
+  .nd { display: inline-block; font-size: 12px; font-weight: 700; color: var(--nt); margin-top: 4px; }
+  .nt .nb { font-size: 15px; line-height: 1.7; margin-top: 8px; color: var(--fg); }
+  @media (max-width: 899px) { .wrap { display: flex; flex-direction: column; } .colR { order: -1; } }
 </style>
 
 <header class="top">
@@ -129,8 +139,8 @@
     </section>
   </div>
   <div class="colR">
-    <section class="card">
-      <h2>📢 센터 안내사항</h2>
+    <section class="card notice">
+      <h2>📢 센터 안내사항 <span class="cnt" id="ntCnt" hidden></span></h2>
       <div id="notices"></div>
     </section>
   </div>
@@ -207,9 +217,11 @@
   }
 
   function renderNotices() {
+    const ntDate = v => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v); return m ? (+m[2]) + '월 ' + (+m[3]) + '일 (' + DOW[new Date(+m[1], m[2] - 1, +m[3]).getDay()] + ')' : v; };
     const list = (DATA.notices || []).slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.date || '').localeCompare(String(a.date || '')));
-    $('notices').innerHTML = list.length ? list.map(n => '<div class="nt"><div class="nt-h">' + (n.pinned ? '<span class="pin">중요</span>' : '') + esc(n.title) + '</div>' +
-      (n.date ? '<div class="nd">' + esc(n.date) + '</div>' : '') + '<div class="nb">' + esc(n.body) + '</div></div>').join('') : '<div class="empty">등록된 안내사항이 없어요.</div>';
+    $('notices').innerHTML = list.length ? list.map(n => '<div class="nt' + (n.pinned ? ' pinned' : '') + '"><div class="nt-h">' + (n.pinned ? '<span class="pin">중요</span>' : '') + esc(n.title) + '</div>' +
+      (n.date ? '<div class="nd">📅 ' + esc(ntDate(n.date)) + '</div>' : '') + '<div class="nb">' + esc(n.body) + '</div></div>').join('') : '<div class="empty">등록된 안내사항이 없어요.</div>';
+    $('ntCnt').hidden = !list.length; $('ntCnt').textContent = list.length + '건';
   }
 
   const move = k => { cm += k; if (cm < 0) { cm = 11; cy--; } if (cm > 11) { cm = 0; cy++; } selDay = ''; renderCal(); renderList(); };

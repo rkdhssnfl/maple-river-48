@@ -1025,11 +1025,12 @@
     if (kind === 'mk') { sm.mk.push(d); mm.mk++; } else { sm.cls.push(d); mm.cls++; }
   }
   const finish = coaches => { Object.values(coaches).forEach(c => { Object.values(c.months).forEach(x => x.meetDates.sort((a, b) => a - b)); Object.values(c.students).forEach(st => Object.values(st.months).forEach(x => { x.cls.sort((a, b) => a - b); x.mk.sort((a, b) => a - b); })); }); return Object.values(coaches).sort((a, b) => a.name.localeCompare(b.name, 'ko')); };
-  function buildMonth() {
+  function buildMonth(split) {
     const coaches = {}; const m = Number(monthSel.value);
+    const mo = d => split ? d.getMonth() + 1 : m;
     CUR_SUBS.forEach(p => {
-      p.rows.forEach(r => r.dates.forEach((d, i) => addRecord(coaches, p.name, m, r.group, d, (r.mk && r.mk[i]) ? 'mk' : 'cls')));
-      p.meet.forEach(d => addRecord(coaches, p.name, m, '', d, 'meet'));
+      p.rows.forEach(r => r.dates.forEach((d, i) => addRecord(coaches, p.name, mo(d), r.group, d, (r.mk && r.mk[i]) ? 'mk' : 'cls')));
+      p.meet.forEach(d => addRecord(coaches, p.name, mo(d), '', d, 'meet'));
       if (!coaches[p.name]) coaches[p.name] = { name: p.name, months: {}, students: {} };
     });
     return finish(coaches);
@@ -1040,6 +1041,13 @@
     YFILES.forEach(rows => rows.forEach(r => addRecord(coaches, r.name, r.m, r.group, fromIso(r.iso), r.kind)));
     return finish(coaches);
   }
+  // 월간 출석부: 이전 달 + 선택한 달, 두 달을 시간순으로
+  function monthsOf(coaches) {
+    const cur = Number(monthSel.value), prev = cur === 1 ? 12 : cur - 1;
+    const set = new Set([prev, cur]);
+    coaches.forEach(c => Object.keys(c.months).forEach(k => set.add(Number(k))));
+    return Array.from(set).sort((a, b) => ((a === cur ? 12 : (a - cur + 12) % 12)) - ((b === cur ? 12 : (b - cur + 12) % 12)));
+  }
   const SEL = { m: { name: '', month: null }, y: { name: '', month: null } };
   function renderView(p, coaches) {
     $(p + 'View').hidden = !coaches.length;
@@ -1047,7 +1055,7 @@
     let cls = 0, mk = 0, meet = 0;
     coaches.forEach(c => Object.values(c.months).forEach(x => { cls += x.cls; mk += x.mk; meet += x.meet; }));
     $(p + 'SCoach').textContent = coaches.length + '명'; $(p + 'SCls').textContent = cls + '회'; $(p + 'SMk').textContent = mk + '회'; $(p + 'SMeet').textContent = meet + '회';
-    const months = p === 'm' ? [Number(monthSel.value)] : MONTHS;
+    const months = p === 'm' ? monthsOf(coaches) : MONTHS;
     const sel = SEL[p];
     let html = '<tr><th>이름</th>' + months.map(m => '<th>' + m + '월</th>').join('') + '<th>수업 합계</th><th>보강 합계</th><th>사례회의</th></tr>';
     coaches.forEach(c => {
@@ -1071,7 +1079,7 @@
     $(p + 'Detail').hidden = !c;
     if (!c) return;
     $(p + 'DetailTitle').textContent = c.name + ' 학생별 일지';
-    const months = MONTHS.filter(m => c.months[m]);
+    const months = p === 'm' ? monthsOf([c]).filter(m => c.months[m]) : MONTHS.filter(m => c.months[m]);
     if (sel.month && !months.includes(sel.month)) sel.month = null;
     let html = '<tr><th>학교(학생)</th>' + months.map(m => '<th class="mo' + (m === sel.month ? ' on' : '') + '" data-m="' + m + '">' + m + '월</th>').join('') + '<th>수업</th><th>보강</th></tr>';
     Object.values(c.students).forEach(st => {
@@ -1089,7 +1097,7 @@
     const m = SEL[p].month;
     $(p + 'Cal').hidden = !m;
     if (!m) return;
-    const year = Number(yearSel.value) + (m <= 2 ? 1 : 0);
+    const year = p === 'm' ? Number(yearSel.value) - (m > Number(monthSel.value) ? 1 : 0) : Number(yearSel.value) + (m <= 2 ? 1 : 0);
     const byDay = {};
     const add = (d, text, cls) => { const k = d.getDate(); (byDay[k] = byDay[k] || []).push({ text, cls }); };
     Object.values(c.students).forEach(st => { const x = st.months[m]; if (!x) return; x.cls.forEach(d => { if (d.getMonth() + 1 === m) add(d, st.group, 'cls'); }); x.mk.forEach(d => { if (d.getMonth() + 1 === m) add(d, '보강 ' + st.group, 'mk'); }); });
@@ -1113,7 +1121,7 @@
     $(p + 'CalTitle').textContent = title;
   }
   function renderMonth() {
-    const coaches = buildMonth();
+    const coaches = buildMonth(true);
     $('mEmpty').hidden = !!coaches.length; $('monthMake').disabled = !coaches.length;
     renderView('m', coaches);
   }

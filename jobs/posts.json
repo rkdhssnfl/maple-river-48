@@ -1,9 +1,99 @@
 {
   "status": {
-    "checkedAt": "2026-11-06 19:35",
-    "note": "첫 확인(수동)"
+    "checkedAt": "2026-11-06 23:40",
+    "note": "공무직·기간제 수동 추가"
   },
   "posts": [
+    {
+      "id": "dg-suseong-im",
+      "region": "daegu",
+      "org": "대구 수성구",
+      "title": "임기제공무원(한의약) 채용",
+      "url": "https://search.naver.com/search.naver?query=%EC%88%98%EC%84%B1%EA%B5%AC%20%EC%9E%84%EA%B8%B0%EC%A0%9C%20%ED%95%9C%EC%9D%98%EC%95%BD%20%EC%B1%84%EC%9A%A9",
+      "deadline": "2026-11-12",
+      "found": "2026-11-06T14:40:00Z"
+    },
+    {
+      "id": "dg-knudh",
+      "region": "daegu",
+      "org": "경북대학교치과병원",
+      "title": "방사선사 채용",
+      "url": "https://search.naver.com/search.naver?query=%EA%B2%BD%EB%B6%81%EB%8C%80%ED%95%99%EA%B5%90%EC%B9%98%EA%B3%BC%EB%B3%91%EC%9B%90%20%EB%B0%A9%EC%82%AC%EC%84%A0%EC%82%AC%20%EC%B1%84%EC%9A%A9",
+      "deadline": "2026-11-11",
+      "found": "2026-11-06T14:40:00Z"
+    },
+    {
+      "id": "dg-juvenile",
+      "region": "daegu",
+      "org": "대구소년원",
+      "title": "운전서기보 경력경쟁채용",
+      "url": "https://search.naver.com/search.naver?query=%EB%8C%80%EA%B5%AC%EC%86%8C%EB%85%84%EC%9B%90%20%EC%9A%B4%EC%A0%84%EC%84%9C%EA%B8%B0%EB%B3%B4%20%EA%B2%BD%EB%A0%A5%EC%B1%84%EC%9A%A9",
+      "deadline": "2026-11-09",
+      "found": "2026-11-06T14:40:00Z"
+    },
+    {
+      "id": "gj-choir",
+      "region": "gyeongju",
+      "org": "경주시 (시립합창단)",
+      "title": "경주시립합창단 지휘자 채용",
+      "url": "https://www.gyeongju.go.kr/open_content/ko/page.do?mnu_uid=435",
+      "deadline": "2026-11-16",
+      "found": "2026-11-06T14:40:00Z"
+    },
+    {
+      "id": "gj-mobility",
+      "region": "gyeongju",
+      "org": "경주시 (교통약자이동지원센터)",
+      "title": "교통약자이동지원센터 운전원 채용",
+      "url": "https://www.gyeongju.go.kr/open_content/ko/page.do?mnu_uid=435",
+      "deadline": "2026-11-17",
+      "found": "2026-11-06T14:40:00Z"
+    },
+    {
+      "id": "gj-hwangryong",
+      "region": "gyeongju",
+      "org": "경주시 (황룡사역사문화관)",
+      "title": "[기간제] 황룡사역사문화관 근로자 채용",
+      "url": "https://www.gyeongju.go.kr/open_content/ko/page.do?mnu_uid=435",
+      "deadline": "2026-11-16",
+      "found": "2026-11-06T14:40:00Z"
+    },
+    {
+      "id": "gj-bulguk",
+      "region": "gyeongju",
+      "org": "경주시 (불국동)",
+      "title": "[기간제] 불국동 환경정비 근로자 채용",
+      "url": "https://www.gyeongju.go.kr/open_content/ko/page.do?mnu_uid=435",
+      "deadline": "2026-11-09",
+      "found": "2026-11-06T14:40:00Z"
+    },
+    {
+      "id": "gj-hr-clean",
+      "region": "gyeongju",
+      "org": "경주시 (화랑마을)",
+      "title": "[기간제] 화랑마을 청소 근로자 채용",
+      "url": "https://www.gyeongju.go.kr/open_content/ko/page.do?mnu_uid=435",
+      "deadline": "2026-11-10",
+      "found": "2026-11-06T14:40:00Z"
+    },
+    {
+      "id": "gj-dgw",
+      "region": "gyeongju",
+      "org": "경주시 (동궁원)",
+      "title": "[기간제] 동궁원 온실관리 근로자 채용",
+      "url": "https://www.gyeongju.go.kr/open_content/ko/page.do?mnu_uid=435",
+      "deadline": "2026-11-10",
+      "found": "2026-11-06T14:40:00Z"
+    },
+    {
+      "id": "gj-hr-cook",
+      "region": "gyeongju",
+      "org": "경주시 (화랑마을)",
+      "title": "[기간제] 화랑마을 조리원 채용",
+      "url": "https://www.gyeongju.go.kr/open_content/ko/page.do?mnu_uid=435",
+      "deadline": "2026-11-11",
+      "found": "2026-11-06T14:40:00Z"
+    },
     {
       "id": "cg-331",
       "region": "chilgok",

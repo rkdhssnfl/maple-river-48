@@ -1,0 +1,73 @@
+{
+  "status": {
+    "checkedAt": "2026-11-06 19:35",
+    "note": "첫 확인(수동)"
+  },
+  "posts": [
+    {
+      "id": "cg-331",
+      "region": "chilgok",
+      "org": "칠곡교육지원청 (석적유치원)",
+      "title": "교육공무직(영양사) 대체인력 채용 공고",
+      "url": "https://www.gbe.kr/cg/na/ntt/selectNttList.do?mi=4076&bbsId=2166",
+      "posted": "2026-10-29",
+      "found": "2026-11-06T10:35:00Z"
+    },
+    {
+      "id": "cg-330",
+      "region": "chilgok",
+      "org": "칠곡교육지원청 (숭산초)",
+      "title": "[긴급] 숭산초 특수교육실무사(대체인력) 채용 공고",
+      "url": "https://www.gbe.kr/cg/na/ntt/selectNttList.do?mi=4076&bbsId=2166",
+      "posted": "2026-10-28",
+      "found": "2026-11-06T10:35:00Z"
+    },
+    {
+      "id": "gj-sinra",
+      "region": "gyeongju",
+      "org": "경주교육지원청 (신라중)",
+      "title": "신라중학교 전문상담사 대체인력 채용 공고",
+      "url": "https://www.gbe.kr/gj/na/ntt/selectNttList.do?bbsId=1583&searchCate=55&mi=11641",
+      "posted": "2026-11-02",
+      "found": "2026-11-06T10:35:00Z"
+    },
+    {
+      "id": "gj-gyerim",
+      "region": "gyeongju",
+      "org": "경주교육지원청 (계림고)",
+      "title": "특수운영직군(당직전담사) 채용 공고",
+      "url": "https://www.gbe.kr/gj/na/ntt/selectNttList.do?bbsId=1583&searchCate=55&mi=11641",
+      "posted": "2026-10-29",
+      "found": "2026-11-06T10:35:00Z"
+    },
+    {
+      "id": "sj-218",
+      "region": "seongju",
+      "org": "성주교육지원청 (명인중)",
+      "title": "[긴급] 명인중학교 사무직원 대체인력 공고",
+      "url": "https://www.gbe.kr/sj/na/ntt/selectNttList.do?mi=3459&bbsId=2199",
+      "posted": "2026-10-28",
+      "found": "2026-11-06T10:35:00Z"
+    },
+    {
+      "id": "gj-knps",
+      "region": "gyeongju",
+      "org": "국립공원공단 경주국립공원",
+      "title": "2026년 경주국립공원 기간제(산불감시) 직원 채용",
+      "url": "https://job.alio.go.kr",
+      "posted": "2026-10-30",
+      "found": "2026-11-06T10:35:00Z",
+      "deadline": "2026-11-06"
+    },
+    {
+      "id": "dg-knu-orbit",
+      "region": "daegu",
+      "org": "경북대학교",
+      "title": "대경 ORBIT 공유대학 사업단 전담직원(기간제) 채용",
+      "url": "https://www.knu.ac.kr",
+      "posted": "2026-10-28",
+      "found": "2026-11-06T10:35:00Z",
+      "deadline": "2026-11-06"
+    }
+  ]
+}

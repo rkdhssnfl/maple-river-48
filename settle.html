@@ -513,6 +513,7 @@ window.JOURNAL_ONLY = true;
     const meetSet = new Set((meetDates || []).map(d => d.getTime()));
     const isOut = region === '청도';
     let visits = 0, pay = 0; const dup = [], notes = [];
+    // 비고에는 '4시간 이상 인정 학교'와 '같은 날 같은 학교 여러 학생'만 적는다
     // 비고는 날짜마다 줄을 만들지 않고 같은 학교(학생)끼리 한 줄로 모은다: 예) 계당초 박민기 4시간 이상 인정 6회
     const agg = new Map(); const add = (key, fn) => { const o = agg.get(key) || { n: 0, fn }; o.n++; agg.set(key, o); };
     const who = g => { const by = new Map(); Array.from(new Set(g)).forEach(x => { const mm = String(x).match(/^\s*([^()]*?)\s*\(([^)]*)\)\s*$/); const sc = mm ? mm[1] : String(x).trim(), st = mm ? mm[2].trim() : ''; if (!by.has(sc)) by.set(sc, []); if (st) by.get(sc).push(st); }); return Array.from(by).map(([sc, sts]) => sc + (sts.length ? ' ' + sts.join('·') : '')).join(', '); };
@@ -520,9 +521,8 @@ window.JOURNAL_ONLY = true;
       const m = days.get(t), d = new Date(t), schools = Array.from(m.keys());
       m.forEach((g, sc) => { if (g.length > 1) { dup.push({ d, school: sc, n: g.length }); add('dup|' + who(g), n => '※ ' + who(g) + ' 같은 날 같은 학교 ' + n + '회 → 각 방문 1회'); } });
       if (meetSet.has(t)) {
-        if (isOut) { add('mo|' + schools.join('·'), n => '※ 사례회의 후 수업(' + schools.join('·') + ') ' + n + '회 → 수업 여비 제외'); return; }
+        if (isOut) return;   // 청도: 사례회의 날 수업 여비 제외 (비고에는 적지 않음)
         visits += 1; pay += VISIT_PAY;
-        if (schools.length > 1) add('mi|' + schools.join('·'), n => '※ 사례회의 후 ' + schools.join('·') + ' ' + n + '회 → 1개교만 인정(1일 정액 2만원)');
         return;
       }
       // 같은 날이라도 학교가 다르면 학교마다 교통비를 준다 (1개교 1만원, 4시간 이상 인정 학교 2만원)

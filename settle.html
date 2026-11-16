@@ -1507,7 +1507,7 @@ window.JOURNAL_ONLY = true;
       b.rows.forEach(ln => { for (let k = 0; k === 0 || k < ln.dates.length; k += DATE_COLS) lines.push({ group: k ? '' : ln.group, weekday: k ? '' : ln.weekday, dates: ln.dates.slice(k, k + DATE_COLS) }); });
       const dupNote = b.payNotes || [];
       const memoAll = b.memo.concat(dupNote);
-      const rows = Math.max(MIN_BLOCK_ROWS, lines.length, memoAll.length);
+      const rows = Math.max(1, lines.length);   // 빈 줄 없이 내용이 있는 줄만
       const top = r, bot = r + rows - 1;
       for (let rr = top; rr <= bot; rr++) {
         const ln = lines[rr - top];
@@ -1521,7 +1521,8 @@ window.JOURNAL_ONLY = true;
           if (c === 22) cell.alignment = { horizontal: 'left', vertical: 'middle' };
         }
         ws.getRow(rr).height = 18.75;
-        if (memoAll[rr - top]) ws.getCell(rr, 22).value = memoAll[rr - top];
+        const memoTxt = rr < bot ? memoAll[rr - top] : memoAll.slice(rr - top).join(' · ');   // 남는 비고는 마지막 줄에 이어서
+        if (memoTxt) ws.getCell(rr, 22).value = memoTxt;
         if (!ln) continue;
         ws.getCell(rr, 4).value = ln.group;
         ws.getCell(rr, 5).value = ln.weekday || null;
@@ -1662,7 +1663,7 @@ window.JOURNAL_ONLY = true;
     for (let col = 1; col <= K; col++) { const cell = ws.getCell(4, col); cell.font = font({ size: col === 3 ? 10 : 11, bold: true }); cell.fill = headFill; cell.alignment = center; cell.border = { top: thin, bottom: dbl, left: thin, right: thin }; }
     ws.mergeCells(4, 3, 4, 2 + DATE_COLS8); ws.getRow(4).height = 17.25;
     const lines = coachLines(p);
-    const rows = Math.max(MIN_ROWS6, lines.length), top = 5, bot = top + rows - 1;
+    const rows = Math.max(1, lines.length), top = 5, bot = top + rows - 1;
     for (let r = top; r <= bot; r++) {
       const ln = lines[r - top];
       for (let col = 1; col <= K; col++) { const cell = ws.getCell(r, col); cell.font = font({ size: (col >= 3 && col < K) ? 10 : 11 }); cell.alignment = center; cell.border = { left: thin, right: thin, top: thin, bottom: r === bot ? dbl : thin }; if (col >= 3 && col < K) cell.numFmt = 'm/d'; }
@@ -2210,7 +2211,7 @@ window.JOURNAL_ONLY = true;
     ws.mergeCells(4, 5, 4, 11); ws.getRow(4).height = 17.25;
     let r = 5; const first = r;
     data.forEach((d, idx) => {
-      const n = Math.max(5, d.lines.length + 1);
+      const n = Math.max(1, d.lines.length);   // 빈 줄 없이
       const top = r, bot = r + n - 1;
       for (let rr = top; rr <= bot; rr++) {
         const ln = d.lines[rr - top];

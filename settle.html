@@ -267,7 +267,7 @@ window.JOURNAL_ONLY = true;
     <div class="tbl"><table id="suTbl"></table></div>
     <button class="btn primary" id="suMake" type="button" disabled style="margin-top:10px">수당 지급 내역 엑셀 만들기</button>
     <div id="suMsg" hidden></div>
-    <p class="small" style="margin-top:8px">파일 이름: <span id="suName"></span><br>순서·이름은 위 교통비 표와 같습니다(정렬 버튼도 함께 적용). 엑셀은 9월 수당지급내역 양식(순·이름·학교(그룹)·요일·코칭 일자 7칸·횟수·지급수당·비고)대로 만들어집니다.</p>
+    <p class="small" style="margin-top:8px">파일 이름: <span id="suName"></span><br>순서·이름은 위 교통비 표와 같습니다(정렬 버튼도 함께 적용). 엑셀은 센터 수당지급 내역 양식 그대로(열 너비·줄 높이·음영·테두리, 순·이름·학교(그룹)·요일·코칭 일자 7칸·횟수·지급수당·비고) 만들어집니다.</p>
   </section>
 
   <section hidden class="card">
@@ -627,7 +627,7 @@ window.JOURNAL_ONLY = true;
       else if (c(1) === '순' && c(2) === '이름' && /학교/.test(c(3))) { hdr = r; col = { region: 0, name: 2, group: 3, wd: 4, kind: '수당' }; }
     }
     if (!hdr) return null;
-    const list = []; let cur = null, curG = null;
+    const list = []; let cur = null, curG = null, curKey = '';
     const d0 = col.kind === '수당' ? 5 : 6, d1 = col.kind === '수당' ? 11 : 14;   // 날짜 칸: 수당 E~K, 교통비 F~N
     for (let r = hdr + 1; r <= ws.rowCount; r++) {
       if (norm(cellText(ws.getCell(r, 1))) === '합계') break;
@@ -636,11 +636,12 @@ window.JOURNAL_ONLY = true;
       if (name && isTop && !(cur && norm(cur.name) === norm(name))) { cur = { region: col.region ? String(cellText(ws.getCell(r, col.region)) || '').trim() : '', name, groups: [], dates: new Map(), abs: new Map(), meet: [] }; list.push(cur); curG = null; }
       if (!cur) continue;
       const g = String(cellText(ws.getCell(r, col.group)) || '').trim();
-      if (g) { curG = g; if (norm(g) !== MEET_LABEL && !cur.groups.some(x => norm(x.g) === norm(g))) cur.groups.push({ g, w: String(cellText(ws.getCell(r, col.wd)) || '').trim() }); }
+      // 같은 학교(학생)가 요일이 달라 두 줄로 적혀 있으면 줄을 그대로 살린다
+      if (g) { curG = g; if (norm(g) !== MEET_LABEL) { curKey = norm(g) + '#' + cur.groups.filter(x => norm(x.g) === norm(g)).length; cur.groups.push({ g, w: String(cellText(ws.getCell(r, col.wd)) || '').trim(), k: curKey }); } }
       if (!curG) continue;
       const ds = []; for (let c = d0; c <= d1; c++) { const d = toDate(ws.getCell(r, c).value); if (d) ds.push(d); }
       if (norm(curG) === MEET_LABEL) { cur.meet.push(...ds); continue; }
-      const key = norm(curG);
+      const key = curKey;
       if (ds.length) cur.dates.set(key, (cur.dates.get(key) || []).concat(ds));
       // 수당 내역 비고의 학생부재(9/14) → 그날은 교통비만
       if (col.kind === '수당') {
@@ -1116,7 +1117,7 @@ window.JOURNAL_ONLY = true;
             const ex = files.get(c.name); if (ex && ex.src !== 'paylist') return;   // 일지를 냈으면 일지가 우선
             const p = ex || { name: c.name, fileName: '', rows: [], meet: [], src: 'paylist', region: c.region, payS: new Map(), payT: new Map(), payAb: new Map(), payMeet: [] };
             const tgt = pay.kind === '수당' ? p.payS : p.payT;
-            c.groups.forEach(x => { const k = norm(x.g); if (c.dates.has(k)) tgt.set(k, { g: x.g, ds: c.dates.get(k) }); if (c.abs.has(k)) p.payAb.set(k, { g: x.g, ds: c.abs.get(k) }); });
+            c.groups.forEach(x => { const k = x.k; if (c.dates.has(k)) tgt.set(k, { g: x.g, ds: c.dates.get(k) }); if (c.abs.has(k)) p.payAb.set(k, { g: x.g, ds: c.abs.get(k) }); });
             if (c.meet.length) p.payMeet = c.meet;
             // 수당 내역 날짜 = 수업한 날, 교통비 내역 날짜 = 간 날(학생부재 포함). 둘 다 있으면 교통비에만 있는 날을 학생부재로 본다
             const keys = new Set([...p.payS.keys(), ...p.payT.keys(), ...p.payAb.keys()]); p.rows = [];
@@ -2154,10 +2155,9 @@ window.JOURNAL_ONLY = true;
       const dates = Array.from(m.values()).filter(d => !abSet.has(d.getTime())).sort((x, y) => x - y);
       const wd = r.weekday || ((dates[0] || absent[0]) ? WD[((dates[0] || absent[0]).getDay() + 6) % 7] : '');
       return { group: r.group, weekday: wd, dates, absent };
-    }).filter(r => r.dates.length || r.absent.length || !b.sub);
-    rows.sort((x, y) => { const o = r => { const i = WD.indexOf(String(r.weekday).charAt(0)); return i < 0 ? 9 : i; }; return o(x) - o(y); });
+    }).filter(r => norm(r.group) !== MEET_LABEL);   // 순서는 명단(올린 엑셀·일지) 그대로, 날짜가 없는 학생 줄도 남긴다
     const lines = [];
-    rows.forEach(r => { for (let k = 0; k === 0 || k < r.dates.length; k += SU_COLS) lines.push({ group: k ? '' : r.group, weekday: k ? '' : r.weekday, dates: r.dates.slice(k, k + SU_COLS), note: !k && r.absent.length ? '학생부재(' + r.absent.map(md).join(', ') + ')' : '' }); });
+    rows.forEach(r => { for (let k = 0; k === 0 || k < r.dates.length; k += SU_COLS) lines.push({ group: k ? '' : r.group, weekday: k ? '' : r.weekday, dates: r.dates.slice(k, k + SU_COLS), note: !k && r.absent.length ? r.absent.map(md).join(', ') + ' 학생부재' : '' }); });
     return lines;
   }
   function suData(blocks) {
@@ -2183,7 +2183,7 @@ window.JOURNAL_ONLY = true;
       const nm = esc(d.b.coach.name);
       h += '<tr><td>' + (i + 1) + '</td><td>' + nm + '</td>' + (d.b.sub ?
         '<td>' + d.base + (d.absN ? '<br><span class="small" style="color:#c62828" title="학생부재: 교통비만 지급">부재 ' + d.absN + '</span>' : '') + '</td><td><input class="add" type="number" step="1" data-su-add="' + nm + '" value="' + (d.add || '') + '" placeholder="0"></td><td><b>' + d.cnt + '</b></td><td>' + d.pay.toLocaleString('ko-KR') + '</td>' +
-        '<td class="nt"><input class="note" type="text" data-su-note="' + nm + '" value="' + esc(d.rawNote) + '" placeholder="' + esc(d.note || '예: 학생부재(9/14)') + '"></td>'
+        '<td class="nt"><input class="note" type="text" data-su-note="' + nm + '" value="' + esc(d.rawNote) + '" placeholder="' + esc(d.note || '예: 9/14 학생부재') + '"></td>'
         : '<td class="warn" colspan="5">미제출</td>') + '</tr>';
     });
     $('suTbl').innerHTML = h;
@@ -2196,23 +2196,33 @@ window.JOURNAL_ONLY = true;
   try { const u = localStorage.getItem('merge.suUnit'); if (u) $('suUnit').value = u; } catch (e) {}
 
   async function buildSudangWorkbook() {
+    // 센터에서 쓰는 수당지급 내역 양식 그대로: 열 너비·줄 높이·음영·테두리·글자 크기까지 맞춘다
     const data = suData(buildBlocks().blocks);
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Sheet1', { pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+    const ws = wb.addWorksheet('Sheet1', { pageSetup: { paperSize: 9, orientation: 'portrait' } });
     const font = o => Object.assign({ name: '맑은 고딕', size: 11 }, o || {});
     const thin = { style: 'thin', color: { argb: 'FF000000' } }, med = { style: 'medium', color: { argb: 'FF000000' } }, dbl = { style: 'double', color: { argb: 'FF000000' } };
-    const center = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    const W = [5.125, 7.375, 18.375, 9, 8.625, 13, 13, 13, 13, 13, 13, 13, 15.125, 24.5];
-    W.forEach((w, i) => { ws.getColumn(i + 1).width = w; });
-    const MONEY = '_-* #,##0_-;\\-* #,##0_-;_-* "-"_-;_-@_-';
+    const box = { left: thin, right: thin, top: thin, bottom: thin };
+    const solid = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
+    const HEAD = solid('FFDBEEF4'), WHITE = solid('FFFFFFFF'), SUM = solid('FFFDEADA');   // 머리글 하늘색, 본문 흰색, 합계 살구색
+    const center = { horizontal: 'center', vertical: 'middle' };
+    const MONEY = '_-* #,##0_-;\\-* #,##0_-;_-* "-"_-;_-@_-', DATE = 'm"/"d;@';
+    const W = { 1: 5.125, 2: 7.375, 3: 18.375, 4: 9, 5: 8.625, 6: 8.625, 7: 8.625, 8: 8.625, 9: 8.625, 10: 8.625, 11: 8.625, 13: 15.125, 14: 24.5 };
+    Object.keys(W).forEach(c => { ws.getColumn(Number(c)).width = W[c]; });
+    // 2행 제목, 3행 센터 이름
     ws.mergeCells(2, 1, 2, 14);
     const t = ws.getCell(2, 1); t.value = yearSel.value + '학년도 학습코칭단 ' + monthSel.value + '월 수당지급 내역'; t.font = font({ size: 14, bold: true }); t.alignment = center;
     ws.getRow(2).height = 20.25;
     ws.mergeCells(3, 12, 3, 14);
-    const c3 = ws.getCell(3, 12); c3.value = CENTER; c3.font = font(); c3.alignment = { horizontal: 'right', vertical: 'middle' };
+    const c3 = ws.getCell(3, 12); c3.value = CENTER; c3.font = font({ size: 10, bold: true }); c3.alignment = { horizontal: 'right', vertical: 'middle' };
     ws.getRow(3).height = 20.25;
+    // 4행 머리글
     const heads = ['순', '이름', '학교(그룹)', '요일', '코칭 일자(월/일)', '', '', '', '', '', '', '횟수', '지급수당', '비고'];
-    heads.forEach((hd, i) => { const c = ws.getCell(4, i + 1); c.value = hd || null; c.font = font({ bold: true }); c.alignment = center; c.border = { top: med, bottom: dbl, left: i === 0 ? med : thin, right: i === 13 ? med : thin }; });
+    heads.forEach((hd, i) => {
+      const c = ws.getCell(4, i + 1), col = i + 1;
+      c.value = hd || null; c.font = font({ bold: true, size: (col === 4 || (col >= 5 && col <= 11)) ? 10 : 11 }); c.alignment = center; c.fill = HEAD;
+      c.border = { top: thin, bottom: dbl, left: (col === 1 || col === 14) ? med : thin, right: col === 14 ? med : thin };
+    });
     ws.mergeCells(4, 5, 4, 11); ws.getRow(4).height = 17.25;
     let r = 5; const first = r;
     data.forEach((d, idx) => {
@@ -2222,21 +2232,21 @@ window.JOURNAL_ONLY = true;
         const ln = d.lines[rr - top];
         for (let c = 1; c <= 14; c++) {
           const cell = ws.getCell(rr, c);
-          cell.font = font({ size: c >= 5 && c <= 11 ? 10 : c === 14 ? 9 : 11 }); cell.alignment = center;
-          cell.border = { left: c === 1 ? med : thin, right: c === 14 ? med : thin, top: rr === top ? thin : undefined, bottom: rr === bot ? thin : undefined };
-          if (c >= 5 && c <= 11) { cell.numFmt = 'm"/"d;@'; cell.border.top = thin; cell.border.bottom = thin; }
-          if (c === 3 || c === 4) { cell.border.top = thin; cell.border.bottom = thin; }
+          cell.border = box; cell.alignment = center;
+          cell.font = font({ size: (c === 4 || (c >= 5 && c <= 11)) ? 10 : c === 14 ? 8 : 11 });
+          if (c === 2 || c === 3 || c === 4 || (c >= 7 && c <= 12)) cell.fill = WHITE;
+          if (c >= 5 && c <= 11) { cell.numFmt = DATE; cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; }
           if (c === 13) cell.numFmt = MONEY;
+          if (c === 14) { cell.numFmt = MONEY; cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; }
         }
         ws.getRow(rr).height = 17.25;
-        if (!ln || !d.b.sub) continue;
-        if (ln.note) ws.getCell(rr, 14).value = ln.note;
+        if (!ln) continue;
         ws.getCell(rr, 3).value = ln.group || null;
         ws.getCell(rr, 4).value = ln.weekday || null;
+        if (!d.b.sub) continue;
+        if (ln.note) ws.getCell(rr, 14).value = ln.note;
         ln.dates.forEach((dt, k) => { ws.getCell(rr, 5 + k).value = toUtc(dt); });
       }
-      // 미제출이어도 명단 학교(그룹)는 적어 둔다
-      if (!d.b.sub) d.lines.forEach((ln, k) => { ws.getCell(top + k, 3).value = ln.group || null; ws.getCell(top + k, 4).value = ln.weekday || null; });
       ws.getCell(top, 1).value = idx + 1;
       ws.getCell(top, 2).value = d.b.coach.name;
       if (d.b.sub) {
@@ -2244,17 +2254,21 @@ window.JOURNAL_ONLY = true;
         ws.getCell(top, 13).value = { formula: 'L' + top + '*' + suUnit(), result: d.pay };
         if (d.note) { const cur = ws.getCell(top, 14).value; ws.getCell(top, 14).value = d.note + (cur ? ', ' + cur : ''); }
       } else ws.getCell(top, 14).value = '미제출';
-      [1, 2, 12, 13].forEach(c => ws.mergeCells(top, c, bot, c));
+      if (bot > top) [1, 2, 12, 13].forEach(c => ws.mergeCells(top, c, bot, c));
       r = bot + 1;
     });
     const last = r - 1;
-    ws.mergeCells(r, 1, r, 11);
-    for (let c = 1; c <= 14; c++) { const cell = ws.getCell(r, c); cell.font = font({ bold: true }); cell.alignment = center; cell.border = { top: dbl, bottom: med, left: c === 1 ? med : thin, right: c === 14 ? med : thin }; if (c === 13) cell.numFmt = MONEY; }
+    // 합계 줄: A:B 합쳐 '합계', 횟수·지급수당·비고 칸은 살구색
+    ws.mergeCells(r, 1, r, 2);
+    for (let c = 1; c <= 14; c++) {
+      const cell = ws.getCell(r, c); cell.font = font({ size: (c >= 5 && c <= 11) ? 10 : 11 }); cell.alignment = center; cell.border = box;
+      if (c >= 12) cell.fill = SUM;
+      if (c === 13) cell.numFmt = MONEY;
+    }
     ws.getCell(r, 1).value = '합계';
     ws.getCell(r, 12).value = { formula: 'SUM(L' + first + ':L' + last + ')', result: data.reduce((n, d) => n + d.cnt, 0) };
     ws.getCell(r, 13).value = { formula: 'SUM(M' + first + ':M' + last + ')', result: data.reduce((n, d) => n + d.pay, 0) };
-    ws.getRow(r).height = 20.25;
-    ws.views = [{ state: 'frozen', ySplit: 4 }];
+    ws.getRow(r).height = 17.25;
     return wb.xlsx.writeBuffer();
   }
   $('suMake').addEventListener('click', async () => {

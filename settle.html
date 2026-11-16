@@ -250,7 +250,7 @@ window.JOURNAL_ONLY = true;
     <div id="notes"></div>
     <button class="btn primary" id="make" type="button" disabled>교통비 지급 내역서 엑셀 만들기</button>
     <div id="msg" hidden></div>
-    <p class="small" style="margin-top:10px">파일 이름: <span id="fname"></span><br>지역 옆 *는 코칭일자의 학교 이름으로 정한 지역입니다(경산·청도교육지원청 관내 초·중학교 목록 기준). 지역 버튼을 누르면 경산/청도를 바꿀 수 있어요. 코칭교통비는 여비 지급 기준대로 계산합니다: 1일 1개교 1만원 · 4시간 이상 인정 학교(계당초·대동초·와촌초·덕산초·동산초·배전중) 2만원 · 같은 날 다른 학교를 가면 학교마다 지급 · 같은 날 같은 학교 여러 학생은 1회 · 사례회의 날 경산은 수업 1개교만(정액 2만원), 청도는 수업 여비 제외. 계산 근거는 엑셀 비고 칸에 적힙니다.</p>
+    <p class="small" style="margin-top:10px">파일 이름: <span id="fname"></span><br>지역 옆 *는 코칭일자의 학교 이름으로 정한 지역입니다(경산·청도교육지원청 관내 초·중학교 목록 기준). 지역 버튼을 누르면 경산/청도를 바꿀 수 있어요. 코칭교통비는 여비 지급 기준대로 계산합니다: 1일 1개교 1만원 · 4시간 이상 인정 학교(계당초·대동초·와촌초·덕산초·동산초·배전중) 2만원 · 같은 날 다른 학교를 가면 학교마다 지급(하루 2개교까지) · 같은 날 같은 학교 여러 학생은 1회 · 사례회의 날 경산은 수업 1개교만(정액 2만원), 청도는 수업 여비 제외. 계산 근거는 엑셀 비고 칸에 적힙니다.</p>
     <div hidden><button id="makeEach" type="button"></button><div id="eachMsg"></div></div>
     <button class="btn ghost" id="reset" type="button">올린 파일 모두 지우기</button>
   </section>
@@ -502,7 +502,7 @@ window.JOURNAL_ONLY = true;
   }
   // 학습코칭 여비 (여비 지급 기준)
   //  · 같은 날 같은 학교에서 여러 학생 → 방문 1회
-  //  · 1개교 1만원, 4시간 이상 인정 학교 2만원. 같은 날 다른 학교를 가면 학교마다 지급
+  //  · 1개교 1만원, 4시간 이상 인정 학교 2만원. 같은 날 다른 학교를 가면 학교마다 지급하되 하루 2개교까지만
   //  · 사례회의 날: 청도 코칭단은 수업 여비 제외(사례회의 관외 일비만),
   //                 경산 코칭단은 수업 1개교만 1만원(사례회의 1만원과 합쳐 1일 정액 2만원), 2개교째부터 제외
   const LONG_SCHOOLS = ['계당초', '대동초', '와촌초', '덕산초', '동산초', '배전중', '매전중'];  // 기준표의 '배전중'은 매전중으로 봄
@@ -526,8 +526,10 @@ window.JOURNAL_ONLY = true;
         return;
       }
       // 같은 날이라도 학교가 다르면 학교마다 교통비를 준다 (1개교 1만원, 4시간 이상 인정 학교 2만원)
-      visits += schools.length;
-      schools.forEach(sc => {
+      // 하루에 2개교까지만 인정 (3개교 이상이면 금액이 큰 학교부터 2곳)
+      const paid = schools.slice().sort((x, y) => (LONG_SCHOOLS.includes(y) ? 1 : 0) - (LONG_SCHOOLS.includes(x) ? 1 : 0)).slice(0, 2);
+      visits += paid.length;
+      paid.forEach(sc => {
         if (LONG_SCHOOLS.includes(sc)) { pay += 20000; const w1 = who(m.get(sc)); add('long|' + w1, n => '※ ' + w1 + ' ' + n + '회 (4시간 이상 인정 학교 → 회당 2만원)'); }
         else pay += VISIT_PAY;
       });

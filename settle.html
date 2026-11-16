@@ -1382,13 +1382,13 @@ window.JOURNAL_ONLY = true;
     $('stMeetOut').textContent = blocks.filter(b => b.coach.region === '청도' && b.outCnt > 0).length + '명 참석';
     $('stPay').textContent = blocks.reduce((n, b) => n + b.pay, 0).toLocaleString('ko-KR') + '원';
     let html = '' +
-      '<tr><th>순</th><th>지역</th><th>이름</th><th>제출</th><th>코칭</th><th>사례회의</th><th>관내<br>사례회의</th><th>관외<br>사례회의</th><th>교통비</th></tr>';
+      '<tr><th>순</th><th>지역</th><th>이름</th><th>제출</th><th>코칭<br>횟수</th><th>방문<br>횟수</th><th>사례회의</th><th>관내<br>사례회의</th><th>관외<br>사례회의</th><th>교통비</th></tr>';
     blocks.forEach((b, i) => {
       html += '<tr><td>' + (i + 1) + '</td><td>' + (b.sub && !MASTER.length ? '<button type="button" class="btn ghost" data-rg="' + esc(b.sub.name) + '" title="눌러서 경산/청도 바꾸기" style="padding:2px 8px;font-size:13px' + (b.coach.region ? '' : ';color:#c62828') + '">' + (b.coach.region || '지역?') + (b.coach.regionGuess ? '<span class="small">*</span>' : '') + '</button>' : esc(b.coach.region)) + '</td><td>' + esc(b.coach.name) + '</td>' +
         '<td class="' + (b.sub ? 'ok">제출' : 'warn">미제출') + '</td>' +
-        '<td>' + (b.sub ? b.visits : '') + '</td><td>' + meetCell(b.sub) + '</td><td>' + (b.sub ? b.inCnt : '') + '</td><td>' + (b.sub ? b.outCnt : '') + '</td>' +
+        '<td>' + (b.sub ? (b.total || 0) : '') + '</td><td>' + (b.sub ? b.visits : '') + '</td><td>' + meetCell(b.sub) + '</td><td>' + (b.sub ? b.inCnt : '') + '</td><td>' + (b.sub ? b.outCnt : '') + '</td>' +
         '<td>' + (b.sub ? b.pay.toLocaleString('ko-KR') : '') + '</td></tr>' +
-        ((b.sub && (b.payNotes || []).length) ? '<tr class="pnote"><td></td><td colspan="8" style="text-align:left;font-size:12px;color:var(--muted);background:var(--bg);padding:4px 8px;line-height:1.6">' + b.payNotes.map(x => esc(x.replace(/^※\s*/, ''))).join(' · ') + '</td></tr>' : '');
+        ((b.sub && (b.payNotes || []).length) ? '<tr class="pnote"><td></td><td colspan="9" style="text-align:left;font-size:12px;color:var(--muted);background:var(--bg);padding:4px 8px;line-height:1.6">' + b.payNotes.map(x => esc(x.replace(/^※\s*/, ''))).join(' · ') + '</td></tr>' : '');
     });
     $('tbl').innerHTML = html;
     renderMeetChips(blocks);
@@ -1484,8 +1484,8 @@ window.JOURNAL_ONLY = true;
     const fill = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
     const HEAD = fill('FFCFE2F3'), BLUE = fill('FFDAEEF3'), PINK = fill('FFFDE9D9'), PEACH = fill('FFFCE5CD');
     const center = { horizontal: 'center', vertical: 'middle' };
-    const COLS = 22; // A~V (범위·항목을 합쳐 V열 '비고')
-    const widths = { A: 6, B: 7.125, C: 8, D: 21.25, E: 8, O: 14.625, P: 12.625, Q: 18.125, R: 17.5, S: 18.625, T: 17.875, U: 13.875, V: 26 };
+    const COLS = 23; // A~W (O 코칭횟수, P 코칭방문횟수 … W '비고')
+    const widths = { A: 6, B: 7.125, C: 8, D: 21.25, E: 8, O: 10.5, P: 14.625, Q: 12.625, R: 18.125, S: 17.5, T: 18.625, U: 17.875, V: 13.875, W: 26 };
     for (let c = 1; c <= COLS; c++) { const L = String.fromCharCode(64 + c); ws.getColumn(c).width = widths[L] || 6.375; }
 
     ws.mergeCells(1, 1, 1, COLS);
@@ -1498,7 +1498,7 @@ window.JOURNAL_ONLY = true;
     for (let c = 1; c <= COLS; c++) ws.getCell(2, c).border = { bottom: thin };
     ws.getRow(2).height = 18.75;
 
-    const heads = ['순', '지역', '이름', '학교(그룹)', '요일', '코칭 일자(월/일)', '', '', '', '', '', '', '', '', '코칭방문횟수', '코칭교통비', '관내연수참여횟수', '관내연수교통비', '관외연수참여횟수', '관외연수교통비', '합계', '비고'];
+    const heads = ['순', '지역', '이름', '학교(그룹)', '요일', '코칭 일자(월/일)', '', '', '', '', '', '', '', '', '코칭횟수', '코칭방문횟수', '코칭교통비', '관내연수참여횟수', '관내연수교통비', '관외연수참여횟수', '관외연수교통비', '합계', '비고'];
     heads.forEach((h, i) => { const c = ws.getCell(3, i + 1); c.value = h; c.font = font({ bold: true }); c.fill = HEAD; c.alignment = center; c.border = { left: thin, right: thin, top: thin, bottom: dbl }; });
     ws.mergeCells(3, 6, 3, 14);
     ws.getRow(3).height = 17.25;
@@ -1517,16 +1517,16 @@ window.JOURNAL_ONLY = true;
         const ln = lines[rr - top];
         for (let c = 1; c <= COLS; c++) {
           const cell = ws.getCell(rr, c);
-          cell.font = font({ size: c >= 15 && c <= 21 ? 14 : 12 }); cell.alignment = center;
+          cell.font = font({ size: c >= 15 && c <= 22 ? 14 : 12 }); cell.alignment = center;
           cell.border = { left: thin, right: thin, bottom: rr === bot ? dbl : thin };
           if (c >= 6 && c <= 14) cell.numFmt = 'm/d';
-          if (c === 16 || c === 18 || c === 20) { cell.fill = BLUE; cell.numFmt = '#,##0'; }
-          if (c === 21) { cell.fill = PINK; cell.numFmt = '#,##0'; }
-          if (c === 22) cell.alignment = { horizontal: 'left', vertical: 'middle' };
+          if (c === 17 || c === 19 || c === 21) { cell.fill = BLUE; cell.numFmt = '#,##0'; }
+          if (c === 22) { cell.fill = PINK; cell.numFmt = '#,##0'; }
+          if (c === 23) cell.alignment = { horizontal: 'left', vertical: 'middle' };
         }
         ws.getRow(rr).height = 18.75;
         const memoTxt = rr < bot ? memoAll[rr - top] : memoAll.slice(rr - top).join(' · ');   // 남는 비고는 마지막 줄에 이어서
-        if (memoTxt) ws.getCell(rr, 22).value = memoTxt;
+        if (memoTxt) ws.getCell(rr, 23).value = memoTxt;
         if (!ln) continue;
         ws.getCell(rr, 4).value = ln.group;
         ws.getCell(rr, 5).value = ln.weekday || null;
@@ -1535,16 +1535,17 @@ window.JOURNAL_ONLY = true;
       ws.getCell(top, 1).value = idx + 1;
       ws.getCell(top, 2).value = b.coach.region;
       ws.getCell(top, 3).value = b.coach.name;
-      const dupCnt = (b.total || b.visits) - b.visits;
-      ws.getCell(top, 15).value = { formula: 'COUNTA(F' + top + ':N' + bot + ')' + (dupCnt ? '-' + dupCnt : ''), result: b.visits };
+      // 코칭횟수(학생별 수업을 모두 센 수)와 코칭방문횟수(같은 날 같은 학교는 1회 등 규정 반영)를 나란히 둔다
+      ws.getCell(top, 15).value = { formula: 'COUNTA(F' + top + ':N' + bot + ')', result: b.total || 0 };
+      ws.getCell(top, 16).value = b.visits;
       // 코칭교통비: 1일 정액·4시간 학교·사례회의 날 규정을 반영한 금액 (근거는 비고)
-      ws.getCell(top, 16).value = b.coachPay;
-      ws.getCell(top, 17).value = { formula: 'COUNTIF(V' + top + ':V' + bot + ', "*(관내)*")', result: b.inCnt };
-      ws.getCell(top, 18).value = { formula: 'PRODUCT(Q' + top + '*' + IN_PAY + ')', result: b.inCnt * IN_PAY };
-      ws.getCell(top, 19).value = { formula: 'COUNTIF(V' + top + ':V' + bot + ', "*(관외)*")', result: b.outCnt };
-      ws.getCell(top, 20).value = { formula: 'PRODUCT(S' + top + '*' + OUT_PAY + ')', result: b.outCnt * OUT_PAY };
-      ws.getCell(top, 21).value = { formula: 'SUM(P' + top + ',R' + top + ',T' + top + ')', result: b.pay };
-      [1, 2, 3, 15, 16, 17, 18, 19, 20, 21].forEach(c => ws.mergeCells(top, c, bot, c));
+      ws.getCell(top, 17).value = b.coachPay;
+      ws.getCell(top, 18).value = { formula: 'COUNTIF(W' + top + ':W' + bot + ', "*(관내)*")', result: b.inCnt };
+      ws.getCell(top, 19).value = { formula: 'PRODUCT(R' + top + '*' + IN_PAY + ')', result: b.inCnt * IN_PAY };
+      ws.getCell(top, 20).value = { formula: 'COUNTIF(W' + top + ':W' + bot + ', "*(관외)*")', result: b.outCnt };
+      ws.getCell(top, 21).value = { formula: 'PRODUCT(T' + top + '*' + OUT_PAY + ')', result: b.outCnt * OUT_PAY };
+      ws.getCell(top, 22).value = { formula: 'SUM(Q' + top + ',S' + top + ',U' + top + ')', result: b.pay };
+      [1, 2, 3, 15, 16, 17, 18, 19, 20, 21, 22].forEach(c => ws.mergeCells(top, c, bot, c));
       r = bot + 1;
     });
     const lastData = r - 1;
@@ -1554,13 +1555,13 @@ window.JOURNAL_ONLY = true;
     for (let c = 1; c <= COLS; c++) {
       const cell = ws.getCell(r, c); cell.font = font({ size: 14 }); cell.alignment = center;
       cell.border = { left: thin, right: thin, top: thin, bottom: thin };
-      if (c <= 14 || c === 21) cell.fill = PEACH; else if (c <= 20) cell.fill = PINK;
+      if (c <= 14 || c === 22) cell.fill = PEACH; else if (c <= 21) cell.fill = PINK;
     }
-    ['O', 'P', 'Q', 'R', 'S', 'T', 'U'].forEach((L, i) => {
+    ['O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V'].forEach((L, i) => {
       const c = 15 + i;
-      const total = blocks.reduce((n, b) => n + [b.visits, b.coachPay, b.inCnt, b.inCnt * IN_PAY, b.outCnt, b.outCnt * OUT_PAY, b.pay][i], 0);
+      const total = blocks.reduce((n, b) => n + ([b.total, b.visits, b.coachPay, b.inCnt, b.inCnt * IN_PAY, b.outCnt, b.outCnt * OUT_PAY, b.pay][i] || 0), 0);
       ws.getCell(r, c).value = { formula: 'SUM(' + L + firstData + ':' + L + lastData + ')', result: total };
-      if (i % 2 === 1 || i === 6) ws.getCell(r, c).numFmt = '#,##0';
+      if (i === 2 || i === 4 || i === 6 || i === 7) ws.getCell(r, c).numFmt = '#,##0';
     });
     ws.views = [{ state: 'frozen', ySplit: 3 }];
     return wb.xlsx.writeBuffer();

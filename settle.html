@@ -513,7 +513,7 @@ window.JOURNAL_ONLY = true;
     const meetSet = new Set((meetDates || []).map(d => d.getTime()));
     const isOut = region === '청도';
     let visits = 0, pay = 0; const dup = [], notes = [];
-    // 비고에는 '4시간 이상 인정 학교', '같은 날 같은 학교 여러 학생', '같은 날 2개교 이상(정액 한도)'만 적는다
+    // 비고에는 '4시간 이상 인정 학교'와 '같은 날 같은 학교 여러 학생'만 적는다
     // 비고는 날짜마다 줄을 만들지 않고 같은 학교(학생)끼리 한 줄로 모은다: 예) 계당초 박민기 4시간 이상 인정 6회
     const agg = new Map(); const add = (key, fn) => { const o = agg.get(key) || { n: 0, fn }; o.n++; agg.set(key, o); };
     const who = g => { const by = new Map(); Array.from(new Set(g)).forEach(x => { const mm = String(x).match(/^\s*([^()]*?)\s*\(([^)]*)\)\s*$/); const sc = mm ? mm[1] : String(x).trim(), st = mm ? mm[2].trim() : ''; if (!by.has(sc)) by.set(sc, []); if (st) by.get(sc).push(st); }); return Array.from(by).map(([sc, sts]) => sc + (sts.length ? ' ' + sts.join('·') : '')).join(', '); };
@@ -528,9 +528,7 @@ window.JOURNAL_ONLY = true;
       // 같은 날이라도 학교가 다르면 학교마다 교통비를 준다 (1개교 1만원, 4시간 이상 인정 학교 2만원)
       // 같은 날 다른 학교 2개교 이상: 2개교까지만 인정, 1일 정액 2만원 한도
       if (schools.length >= 2) {
-        visits += 2; pay += 20000;
-        const ws2 = schools.map(sc => who(m.get(sc))).join('·');
-        add('two|' + ws2, n => '※ ' + ws2 + ' 같은 날 ' + schools.length + '개교 방문 ' + n + '회 → 1일 정액 2만원 한도');
+        visits += 2; pay += 20000;   // 비고에는 적지 않음
       } else if (LONG_SCHOOLS.includes(schools[0])) { pay += 20000; visits += 1; const w1 = who(m.get(schools[0])); add('long|' + w1, n => '※ ' + w1 + ' ' + n + '회 (4시간 이상 인정 학교 → 회당 2만원)'); }
       else { pay += VISIT_PAY; visits += 1; }
     });

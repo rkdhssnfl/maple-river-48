@@ -190,7 +190,7 @@ window.JOURNAL_ONLY = true;
       <b>여기를 눌러 학습서비스 일지 선택</b> 또는 끌어다 놓기<br>
       <span class="small"><b>왈라 응답 엑셀</b>(학습서비스 일지 양식), <b>일지 파일</b>(한글·엑셀·워드·PDF), <b>메일 압축(zip)</b> 모두 됩니다. 여러 개를 한 번에 올려도 돼요.</span><br>
       <span class="small">일지의 학교명·학생명·학습코치명과 회기별 날짜를 읽어 코칭일자·교통비·수당을 만듭니다. 내용에 "학생부재"가 있는 날은 교통비만 줍니다.</span><br>
-      <span class="small"><b>지난달 수당 지급 내역·교통비 지급 내역 엑셀</b>을 함께 올리면 그 파일의 코칭단 이름·지역·학교(학생)·순서를 명단으로 써서, 같은 순서로 수당·교통비를 계산합니다(미제출자도 표에 나와요).</span>
+      <span class="small"><b>수당 지급 내역·교통비 지급 내역 엑셀</b>도 여기에 올릴 수 있어요. 그 파일의 코칭단 이름·지역·학교(학생)·순서를 명단으로 쓰고, 적힌 날짜로 <b>수당·교통비를 바로 계산</b>합니다. 같은 사람의 일지를 올리면 일지가 우선이에요.</span>
     </label>
     <div id="parseMsg" hidden></div>
     <div id="mailBox" class="msg" hidden></div>
@@ -623,14 +623,27 @@ window.JOURNAL_ONLY = true;
       else if (c(1) === '순' && c(2) === '이름' && /학교/.test(c(3))) { hdr = r; col = { region: 0, name: 2, group: 3, wd: 4, kind: '수당' }; }
     }
     if (!hdr) return null;
-    const list = []; let cur = null;
+    const list = []; let cur = null, curG = null;
+    const d0 = col.kind === '수당' ? 5 : 6, d1 = col.kind === '수당' ? 11 : 14;   // 날짜 칸: 수당 E~K, 교통비 F~N
     for (let r = hdr + 1; r <= ws.rowCount; r++) {
       if (norm(cellText(ws.getCell(r, 1))) === '합계') break;
       const nameCell = ws.getCell(r, col.name); const name = String(cellText(nameCell) || '').trim();
       const isTop = !nameCell.isMerged || (nameCell.master && nameCell.master.address === nameCell.address);
-      if (name && isTop && !(cur && norm(cur.name) === norm(name))) { cur = { region: col.region ? String(cellText(ws.getCell(r, col.region)) || '').trim() : '', name, groups: [] }; list.push(cur); }
+      if (name && isTop && !(cur && norm(cur.name) === norm(name))) { cur = { region: col.region ? String(cellText(ws.getCell(r, col.region)) || '').trim() : '', name, groups: [], dates: new Map(), abs: new Map(), meet: [] }; list.push(cur); curG = null; }
+      if (!cur) continue;
       const g = String(cellText(ws.getCell(r, col.group)) || '').trim();
-      if (g && cur && norm(g) !== MEET_LABEL && !cur.groups.some(x => norm(x.g) === norm(g))) cur.groups.push({ g, w: String(cellText(ws.getCell(r, col.wd)) || '').trim() });
+      if (g) { curG = g; if (norm(g) !== MEET_LABEL && !cur.groups.some(x => norm(x.g) === norm(g))) cur.groups.push({ g, w: String(cellText(ws.getCell(r, col.wd)) || '').trim() }); }
+      if (!curG) continue;
+      const ds = []; for (let c = d0; c <= d1; c++) { const d = toDate(ws.getCell(r, c).value); if (d) ds.push(d); }
+      if (norm(curG) === MEET_LABEL) { cur.meet.push(...ds); continue; }
+      const key = norm(curG);
+      if (ds.length) cur.dates.set(key, (cur.dates.get(key) || []).concat(ds));
+      // 수당 내역 비고의 학생부재(9/14) → 그날은 교통비만
+      if (col.kind === '수당') {
+        const memo = String(cellText(ws.getCell(r, 14)) || '').trim();
+        const ab = absDates(memo); if (ab.length) cur.abs.set(key, (cur.abs.get(key) || []).concat(ab));
+        else if (memo) { cur.memo = (cur.memo ? cur.memo + ', ' : '') + memo; const ex = memo.match(/수당\s*(\d+)\s*회기\s*추가/); if (ex) cur.extra = (cur.extra || 0) + Number(ex[1]); }
+      }
     }
     if (!list.length) return null;
     // 수당 내역에는 지역 칸이 없으므로 학교 이름으로 지역을 정한다
@@ -1063,8 +1076,8 @@ window.JOURNAL_ONLY = true;
     const byCoach = new Map(); got.forEach(r => { if (!r.coach) return; (byCoach.get(r.coach) || byCoach.set(r.coach, []).get(r.coach)).push(r); });
     byCoach.forEach((recs, coach) => {
       const ex = files.get(coach);
-      if (ex && ex.src !== 'journal') return;   // 코칭일자를 따로 냈으면 그것을 쓴다
-      const p = ex || { name: coach, fileName: '', rows: [], meet: [], src: 'journal', region: '' };
+      if (ex && ex.src !== 'journal' && ex.src !== 'paylist') return;   // 코칭일자를 따로 냈으면 그것을 쓴다
+      const p = (ex && ex.src === 'journal' ? ex : null) || { name: coach, fileName: '', rows: [], meet: [], src: 'journal', region: '' };
       recs.forEach(r => {
         let row = p.rows.find(x => norm(x.group) === norm(r.group));
         if (!row) { row = { group: r.group, dates: [], mk: [], ab: [] }; p.rows.push(row); }
@@ -1093,7 +1106,38 @@ window.JOURNAL_ONLY = true;
         if (pay) {
           MASTER = pay.list; SORT_ORDER = null;
           ROSTER = pay.list.map(c => ({ name: c.name, region: c.region })); try { localStorage.setItem('merge.roster', JSON.stringify(ROSTER)); } catch (e) {}
-          f.isPayList = true; ok.push(f.name + ' (' + pay.kind + ' 내역 → 명단 ' + pay.list.length + '명)'); continue;
+          let used = 0; const memoQ = [];
+          pay.list.forEach(c => {
+            if (!c.dates.size && !c.abs.size) return;
+            const ex = files.get(c.name); if (ex && ex.src !== 'paylist') return;   // 일지를 냈으면 일지가 우선
+            const p = ex || { name: c.name, fileName: '', rows: [], meet: [], src: 'paylist', region: c.region, payS: new Map(), payT: new Map(), payAb: new Map(), payMeet: [] };
+            const tgt = pay.kind === '수당' ? p.payS : p.payT;
+            c.groups.forEach(x => { const k = norm(x.g); if (c.dates.has(k)) tgt.set(k, { g: x.g, ds: c.dates.get(k) }); if (c.abs.has(k)) p.payAb.set(k, { g: x.g, ds: c.abs.get(k) }); });
+            if (c.meet.length) p.payMeet = c.meet;
+            // 수당 내역 날짜 = 수업한 날, 교통비 내역 날짜 = 간 날(학생부재 포함). 둘 다 있으면 교통비에만 있는 날을 학생부재로 본다
+            const keys = new Set([...p.payS.keys(), ...p.payT.keys(), ...p.payAb.keys()]); p.rows = [];
+            keys.forEach(k => {
+              const S = p.payS.get(k), T = p.payT.get(k), A = p.payAb.get(k);
+              const t = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+              const all = new Map(); [S, T, A].forEach(x => x && x.ds.forEach(d => all.set(t(d), d)));
+              const ab = new Set((A ? A.ds : []).map(t)); if (S && T) { const ss = new Set(S.ds.map(t)); T.ds.forEach(d => { if (!ss.has(t(d))) ab.add(t(d)); }); }
+              const dates = Array.from(all.values()).sort((a, b) => a - b);
+              p.rows.push({ group: (S || T || A).g, dates, mk: dates.map(() => false), ab: Array.from(ab) });
+            });
+            p.fileName = Array.from(new Set((p.fileName ? p.fileName.split(', ') : []).concat(f.name))).join(', ');
+            if (!p.region) p.region = c.region;
+            files.set(c.name, p); used++; if (pay.kind === '수당' && (c.memo || c.extra)) memoQ.push(c);
+          });
+          // 달 맞추기 + 교통비 내역의 사례회의 줄: 날짜를 채우고, 사례회의 줄이 없는 사람은 불참으로
+          const cnt = {}; pay.list.forEach(c => c.dates.forEach(ds => ds.forEach(d => { const k = d.getMonth() + 1; cnt[k] = (cnt[k] || 0) + 1; })));
+          const best = Object.keys(cnt).sort((x, y) => cnt[y] - cnt[x])[0];
+          const md0 = (pay.list.find(c => c.meet.length) || { meet: [] }).meet[0];
+          if (md0) {
+            if (!meetDateEl.value) { meetDateEl.value = md0.getFullYear() + '-' + String(md0.getMonth() + 1).padStart(2, '0') + '-' + String(md0.getDate()).padStart(2, '0'); monthFromMeet(); }
+            pay.list.forEach(c => { if (c.dates.size && !c.meet.length) MEET_ABSENT.add(norm(c.name)); });
+          } else if (best && !meetDate()) monthSel.value = best;
+          memoQ.forEach(c => suSet(c.name, { add: c.extra || 0, note: c.memo || '' }));  // 비고의 '수당 1회기 추가지급' 등
+          f.isPayList = true; ok.push(f.name + ' (' + pay.kind + ' 내역 → 명단 ' + pay.list.length + '명' + (used ? ', 날짜 ' + used + '명 계산' : '') + ')'); continue;
         }
         let links = null; try { links = await wallaLinks(f); } catch (e) {}
         if (!links) { f.isDoc = true; continue; }
@@ -1255,7 +1299,7 @@ window.JOURNAL_ONLY = true;
   // 사례회의 칸: 엑셀 파일로 낸 사람은 참석 여부가 없으므로 선생님이 눌러서 정한다
   function meetCell(p) {
     if (!p) return '';
-    const isFile = p.src === undefined || p.src === 'wallafile' || p.src === 'journal';
+    const isFile = p.src === undefined || p.src === 'wallafile' || p.src === 'journal' || p.src === 'paylist';
     const fromFile = isFile && !p.manualMeet && p.meet.length && p.meetAttend !== true;
     if (isFile && !fromFile) return p.meetAttend === true ? '<span style="color:#2e7d32;font-weight:700">참석</span>' : p.meetAttend === false ? '<span style="color:#c62828;font-weight:700">불참</span>' : '<span class="small" style="color:#b26a00">미확인</span>';
     if (fromFile) return '<span class="small">파일에 기록</span>';
@@ -1268,7 +1312,7 @@ window.JOURNAL_ONLY = true;
     if (!window.JOURNAL_ONLY) return;
     const d = meetDate();
     files.forEach(p => {
-      if (p.src !== 'journal') return;
+      if (p.src !== 'journal' && p.src !== 'paylist') return;
       p.manualMeet = true;
       if (!d) { p.meetAttend = null; p.meet = []; return; }
       const att = !MEET_ABSENT.has(norm(p.name));
@@ -1373,7 +1417,7 @@ window.JOURNAL_ONLY = true;
         for (let k = 0; k < DATE_COLS8; k++) { const d = ln.dates[k]; t += '<td class="' + (d ? (ln.meet ? 'mt' : ln.ab[k] ? 'ab' : (ln.mk[k] ? 'mk' : '')) : '') + '"' + (d && ln.ab[k] ? ' title="학생부재: 교통비만, 수업수당 제외"' : '') + '>' + (d ? md(d) + (ln.ab[k] ? '<br>부재' : '') : '') + '</td>'; }
         t += '</tr>';
       });
-      const src = p.src === 'journal' ? '학습서비스 일지' : p.src === 'walla' ? '왈라 응답' : p.src === 'wallafile' ? '왈라 첨부 파일' : p.src === 'text' ? '카톡 글' : '엑셀 파일';
+      const src = p.src === 'journal' ? '학습서비스 일지' : p.src === 'paylist' ? '수당·교통비 내역 엑셀' : p.src === 'walla' ? '왈라 응답' : p.src === 'wallafile' ? '왈라 첨부 파일' : p.src === 'text' ? '카톡 글' : '엑셀 파일';
       const done = DONE.has(doneKey(p));
       return '<div class="coach' + (done ? ' done' : '') + '" data-idx="' + i + '"><h3>' + esc(p.name) + (done ? ' <span class="cnt dl">파일 받음</span>' : '') + (p.region ? ' <span class="cnt">' + esc(p.region) + '</span>' : '') + ' <span class="cnt">' + total + '회 · ' + src + (p.src ? '' : ' (' + esc(p.fileName) + ')') + '</span>' +
         '<button class="btn ghost" data-coach="' + i + '" type="button" style="margin-left:auto">코칭일자 파일 내려받기</button></h3><div class="pvw"><table class="pv">' + t + '</table></div></div>';

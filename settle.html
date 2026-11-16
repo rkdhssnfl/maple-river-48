@@ -189,7 +189,8 @@ window.JOURNAL_ONLY = true;
       <input type="file" id="files" multiple accept=".xlsx,.zip,.hwpx,.hwp,.pdf,.docx">
       <b>여기를 눌러 학습서비스 일지 선택</b> 또는 끌어다 놓기<br>
       <span class="small"><b>왈라 응답 엑셀</b>(학습서비스 일지 양식), <b>일지 파일</b>(한글·엑셀·워드·PDF), <b>메일 압축(zip)</b> 모두 됩니다. 여러 개를 한 번에 올려도 돼요.</span><br>
-      <span class="small">일지의 학교명·학생명·학습코치명과 회기별 날짜를 읽어 코칭일자·교통비·수당을 만듭니다. 내용에 "학생부재"가 있는 날은 교통비만 줍니다.</span>
+      <span class="small">일지의 학교명·학생명·학습코치명과 회기별 날짜를 읽어 코칭일자·교통비·수당을 만듭니다. 내용에 "학생부재"가 있는 날은 교통비만 줍니다.</span><br>
+      <span class="small"><b>지난달 수당 지급 내역·교통비 지급 내역 엑셀</b>을 함께 올리면 그 파일의 코칭단 이름·지역·학교(학생)·순서를 명단으로 써서, 같은 순서로 수당·교통비를 계산합니다(미제출자도 표에 나와요).</span>
     </label>
     <div id="parseMsg" hidden></div>
     <div id="mailBox" class="msg" hidden></div>
@@ -611,6 +612,30 @@ window.JOURNAL_ONLY = true;
     if (!list.length) throw new Error('명단이 비어 있습니다');
     const t = String(cellText(ws.getCell(1, 1)) || ''); const ym = t.match(/(\d{4})학년도/); const mm = t.match(/(\d{1,2})월/);
     return { list, year: ym ? Number(ym[1]) : null, month: mm ? Number(mm[1]) : null, fileName: file.name };
+  }
+  // 수당 지급 내역·교통비 지급 내역 엑셀 → 코칭단 명단(이름·지역·학교(학생)·순서). 둘 다 아니면 null
+  async function parsePayList(file) {
+    const wb = await loadBook(file); const ws = wb.worksheets[0]; if (!ws) return null;
+    let hdr = 0, col = null;
+    for (let r = 1; r <= 10 && !hdr; r++) {
+      const c = k => norm(cellText(ws.getCell(r, k)));
+      if (c(1) === '순' && c(3) === '이름') { hdr = r; col = { region: 2, name: 3, group: 4, wd: 5, kind: '교통비' }; }
+      else if (c(1) === '순' && c(2) === '이름' && /학교/.test(c(3))) { hdr = r; col = { region: 0, name: 2, group: 3, wd: 4, kind: '수당' }; }
+    }
+    if (!hdr) return null;
+    const list = []; let cur = null;
+    for (let r = hdr + 1; r <= ws.rowCount; r++) {
+      if (norm(cellText(ws.getCell(r, 1))) === '합계') break;
+      const nameCell = ws.getCell(r, col.name); const name = String(cellText(nameCell) || '').trim();
+      const isTop = !nameCell.isMerged || (nameCell.master && nameCell.master.address === nameCell.address);
+      if (name && isTop && !(cur && norm(cur.name) === norm(name))) { cur = { region: col.region ? String(cellText(ws.getCell(r, col.region)) || '').trim() : '', name, groups: [] }; list.push(cur); }
+      const g = String(cellText(ws.getCell(r, col.group)) || '').trim();
+      if (g && cur && norm(g) !== MEET_LABEL && !cur.groups.some(x => norm(x.g) === norm(g))) cur.groups.push({ g, w: String(cellText(ws.getCell(r, col.wd)) || '').trim() });
+    }
+    if (!list.length) return null;
+    // 수당 내역에는 지역 칸이 없으므로 학교 이름으로 지역을 정한다
+    list.forEach(c => { if (c.region) return; const n = { '경산': 0, '청도': 0 }; c.groups.forEach(x => { const rg = schoolRegion(schoolOf(norm(x.g))); if (rg) n[rg]++; }); c.region = n['청도'] > n['경산'] ? '청도' : n['경산'] ? '경산' : ''; });
+    return { list, kind: col.kind };
   }
   const tplDrop = $('tplDrop'), tplIn = $('tplFile');
   ['dragenter', 'dragover'].forEach(ev => tplDrop.addEventListener(ev, e => { e.preventDefault(); tplDrop.classList.add('over'); }));
@@ -1063,6 +1088,13 @@ window.JOURNAL_ONLY = true;
       // 학습서비스 일지 전용: 왈라 응답 엑셀이면 첨부 링크를 받아 오고, 그 밖의 엑셀은 엑셀로 쓴 일지로 읽는다
       for (const f of expanded.slice()) {
         if (!/\.xlsx$/i.test(f.name)) continue;
+        // 수당·교통비 지급 내역 엑셀이면 명단으로 쓴다 (이름·지역·학교(학생)·순서)
+        let pay = null; try { pay = await parsePayList(f); } catch (e) {}
+        if (pay) {
+          MASTER = pay.list; SORT_ORDER = null;
+          ROSTER = pay.list.map(c => ({ name: c.name, region: c.region })); try { localStorage.setItem('merge.roster', JSON.stringify(ROSTER)); } catch (e) {}
+          f.isPayList = true; ok.push(f.name + ' (' + pay.kind + ' 내역 → 명단 ' + pay.list.length + '명)'); continue;
+        }
         let links = null; try { links = await wallaLinks(f); } catch (e) {}
         if (!links) { f.isDoc = true; continue; }
         for (const x of links) {
@@ -1086,7 +1118,7 @@ window.JOURNAL_ONLY = true;
     }
     if (detected && !meetDate()) monthSel.value = detected;
     assignMailDocs(expanded);
-    try { if (await ingestJournalDocs(expanded.filter(f => f.isDoc), errs, ok)) { rebuildMail(); renderMailBox(); } } catch (e) { errs.push('일지 읽기 오류: ' + (e.message || e)); }
+    try { if (await ingestJournalDocs(expanded.filter(f => f.isDoc && !f.isPayList), errs, ok)) { rebuildMail(); renderMailBox(); } } catch (e) { errs.push('일지 읽기 오류: ' + (e.message || e)); }
     pm.className = 'msg' + (errs.length ? ' err' : '');
     // 왈라에 첨부된 파일 중 자동으로 못 읽은 것: 링크를 보여 주고 직접 올리게 안내 (이미 올린 이름은 제외)
     const pend = PENDING_LINKS.filter(x => !files.has(x.name));

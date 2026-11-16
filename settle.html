@@ -162,6 +162,12 @@ window.JOURNAL_ONLY = true;
       <b>코칭단 명단 파일 올리기</b> (엑셀·CSV, "이름" 칸만 있으면 돼요)<br>
       <span class="small">한 번 올리면 이 기기에 기억해서 다음 달에도 그대로 씁니다. "지역" 칸이 있으면 교통비 지역 계산에도 씁니다.</span>
     </label>
+    <div class="row" id="rosterAdd" style="margin-top:8px;gap:6px;align-items:center;flex-wrap:wrap">
+      <input type="text" id="rAddName" placeholder="이름" style="width:110px;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px">
+      <select id="rAddRegion" style="font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px"><option>경산</option><option>청도</option></select>
+      <button class="btn ghost" type="button" id="rAddBtn" style="padding:6px 12px;font-size:13px">+ 코칭단 추가</button>
+      <span class="small">명단에서 빼려면 표의 ✕를 누르세요.</span>
+    </div>
     <div id="rosterBox" style="margin-top:10px"></div>
   </section>
 
@@ -209,7 +215,7 @@ window.JOURNAL_ONLY = true;
   </div>
   <div class="colB">
   <section class="card" id="meetCard" style="border:2px solid #2e7d32;background:#f3faf4">
-    <h2 style="color:#1b5e20">📅 사례회의 참석 체크 <span class="small">(명단을 올리면 전체 이름이 나와요)</span></h2>
+    <h2 style="color:#1b5e20">📅 사례회의 불참 체크 <span class="small">(모두 참석으로 계산 · 불참한 사람만 누르기)</span></h2>
     <div class="small" id="meetHint">엑셀(메일 압축 포함)로 낸 사람은 파일에 참석 여부가 없어요. 참석한 사람 이름을 눌러 초록으로 바꾸면 교통비에 바로 들어갑니다. 한 번 더 누르면 취소.</div>
     <div id="meetChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"><span class="small">아직 엑셀로 낸 사람이 없어요.</span></div>
   </section>
@@ -441,9 +447,27 @@ window.JOURNAL_ONLY = true;
     }
     return out;
   }
+  // 명단 고치기: 추가·삭제 (이 기기에 저장)
+  const RDEL = n => '<td><button type="button" data-rdel="' + esc(n) + '" title="명단에서 빼기" style="border:0;background:none;color:#c62828;font-weight:700;cursor:pointer;font-size:14px">✕</button></td>';
+  const RADD = n => '<button type="button" data-radd="' + esc(n) + '" style="border:1px solid #e0b85a;background:#fff7e3;border-radius:999px;padding:1px 8px;font:inherit;font-size:12px;cursor:pointer">+ ' + esc(n) + '</button>';
+  function saveRoster() { try { localStorage.setItem('merge.roster', JSON.stringify(ROSTER)); } catch (e) {} render(); }
+  function rosterAdd(name, region) {
+    name = String(name || '').replace(/\s+/g, ''); if (!name) return false;
+    if (ROSTER.some(x => norm(x.name) === norm(name))) return false;
+    ROSTER.push({ name, region: region || '경산' }); saveRoster(); return true;
+  }
+  (function () {
+    const nm = $('rAddName'), rg = $('rAddRegion'), bt = $('rAddBtn'), box = $('rosterBox');
+    if (bt) { const go = () => { if (rosterAdd(nm.value, rg.value)) { nm.value = ''; nm.focus(); } else if (nm.value.trim()) nm.select(); }; bt.addEventListener('click', go); nm.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(); } }); }
+    if (box) box.addEventListener('click', e => {
+      const d = e.target.closest('[data-rdel]'), a = e.target.closest('[data-radd]');
+      if (d) { ROSTER = ROSTER.filter(x => norm(x.name) !== norm(d.dataset.rdel)); saveRoster(); }
+      if (a) { const p = Array.from(files.values()).find(q => norm(q.name) === norm(a.dataset.radd)); rosterAdd(a.dataset.radd, (p && (p.regionManual || p.region)) || '경산'); }
+    });
+  })();
   function renderRoster() {
     const box = $('rosterBox'); if (!box) return;
-    if (!ROSTER.length) { box.innerHTML = '<div class="small">명단을 올리면 누가 코칭일자·학습서비스 일지를 냈는지 이름별로 보여 줍니다.</div>'; $('rosterState').textContent = ''; return; }
+    if (!ROSTER.length) { const ex = Array.from(files.keys()); box.innerHTML = '<div class="small">명단 파일을 올리거나 위에서 이름을 하나씩 추가하면, 누가 냈는지 이름별로 보여 줍니다.' + (ex.length ? '<br>지금 낸 사람: ' + ex.map(RADD).join(' ') + ' (눌러서 명단에 추가)' : '') + '</div>'; $('rosterState').textContent = ''; return; }
     const subNames = new Set(Array.from(files.keys()).map(norm));
     const jNames = new Set(Array.from(JOURNAL.values()).filter(j => j.link).map(j => norm(j.name)));
     MAIL_J.forEach(v => jNames.add(norm(v.name))); files.forEach(p => { if (p.src === 'journal') jNames.add(norm(p.name)); });
@@ -457,9 +481,9 @@ window.JOURNAL_ONLY = true;
       $('rosterState').textContent = '(' + ROSTER.length + '명)';
       box.innerHTML = '<div class="stats" style="margin:0 0 8px"><div class="ok"><div class="k">일지 제출</div><div class="v">' + done.length + '</div></div><div class="warn"><div class="k">일지 미제출</div><div class="v">' + (list.length - done.length) + '</div></div></div>' +
         '<div class="small" style="margin:0 0 6px"><b style="color:#c62828">일지 미제출:</b> ' + (esc(list.filter(x => !jNames.has(norm(x.name))).map(x => x.name).join(', ')) || '없음') + '</div>' +
-        '<div class="tbl" style="max-height:360px;overflow:auto"><table class="pv" style="font-size:13px"><tr><th>순</th><th>지역</th><th>이름</th><th>학습서비스 일지</th><th>학생</th><th>수업</th><th>부재</th></tr>' +
-        list.map((x, i) => { const ok = jNames.has(norm(x.name)), f = info(x.name); return '<tr><td>' + (i + 1) + '</td><td>' + esc(x.region) + '</td><td>' + esc(x.name) + '</td>' + (ok ? '<td style="color:#2e7d32;font-weight:700"' + (f && f.file ? ' title="' + esc(f.file) + '"' : '') + '>제출</td>' : '<td style="color:#c62828;font-weight:700;background:#fdeaea">미제출</td>') + '<td>' + (f ? f.st + '명' : '') + '</td><td>' + (f ? f.c + '회' : '') + '</td><td' + (f && f.a ? ' style="color:#c62828;font-weight:700"' : '') + '>' + (f && f.a ? f.a + '회' : '') + '</td></tr>'; }).join('') + '</table></div>' +
-        (extra.length ? '<div class="small" style="margin-top:6px;color:#b26a00">명단에 없는 제출자: ' + esc(extra.join(', ')) + ' (일지의 학습코치명 표기를 확인해 주세요)</div>' : '') +
+        '<div class="tbl" style="max-height:360px;overflow:auto"><table class="pv" style="font-size:13px"><tr><th>순</th><th>지역</th><th>이름</th><th>학습서비스 일지</th><th>학생</th><th>수업</th><th>부재</th><th></th></tr>' +
+        list.map((x, i) => { const ok = jNames.has(norm(x.name)), f = info(x.name); return '<tr><td>' + (i + 1) + '</td><td>' + esc(x.region) + '</td><td>' + esc(x.name) + '</td>' + (ok ? '<td style="color:#2e7d32;font-weight:700"' + (f && f.file ? ' title="' + esc(f.file) + '"' : '') + '>제출</td>' : '<td style="color:#c62828;font-weight:700;background:#fdeaea">미제출</td>') + '<td>' + (f ? f.st + '명' : '') + '</td><td>' + (f ? f.c + '회' : '') + '</td><td' + (f && f.a ? ' style="color:#c62828;font-weight:700"' : '') + '>' + (f && f.a ? f.a + '회' : '') + '</td>' + RDEL(x.name) + '</tr>'; }).join('') + '</table></div>' +
+        (extra.length ? '<div class="small" style="margin-top:6px;color:#b26a00">명단에 없는 제출자: ' + extra.map(RADD).join(' ') + ' (일지의 학습코치명 표기를 확인하고, 맞으면 눌러서 명단에 추가)</div>' : '') +
         '<div class="row" style="margin-top:8px"><button class="btn ghost" type="button" id="rosterClear" style="font-size:12px;padding:4px 10px">명단 지우기</button></div>';
       $('rosterClear').onclick = () => { ROSTER = []; try { localStorage.removeItem('merge.roster'); } catch (e) {} render(); };
       return;
@@ -469,9 +493,9 @@ window.JOURNAL_ONLY = true;
     const cell = ok => ok ? '<td style="color:#2e7d32;font-weight:700">제출</td>' : '<td style="color:#c62828;font-weight:700;background:#fdeaea">미제출</td>';
     box.innerHTML = '<div class="stats" style="margin:0 0 8px"><div class="ok"><div class="k">코칭일자 제출</div><div class="v">' + cS + '</div></div><div class="warn"><div class="k">코칭일자 미제출</div><div class="v">' + (list.length - cS) + '</div></div><div class="ok"><div class="k">일지 제출</div><div class="v">' + cJ + '</div></div><div class="warn"><div class="k">일지 미제출</div><div class="v">' + (list.length - cJ) + '</div></div></div>' +
       '<div class="small" style="margin:0 0 6px"><b style="color:#c62828">코칭일자 미제출:</b> ' + (esc(list.filter(x => !subNames.has(norm(x.name))).map(x => x.name).join(', ')) || '없음') + '</div>' +
-      '<div class="tbl" style="max-height:340px;overflow:auto"><table class="pv" style="font-size:13px"><tr><th>순</th><th>지역</th><th>이름</th><th>코칭일자</th><th>학습서비스 일지</th></tr>' +
-      list.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.region) + '</td><td>' + esc(x.name) + '</td>' + cell(subNames.has(norm(x.name))) + cell(jNames.has(norm(x.name))) + '</tr>').join('') + '</table></div>' +
-      (extra.length ? '<div class="small" style="margin-top:6px;color:#b26a00">명단에 없는 제출자: ' + esc(extra.join(', ')) + ' (이름 표기가 다르면 확인해 주세요)</div>' : '') +
+      '<div class="tbl" style="max-height:340px;overflow:auto"><table class="pv" style="font-size:13px"><tr><th>순</th><th>지역</th><th>이름</th><th>코칭일자</th><th>학습서비스 일지</th><th></th></tr>' +
+      list.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.region) + '</td><td>' + esc(x.name) + '</td>' + cell(subNames.has(norm(x.name))) + cell(jNames.has(norm(x.name))) + RDEL(x.name) + '</tr>').join('') + '</table></div>' +
+      (extra.length ? '<div class="small" style="margin-top:6px;color:#b26a00">명단에 없는 제출자: ' + extra.map(RADD).join(' ') + ' (이름 표기를 확인하고, 맞으면 눌러서 명단에 추가)</div>' : '') +
       '<div class="row" style="margin-top:8px"><button class="btn ghost" type="button" id="rosterClear" style="font-size:12px;padding:4px 10px">명단 지우기</button></div>';
     $('rosterClear').onclick = () => { ROSTER = []; try { localStorage.removeItem('merge.roster'); } catch (e) {} render(); };
   }
@@ -1201,36 +1225,42 @@ window.JOURNAL_ONLY = true;
     if (!p) return '';
     const isFile = p.src === undefined || p.src === 'wallafile' || p.src === 'journal';
     const fromFile = isFile && !p.manualMeet && p.meet.length && p.meetAttend !== true;
-    if (isFile && !fromFile) return p.meetAttend === true ? '<span style="color:#2e7d32;font-weight:700">참석</span>' : '<span class="small" style="color:#b26a00">미확인</span>';
+    if (isFile && !fromFile) return p.meetAttend === true ? '<span style="color:#2e7d32;font-weight:700">참석</span>' : p.meetAttend === false ? '<span style="color:#c62828;font-weight:700">불참</span>' : '<span class="small" style="color:#b26a00">미확인</span>';
     if (fromFile) return '<span class="small">파일에 기록</span>';
     const dm = meetDate();
     if (p.meetAttend === true && p.meetMonth && dm && !meetMonthOk(p, dm)) return '<span class="small" style="color:#b26a00">' + p.meetMonth + '월 참석<br>(이달 아님)</span>';
     return p.meetAttend === true || p.meet.length ? '<span style="color:#2e7d32;font-weight:700">' + (p.meetMonth ? p.meetMonth + '월 ' : '') + '참석</span>' : p.meetAttend === false ? '<span style="color:#c62828;font-weight:700">불참</span>' : '<span class="small">-</span>';
   }
-  const PRE_MEET = new Set(); // 일지 전용: 명단에서 참석으로 누른 이름 (일지를 나중에 올려도 적용)
+  const MEET_ABSENT = new Set(); // 일지 전용: 사례회의 '불참'으로 누른 이름. 나머지는 모두 참석으로 본다
   function applyPreMeet() {
-    const d = meetDate(); if (!d) return;
-    files.forEach(p => { if (PRE_MEET.has(norm(p.name)) && p.meetAttend !== true) { p.manualMeet = true; p.meetAttend = true; p.meet = [d]; } });
+    if (!window.JOURNAL_ONLY) return;
+    const d = meetDate();
+    files.forEach(p => {
+      if (p.src !== 'journal') return;
+      p.manualMeet = true;
+      if (!d) { p.meetAttend = null; p.meet = []; return; }
+      const att = !MEET_ABSENT.has(norm(p.name));
+      p.meetAttend = att; p.meet = att ? [d] : [];
+    });
   }
   function renderMeetChips(blocks) {
     const box = $('meetChips');
-    if (window.JOURNAL_ONLY && ROSTER.length) {
-      // 명단 전체를 버튼으로: 일지를 아직 안 낸 사람도 미리 눌러 둘 수 있다
+    if (window.JOURNAL_ONLY) {
+      // 기본은 모두 참석, 불참한 사람만 누른다 (명단이 있으면 명단 전체, 없으면 일지를 낸 사람)
       const d = meetDate();
       const rk = r => /청도/.test(r) ? 1 : /경산/.test(r) ? 0 : 2;
       const names = ROSTER.slice().sort((a, b) => rk(a.region) - rk(b.region) || a.name.localeCompare(b.name, 'ko')).map(x => x.name);
       files.forEach(p => { if (!names.some(n => norm(n) === norm(p.name))) names.push(p.name); });
       const subOf = n => Array.from(files.values()).find(q => norm(q.name) === norm(n));
-      const on = n => { const p = subOf(n); return p ? p.meetAttend === true : PRE_MEET.has(norm(n)); };
-      $('meetHint').innerHTML = d ? '사례회의 날짜 <b>' + md(d) + '</b> · 코칭단 명단 전체입니다. 참석한 사람 이름을 눌러 초록으로 바꾸면 교통비에 바로 들어갑니다. 흐린 이름은 아직 일지를 안 낸 사람(일지를 올리면 그대로 반영).' : '<b style="color:#c62828">먼저 1번 "이달 사례회의 날짜"를 골라 주세요.</b> 그다음 참석한 사람 이름을 누르면 교통비에 들어갑니다.';
-      box.innerHTML = names.map(n => { const o = on(n), has = !!subOf(n); return '<button type="button" class="btn" data-meet="' + esc(n) + '" style="padding:7px 12px;font-size:14px;font-weight:700;' + (o ? 'background:#2e7d32;color:#fff;border-color:#2e7d32' : 'background:#fff;color:#1d2a24') + (has ? '' : ';opacity:.6;border-style:dashed') + '">' + (o ? '✓ ' : '') + esc(n) + '</button>'; }).join('') +
-        '<span class="small" style="align-self:center;margin-left:4px">참석 ' + names.filter(on).length + ' / ' + names.length + '명</span>';
+      const absent = n => MEET_ABSENT.has(norm(n));
+      $('meetHint').innerHTML = d ? '사례회의 날짜 <b>' + md(d) + '</b> · 모두 <b style="color:#2e7d32">참석</b>으로 계산해요. <b style="color:#c62828">불참한 사람만</b> 이름을 눌러 빨간색으로 바꿔 주세요. 흐린 이름은 아직 일지를 안 낸 사람이에요(미리 눌러 두면 일지를 올릴 때 그대로 적용).' : '<b style="color:#c62828">먼저 1번 "이달 사례회의 날짜"를 골라 주세요.</b> 날짜를 고르면 모두 참석으로 계산되고, 불참한 사람만 누르면 됩니다.';
+      if (!names.length) { box.innerHTML = '<span class="small">일지를 올리거나 코칭단 명단을 올리면 이름이 나와요.</span>'; return; }
+      box.innerHTML = names.map(n => { const ab = absent(n), has = !!subOf(n); return '<button type="button" class="btn" data-meet="' + esc(n) + '" title="' + (ab ? '불참 → 누르면 참석' : '참석 → 누르면 불참') + '" style="padding:7px 12px;font-size:14px;font-weight:700;' + (!d ? 'background:#fff;color:#1d2a24' : ab ? 'background:#c62828;color:#fff;border-color:#c62828' : 'background:#e8f5ec;color:#1f6b3a;border-color:#9fd0ae') + (has ? '' : ';opacity:.6;border-style:dashed') + '">' + (d ? (ab ? '✕ ' : '✓ ') : '') + esc(n) + (ab ? ' 불참' : '') + '</button>'; }).join('') +
+        '<span class="small" style="align-self:center;margin-left:4px">' + (d ? '참석 ' + names.filter(n => !absent(n)).length + ' · <b style="color:#c62828">불참 ' + names.filter(absent).length + '</b> / ' + names.length + '명' : names.length + '명') + '</span>';
       box.querySelectorAll('button[data-meet]').forEach(btn => btn.addEventListener('click', () => {
-        const dd = meetDate(); if (!dd) { $('meetDate').focus(); $('meetDate').scrollIntoView({ block: 'center' }); return; }
-        const n = btn.dataset.meet, k = norm(n), p = subOf(n);
-        const nowOn = !on(n);
-        if (nowOn) PRE_MEET.add(k); else PRE_MEET.delete(k);
-        if (p) { p.manualMeet = true; if (nowOn) { p.meetAttend = true; p.meet = [dd]; } else { p.meetAttend = null; p.meet = []; } }
+        if (!meetDate()) { $('meetDate').focus(); $('meetDate').scrollIntoView({ block: 'center' }); return; }
+        const k = norm(btn.dataset.meet);
+        if (MEET_ABSENT.has(k)) MEET_ABSENT.delete(k); else MEET_ABSENT.add(k);
         render();
       }));
       return;

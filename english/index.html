@@ -672,17 +672,21 @@ let lastErr='';
 const SAY={close:'cloze'};
 const LN={a:'ay',b:'bee',c:'see',d:'dee',e:'ee',f:'eff',g:'gee',h:'aitch',i:'eye',j:'jay',k:'kay',l:'ell',m:'em',n:'en',o:'oh',p:'pee',q:'cue',r:'are',s:'ess',t:'tee',u:'you',v:'vee',w:'double you',x:'ex',y:'why',z:'zee'};
 const isL=x=>/^[A-Za-z]$/.test(x);
+function letterMode(){try{const u=G[S.g].units[S.u];return(VIEW==='unit'||VIEW==='game')&&u.w.every(w=>isL(w[0]))}catch(e){return false}}
 function norm(t){
   t=String(t).trim();
   if(SAY[t])return SAY[t]+'.';
   if(t.includes('→')){const a=t.split('→').map(x=>x.trim());return(/[-+]/.test(a[0])?'':a[0]+', ')+a[1]+'.'}
   let k=t.split(/\s+/);
-  if(k.length===3&&k[1]==='-')return(isL(k[0])?LN[k[0].toLowerCase()]+', ':'')+k[2]+'.';
+  if(k.length===3&&k[1]==='-')return(isL(k[0])?k[0].toUpperCase()+', ':'')+k[2]+'.';
   if(k.every(isL)){
+    /* 낱글자는 대문자로 넘겨야 글자 이름으로 읽는다. 사이트 워드의 a, I는 낱말이므로 그대로 둔다 */
+    if(k.length===1&&k[0]!==k[0].toUpperCase()&&!letterMode())return t+'.';
+    if(k.length===1&&k[0]==='I'&&!letterMode())return 'I.';
     k=k.filter((x,i)=>!(i&&k[i-1]!==x&&k[i-1].toLowerCase()===x.toLowerCase()));
-    return k.map(x=>LN[x.toLowerCase()]).join(', ')+'.';
+    return k.map(x=>x.toUpperCase()).join(', ')+'.';
   }
-  t=t.replace(/^([A-Z]) is for /,(m,c)=>LN[c.toLowerCase()]+' is for ').replace(/\s{2,}/g,', ');
+  t=t.replace(/\s{2,}/g,', ');
   return /[.?!]$/.test(t)?t:t+'.';
 }
 function sayList(list){

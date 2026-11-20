@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elementary English Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 레이아웃: 왼쪽 정렬 880px 한 단. 학년 탭 → 단원 카드 → 개념 카드 + 게임.
+     영어 낱말은 4선 공책 줄 위에 놓는다. 한 가지(밝은) 테마만 쓴다. */
+  color-scheme: light;
+  --paper:#f2f6fd;
+  --card:#ffffff;
+  --ink:#1b2850;
+  --ink-soft:#56628a;
+  --line:#cfd9ee;
+  --sun:#ffc531;
+  --good:#0d8a5c;
+  --bad:#d63a40;
+  --gc:#e2532b;          /* 학년 색: 스크립트가 학년마다 바꾼다 */
+  --gc-soft:#ffe9e1;
+  --f-display:'Jua','Noto Sans KR','Malgun Gothic',sans-serif;
+  --f-body:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+  --f-en:'Andika','Comic Sans MS','Trebuchet MS',var(--f-body);
+}
+:root[data-g="1"]{--gc:#0a7c93;--gc-soft:#d9f1f6}
+:root[data-g="2"]{--gc:#b23a7f;--gc-soft:#fbe3f1}
+:root[data-g="4"]{--gc:#0d8a5c;--gc-soft:#dcf5ea}
+:root[data-g="5"]{--gc:#2b6be6;--gc-soft:#e0ebff}
+:root[data-g="6"]{--gc:#7a4be0;--gc-soft:#ece4ff}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.6}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.wrap{max-width:880px;margin:0 auto;padding:20px 16px 56px}
+.en{font-family:var(--f-en)}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+
+/* 머리 */
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:20px}
+.top h1{font-size:34px;line-height:1.1}
+.top h1{font-family:var(--f-en);font-weight:700}
+.top h1 small{display:block;font-family:var(--f-body);font-weight:500;font-size:15px;color:var(--ink-soft);letter-spacing:.04em;margin-bottom:4px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{font-family:var(--f-display);font-size:17px;padding:6px 14px;text-decoration:none;color:inherit;border-radius:999px;border:2px solid var(--ink);background:var(--card)}
+.tab[aria-current="page"]{background:var(--gc);border-color:var(--gc);color:#fff}
+
+.snd{display:flex;gap:8px;flex-wrap:wrap;flex-basis:100%}
+.snd button{font-size:14px;font-weight:700;padding:4px 14px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink-soft)}
+.snd select{font:inherit;font-size:14px;font-weight:700;padding:4px 8px;border-radius:999px;border:2px solid var(--ink);background:var(--card);color:var(--ink)}
+.snd .vl{font-size:14px;font-weight:700;align-self:center;color:var(--ink-soft)}
+.snd #sndMsg{font-size:13px;color:var(--ink-soft);align-self:center}
+.snd button[aria-pressed="true"]{border-color:var(--ink);background:var(--sun);color:var(--ink)}
+/* 과정 화면 */
+.cont{display:grid;gap:2px;text-align:left;width:100%;padding:16px 20px;margin:0 0 22px;border-radius:18px;border:2px solid var(--ink);border-bottom-width:6px;background:var(--sun)}
+.cont span{font-size:14px;font-weight:700}
+.cont b{font-family:var(--f-display);font-weight:400;font-size:23px;line-height:1.3}
+.cont.fin{font-family:var(--f-display);font-size:22px}
+.path{list-style:none;margin:0 0 24px;padding:0;display:grid;gap:10px}
+.stage{display:grid;grid-template-columns:auto 1fr auto;gap:2px 14px;align-items:center;padding:14px 16px;background:var(--card);border:2px solid var(--line);border-left:8px solid var(--gc);border-radius:14px;text-decoration:none;color:inherit}
+.stage:hover{border-color:var(--gc)}
+.stage .no{grid-row:span 2;font-family:var(--f-display);font-size:22px;width:44px;height:44px;border-radius:50%;background:var(--gc);color:#fff;display:grid;place-items:center}
+.stage .sn{font-family:var(--f-display);font-size:21px}
+.stage .sd{grid-column:2/4;color:var(--ink-soft);font-size:15px}
+.stage .bar{grid-column:1/4;height:8px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:8px}
+.stage .bar i{display:block;height:100%;background:var(--gc)}
+.stage .st{grid-column:1/4;font-size:13px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.pill{font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;background:var(--paper);color:var(--ink-soft);border:1px solid var(--line)}
+.pill.on{background:var(--gc-soft);color:var(--gc);border-color:var(--gc)}
+.pill.ok{background:var(--good);color:#fff;border-color:var(--good)}
+.unit.now,.gbtn.now{border-color:var(--ink);box-shadow:0 0 0 3px var(--sun)}
+.unit.ok .no{background:var(--good)}
+.unit.ok,.gbtn.ok{border-color:var(--good)}
+.gbtn .num{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--gc);color:#fff;font-size:16px;margin-right:8px}
+.gbtn.ok .num{background:var(--good)}
+.gbtn em{font-style:normal;font-size:13px;font-weight:700;letter-spacing:0;color:var(--ink-soft);margin-left:6px}
+a.back{display:inline-block;text-decoration:none}
+.pic{width:1.7em;height:1.28em;vertical-align:middle}
+.sent .spic{font-style:normal;font-size:44px;line-height:1;flex:none}
+.sent .spic .pic{width:1.9em;height:1.43em}
+.q .big .pic{width:3.4em;height:2.55em}
+.word>i .pic{width:2.6em;height:1.95em}
+.sents.gal{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.sents.gal .sent{flex-direction:column;align-items:flex-start;padding:14px;gap:4px}
+.sents.gal .spic{font-size:60px;align-self:center}
+.sents.gal .spic .pic{width:2.8em;height:2.1em}
+.mc .face .pic{width:2.4em;height:1.8em}
+.ovc .em{width:100%}
+.ovc .em .pic{width:min(100%,400px);height:auto}
+.rot{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;width:min(100%,400px)}
+.rot input{flex:1;accent-color:var(--gc)}
+.choice .pic{width:2.4em;height:1.8em;display:block;margin:0 auto 4px}
+.form{display:grid;gap:6px;max-width:520px}
+.form label{font-weight:700;font-size:14px;margin-top:8px}
+.form input,.form textarea{font:inherit;color:var(--ink);background:var(--paper);border:2px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+.form textarea{font-family:var(--f-en),var(--f-body);line-height:1.6;resize:vertical}
+.form input:focus,.form textarea:focus{outline:3px solid var(--ink);outline-offset:1px}
+.dels{margin:12px 0 0;display:flex;flex-wrap:wrap;gap:6px 14px}
+.dels .skip{margin:0;font-size:14px}
+/* 학년 화면 */
+.lead{margin:6px 0 18px;color:var(--ink-soft);max-width:60ch}
+.gh{font-size:26px}
+.units{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.unit{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;text-align:left;padding:16px;background:var(--card);border:2px solid var(--line);border-radius:16px;border-bottom-width:5px}
+.unit:hover{border-color:var(--gc)}
+.unit .no{grid-row:span 3;font-family:var(--f-display);font-size:22px;width:44px;height:44px;border-radius:50%;background:var(--gc);color:#fff;display:grid;place-items:center}
+.unit .ut{font-family:var(--f-display);font-size:20px;line-height:1.3}
+.unit .uk{color:var(--ink-soft);font-size:15px;line-height:1.4}
+.unit .st{font-size:14px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.star{color:var(--sun)} .star.off{color:var(--line)}
+
+/* 단원 화면 */
+.back{background:none;border:0;padding:6px 0;color:var(--ink-soft);font-weight:500}
+.back:hover{color:var(--ink)}
+.concept{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:20px;margin:10px 0 22px}
+.concept h2{font-size:28px;margin-bottom:12px}
+.label{display:inline-block;font-size:13px;font-weight:700;color:var(--gc);background:var(--gc-soft);padding:2px 10px;border-radius:999px;margin-bottom:8px}
+.keys{display:grid;gap:8px;margin-bottom:14px}
+.key{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+/* 영어 4선 공책: 위에서 셋째 줄(기준선)만 붉게 */
+.lined{background-image:
+  linear-gradient(to bottom,transparent 17%,var(--line) 17%,var(--line) calc(17% + 1px),transparent calc(17% + 1px),
+  transparent 39%,var(--line) 39%,var(--line) calc(39% + 1px),transparent calc(39% + 1px),
+  transparent 63%,#f0a39a 63%,#f0a39a calc(63% + 2px),transparent calc(63% + 2px),
+  transparent 85%,var(--line) 85%,var(--line) calc(85% + 1px),transparent calc(85% + 1px))}
+.key .lined{font-family:var(--f-en);font-size:24px;font-weight:700;padding:6px 14px;flex:1 1 260px;border-radius:8px;overflow-wrap:anywhere}
+.say{flex:none;border:2px solid var(--ink);background:var(--sun);border-radius:999px;padding:4px 14px;font-size:14px;font-weight:700}
+.tip{margin:0 0 16px;max-width:62ch}
+.words{display:flex;flex-wrap:wrap;gap:8px}
+.word{display:flex;align-items:center;gap:8px;border:2px solid var(--line);background:var(--paper);border-radius:12px;padding:6px 12px;text-align:left}
+.word:hover{border-color:var(--gc)}
+.word b{font-family:var(--f-en);font-size:18px}
+.word span{font-size:14px;color:var(--ink-soft)}
+.word i{font-style:normal;font-size:20px}
+.lrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0 8px}
+.lrow .label{margin:0}
+.concept .tip+.lrow{margin-top:0}
+.sents{display:grid;gap:8px}
+.sent{flex-wrap:wrap;gap:2px 12px}
+.choices.long{grid-template-columns:1fr}
+.choices.long .choice{font-size:20px;padding:12px}
+.fb .note{font-weight:500;color:var(--ink-soft)}
+.fb .donebox{justify-content:center;margin:0 0 12px}
+.fb .donebox .lined{flex:0 1 auto;font-size:28px}
+.ov{position:fixed;inset:0;background:rgba(27,40,80,.5);display:grid;place-items:center;padding:16px;z-index:10}
+.ovc{background:var(--card);border-radius:20px;padding:28px 22px;max-width:600px;width:100%;text-align:center;display:grid;gap:14px;justify-items:center;border:3px solid var(--gc)}
+.ovc .em{font-size:64px;line-height:1.1;font-weight:700}
+.ovc .lined{font-family:var(--f-en);font-weight:700;font-size:clamp(28px,7vw,54px);line-height:1.5;padding:8px 20px;border-radius:10px;overflow-wrap:anywhere;width:100%}
+.ovc p{margin:0;font-size:20px;color:var(--ink-soft)}
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.gbtn{text-align:left;padding:16px;border-radius:16px;border:2px solid var(--gc);border-bottom-width:5px;background:var(--card);display:grid;gap:2px}
+.gbtn:hover{background:var(--gc-soft)}
+.gbtn b{font-family:var(--f-display);font-weight:400;font-size:21px}
+.gbtn span{font-size:14px;color:var(--ink-soft)}
+.gbtn .st{font-size:18px;letter-spacing:2px}
+.sub{font-size:22px;margin:0 0 10px}
+
+/* 게임 화면 */
+.gbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.gbar .gt{font-family:var(--f-display);font-size:20px}
+.gbar .gp{font-variant-numeric:tabular-nums;font-weight:700;color:var(--gc)}
+.prog{height:10px;background:var(--line);border-radius:999px;overflow:hidden;margin:8px 0 20px}
+.prog i{display:block;height:100%;background:var(--gc);border-radius:999px;transition:width .3s}
+.q{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:22px 18px;text-align:center;margin-bottom:16px}
+.q .big{font-size:64px;line-height:1.15;font-family:var(--f-en);font-weight:700}
+.q .qt{font-size:22px;font-weight:500;overflow-wrap:anywhere}
+.q .qt.en{font-size:26px;font-weight:700}
+.q .hint{font-size:15px;color:var(--ink-soft);margin-top:4px}
+.choices{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.choice{padding:16px 10px;font-size:24px;font-weight:700;background:var(--card);border:2px solid var(--ink);border-bottom-width:5px;border-radius:14px;overflow-wrap:anywhere}
+.choice:hover:not(:disabled){background:var(--gc-soft)}
+.choice.ok{background:var(--good);border-color:var(--good);color:#fff}
+.choice.no{background:#fde8e8;border-color:var(--bad);color:var(--bad);text-decoration:line-through}
+.choice:disabled{cursor:default}
+.fb{min-height:96px;margin-top:16px;text-align:center}
+.fb p{margin:0 0 10px;font-weight:700;font-size:18px}
+.fb .good{color:var(--good)} .fb .bad{color:var(--bad)}
+.next,.btn{font-family:var(--f-display);font-size:20px;padding:10px 26px;border-radius:999px;border:2px solid var(--ink);background:var(--sun)}
+.btn.plain{background:var(--card)}
+.answer{min-height:74px;border:2px dashed var(--gc);border-radius:14px;padding:12px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;background-color:var(--card);margin-bottom:14px}
+.answer.done{border-style:solid;border-color:var(--good)}
+.pool{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:58px}
+.tile{font-family:var(--f-en);font-size:24px;font-weight:700;padding:8px 16px;min-width:48px;border-radius:12px;border:2px solid var(--ink);border-bottom-width:5px;background:var(--card)}
+.answer .tile{background:var(--gc-soft)}
+.answer.done .tile{background:var(--good);border-color:var(--good);color:#fff}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.mc{aspect-ratio:1/1;min-height:84px;border-radius:14px;border:2px solid var(--ink);border-bottom-width:5px;background:var(--gc);color:#fff;font-family:var(--f-display);font-size:30px;padding:4px;display:grid;place-items:center;overflow:hidden}
+.mc .face{display:none;text-align:center;line-height:1.25;overflow-wrap:anywhere}
+.mc .face b{font-family:var(--f-en);font-size:clamp(15px,3.6vw,24px)}
+.mc .face i{font-style:normal;display:block;font-size:clamp(20px,5vw,32px);font-family:var(--f-en)}
+.mc .face span{font-family:var(--f-body);font-size:clamp(12px,2.6vw,15px);font-weight:500}
+.mc.open,.mc.done{background:var(--card);color:var(--ink)}
+.mc.open .face,.mc.done .face{display:block}
+.mc.open .qm,.mc.done .qm{display:none}
+.mc.done{border-color:var(--good);background:#e4f6ee}
+.pad{position:relative;background:#fff;border:2px solid var(--line);border-radius:18px;overflow:hidden;aspect-ratio:2/1;margin-bottom:14px}
+.pad canvas{position:absolute;inset:0;width:100%;height:100%}
+#dr{touch-action:none;cursor:crosshair}
+.q .say{font-size:20px;padding:10px 26px;margin-top:12px}
+.skip{background:none;border:0;text-decoration:underline;color:var(--ink-soft);margin-left:10px}
+.result{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:32px 18px;text-align:center}
+.result .st{font-size:56px;letter-spacing:6px;line-height:1.2}
+.result h2{font-size:28px;margin:6px 0}
+.result p{margin:0 0 20px;color:var(--ink-soft)}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+footer{margin-top:36px;font-size:13px;color:var(--ink-soft);max-width:70ch}
+@media (max-width:420px){.top h1{font-size:28px}.q .big{font-size:52px}.choice{font-size:20px}.tile{font-size:20px;padding:6px 12px}.mgrid{grid-template-columns:repeat(3,1fr)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1><small>초등 영어 놀이터</small>Elementary English Playground</h1>
+    <nav class="tabs" id="tabs" aria-label="학년 고르기"></nav>
+    <div class="snd" id="snd" aria-label="소리 설정"></div>
+  </header>
+  <main id="app"></main>
+  <footer>알파벳, 파닉스, 사이트 워드는 영어를 처음 읽고 쓰는 데 필요한 기초이고, 3~6학년 표현은 2022 개정 영어과 교육과정의 학년군별 의사소통 기능과 기본 어휘를 바탕으로 엮었습니다. 교과서는 출판사마다 단원 순서가 다릅니다. 어휘 탭의 낱말은 초등 수준의 기초 낱말을 주제별로 고른 것이며, 교과서 낱말은 내 낱말 탭에 직접 넣어 씁니다. 따라 쓰기는 글자 모양만 확인하고 획순은 확인하지 않습니다. 별과 진행 기록은 이 기기에만 저장됩니다.</footer>
+</div>
+<script>
+/* 단원 자료: t 제목, k 핵심 표현, tip 개념 설명, w [영어, 뜻, 그림], s [문장, 뜻], f [문제, 정답, [오답], 도움말] */
+const G={
+1:{lead:'알파벳 26글자의 이름과 모양을 익히고 네 줄 공책에 따라 써요.',units:[
+{t:'알파벳 A~M 쓰기',letters:'ABCDEFGHIJKLM',k:['A a  B b  C c  D d','E e  F f  G g  H h','I i  J j  K k  L l  M m'],tip:'알파벳은 네 줄 공책에 써요. 대문자는 첫째 줄부터 붉은 셋째 줄까지 닿게 써요. 소문자 a, c, e는 둘째 줄과 셋째 줄 사이에 쓰고, b, d, h, k, l은 첫째 줄까지 올라가요. g와 j는 넷째 줄까지 내려가요.',
+ s:[['A B C D E F G','대문자를 순서대로 놓아요 (A부터)'],['H I J K L M','대문자를 순서대로 놓아요 (H부터)'],['a b c d e f g','소문자를 순서대로 놓아요 (a부터)'],['h i j k l m','소문자를 순서대로 놓아요 (h부터)']],
+ f:[['대문자 B의 소문자는 ___','b',['d','p','q']],['소문자 g의 대문자는 ___','G',['C','Q','J']],['A B C ___ E','D',['F','G','B']],['i j k ___ m','l',['n','h','t']],['넷째 줄까지 내려가는 소문자는 ___','g',['a','d','h']]]},
+{t:'알파벳 N~Z 쓰기',letters:'NOPQRSTUVWXYZ',k:['N n  O o  P p  Q q','R r  S s  T t  U u','V v  W w  X x  Y y  Z z'],tip:'대문자와 소문자의 모양이 닮은 글자(O o, S s, V v, W w, X x, Z z)와 다른 글자(N n, Q q, R r)를 구별해 보세요. 소문자 p, q, y는 넷째 줄까지 내려가요.',
+ s:[['N O P Q R S T','대문자를 순서대로 놓아요 (N부터)'],['U V W X Y Z','대문자를 순서대로 놓아요 (U부터)'],['n o p q r s t','소문자를 순서대로 놓아요 (n부터)'],['u v w x y z','소문자를 순서대로 놓아요 (u부터)']],
+ f:[['대문자 Q의 소문자는 ___','q',['p','g','d']],['소문자 r의 대문자는 ___','R',['P','B','K']],['N O P ___ R','Q',['S','M','T']],['w x y ___','z',['v','s','u']],['넷째 줄까지 내려가는 소문자는 ___','p',['n','o','t']]]},
+{t:'헷갈리기 쉬운 글자',letters:'BDPQMNUVIL',k:['b d  p q','m n  u v','I l  i j'],tip:'b와 d, p와 q는 좌우가 뒤집힌 모양이에요. 막대를 먼저 쓰는지 동그라미를 먼저 쓰는지 살펴보세요. 대문자 I와 소문자 l도 닮았어요. 소문자 i에는 점이 있어요.',
+ s:[['B b D d','대문자 다음에 짝이 되는 소문자를 놓아요 (B, D)'],['P p Q q','대문자 다음에 짝이 되는 소문자를 놓아요 (P, Q)'],['M m N n','대문자 다음에 짝이 되는 소문자를 놓아요 (M, N)'],['U u V v','대문자 다음에 짝이 되는 소문자를 놓아요 (U, V)']],
+ f:[['b를 좌우로 뒤집은 모양의 글자는 ___','d',['p','q','h']],['p를 좌우로 뒤집은 모양의 글자는 ___','q',['b','d','g']],['대문자 I의 소문자는 ___','i',['l','j','t']],['대문자 L의 소문자는 ___','l',['i','t','j']],['n을 위아래로 뒤집으면 닮은 글자는 ___','u',['m','v','w']]]}
+]},
+2:{lead:'글자와 소리의 관계를 차례대로 익혀 낱말을 읽고 써요.',units:[
+{t:'자음 첫소리 1 (b c d f g h j)',k:['b - bear','c - cat','d - dog'],tip:'글자에는 이름과 소리가 따로 있어요. b의 이름은 비, 소리는 bear의 첫소리예요. 낱말을 눌러 듣고, 첫소리를 따라 말해 보세요.',
+ w:[['bear','곰','🐻'],['bus','버스','🚌'],['cat','고양이','🐱'],['dog','개','🐶'],['duck','오리','🦆'],['fish','물고기','🐟'],['goat','염소','🐐'],['gift','선물','🎁'],['hat','모자','🎩'],['juice','주스','🧃']],
+ s:[['B is for bear.','bear는 b로 시작해요'],['C is for cat.','cat은 c로 시작해요'],['D is for dog.','dog는 d로 시작해요'],['H is for hat.','hat은 h로 시작해요']],
+ f:[['🐻 ___ear','b',['d','p','h']],['🐱 ___at','c',['g','d','j']],['🐶 ___og','d',['b','g','f']],['🐟 ___ish','f',['h','b','j']],['🐐 ___oat','g',['c','j','d']],['🎩 ___at','h',['f','b','g']],['🧃 ___uice','j',['g','d','c']]]},
+{t:'자음 첫소리 2 (k l m n p q r)',k:['k - king','l - lion','m - moon'],tip:'m과 n, p와 b처럼 소리가 닮은 글자는 입 모양을 살피며 들어 보세요. q는 거의 언제나 u와 함께 qu로 써요.',
+ w:[['king','왕','🤴'],['key','열쇠','🔑'],['lion','사자','🦁'],['moon','달','🌙'],['milk','우유','🥛'],['nose','코','👃'],['pig','돼지','🐷'],['pen','펜','🖊️'],['queen','여왕','👸'],['rain','비','🌧️']],
+ s:[['K is for king.','king은 k로 시작해요'],['L is for lion.','lion은 l로 시작해요'],['M is for moon.','moon은 m으로 시작해요'],['R is for rain.','rain은 r로 시작해요']],
+ f:[['🤴 ___ing','k',['r','p','n']],['🦁 ___ion','l',['r','n','m']],['🌙 ___oon','m',['n','l','p']],['👃 ___ose','n',['m','r','l']],['🐷 ___ig','p',['q','k','n']],['👸 ___ueen','q',['p','k','r']],['🌧️ ___ain','r',['l','n','m']]]},
+{t:'자음 첫소리 3 (s t v w x y z)',k:['s - sun','t - tiger','v - van'],tip:'x는 낱말의 끝에서 자주 만나요. box, fox, six처럼요. v는 윗니를 아랫입술에 살짝 대고 소리 내요.',
+ w:[['sun','해','☀️'],['sock','양말','🧦'],['tiger','호랑이','🐯'],['tent','텐트','⛺'],['van','승합차','🚐'],['web','거미줄','🕸️'],['watch','손목시계','⌚'],['fox','여우','🦊'],['yellow','노란색','🟡'],['zebra','얼룩말','🦓']],
+ s:[['S is for sun.','sun은 s로 시작해요'],['T is for tiger.','tiger는 t로 시작해요'],['V is for van.','van은 v로 시작해요'],['Z is for zebra.','zebra는 z로 시작해요']],
+ f:[['☀️ ___un','s',['z','t','v']],['🐯 ___iger','t',['s','y','w']],['🚐 ___an','v',['w','y','z']],['🕸️ ___eb','w',['v','y','t']],['🦊 fo___','x',['s','z','t']],['🟡 ___ellow','y',['w','v','s']],['🦓 ___ebra','z',['s','x','v']]]},
+{t:'짧은 모음 a, e, i',k:['c - a - t → cat','b - e - d → bed','p - i - g → pig'],tip:'모음 a, e, i, o, u는 낱말 가운데에서 짧은 소리를 내요. 자음, 모음, 자음 세 소리를 하나씩 말한 다음 이어서 읽어 보세요.',
+ w:[['cat','고양이','🐱'],['bag','가방','🎒'],['map','지도','🗺️'],['hat','모자','🎩'],['bed','침대','🛏️'],['hen','암탉','🐔'],['pen','펜','🖊️'],['ten','열','10'],['pig','돼지','🐷'],['six','여섯','6'],['lip','입술','👄'],['pin','핀','📌']],
+ s:[['A cat is in a bag.','고양이가 가방 안에 있어요.'],['The hen is red.','암탉은 빨간색이에요.'],['A pig is big.','돼지는 커요.'],['I have ten pens.','나는 펜이 열 자루 있어요.']],
+ f:[['🐱 c___t','a',['e','i','o']],['🛏️ b___d','e',['a','i','u']],['🐷 p___g','i',['a','e','o']],['🖊️ p___n','e',['a','i','u']],['🗺️ m___p','a',['o','e','u']],['6 s___x','i',['a','e','o']]]},
+{t:'짧은 모음 o, u',k:['d - o - g → dog','s - u - n → sun'],tip:'o는 입을 동그랗게 벌려 짧게, u는 입을 조금만 벌려 짧게 소리 내요. hot과 hut, cop과 cup처럼 모음 하나로 낱말이 달라져요.',
+ w:[['dog','개','🐶'],['hot','더운, 뜨거운','🥵'],['box','상자','📦'],['fox','여우','🦊'],['mop','대걸레','🧹'],['pot','냄비','🍲'],['sun','해','☀️'],['bus','버스','🚌'],['cup','컵','☕'],['bug','벌레','🐛'],['nut','견과','🥜'],['run','달리다','🏃']],
+ s:[['The dog is hot.','개가 더워해요.'],['A fox is in a box.','여우가 상자 안에 있어요.'],['A bug is on the cup.','벌레가 컵 위에 있어요.'],['Run to the bus.','버스로 달려가요.']],
+ f:[['🐶 d___g','o',['a','u','i']],['☀️ s___n','u',['o','a','e']],['📦 b___x','o',['a','u','e']],['🚌 b___s','u',['o','a','i']],['🥜 n___t','u',['o','a','e']],['🍲 p___t','o',['a','u','e']]]},
+{t:'긴 모음과 끝의 e',k:['cap → cape','kit → kite','hop → hope'],tip:'낱말 끝에 e가 붙으면 앞의 모음이 자기 이름 소리를 내요. a는 에이, i는 아이, o는 오우, u는 유로 읽어요. 끝의 e는 소리가 나지 않아요.',
+ w:[['cake','케이크','🎂'],['game','게임, 놀이','🎮'],['name','이름','🏷️'],['bike','자전거','🚲'],['kite','연','🪁'],['five','다섯','5'],['nose','코','👃'],['home','집','🏠'],['rope','밧줄','🪢'],['cute','귀여운','🥰']],
+ s:[['I like the cake.','나는 그 케이크를 좋아해요.'],['I ride a bike.','나는 자전거를 타요.'],['I have five kites.','나는 연이 다섯 개 있어요.'],['The dog is cute.','그 개는 귀여워요.']],
+ f:[['kit + e = ___','kite',['kitt','kiet','kate']],['cap + e = ___','cape',['capp','caep','cope']],['🎂 c___ke','a',['i','o','u']],['🚲 b___ke','i',['a','o','u']],['👃 n___se','o',['a','i','u']],['낱말 끝의 e는 ___','소리가 나지 않아요',['에 소리가 나요','이 소리가 나요','두 번 읽어요']]]},
+{t:'두 글자가 내는 한 소리',k:['sh - ship','ch - chair','th - three'],tip:'두 글자가 만나 새로운 한 소리를 내기도 해요. sh, ch, th, wh, ph는 한 덩어리로 읽어요. ph는 f와 같은 소리예요.',
+ w:[['ship','배','🚢'],['shoe','신발','👟'],['fish','물고기','🐟'],['chair','의자','🪑'],['cheese','치즈','🧀'],['lunch','점심 식사','🍱'],['three','셋','3'],['bath','목욕','🛁'],['whale','고래','🐋'],['phone','전화기','📱']],
+ s:[['The fish is on the dish.','물고기가 접시 위에 있어요.'],['I sit on a chair.','나는 의자에 앉아요.'],['I have three shoes.','나는 신발이 세 짝 있어요.'],['The whale is big.','고래는 커요.']],
+ f:[['🚢 ___ip','sh',['ch','th','wh']],['🪑 ___air','ch',['sh','th','ph']],['3 ___ree','th',['sh','ch','wh']],['🐟 fi___','sh',['ch','th','ph']],['🐋 ___ale','wh',['sh','ch','th']],['📱 ___one','ph',['sh','th','wh']]]},
+{t:'이어지는 자음 소리',k:['f + r → frog','s + t → star','c + l → clock'],tip:'자음 두 개가 나란히 오면 두 소리를 모두 빠르게 이어서 말해요. frog는 f와 r 소리가 둘 다 들려요.',
+ w:[['frog','개구리','🐸'],['flag','깃발','🚩'],['tree','나무','🌳'],['star','별','⭐'],['snow','눈','❄️'],['spoon','숟가락','🥄'],['clock','시계','🕒'],['black','검은색','⚫'],['green','초록색','🟢'],['drum','북','🥁']],
+ s:[['The frog is green.','개구리는 초록색이에요.'],['I see a star.','나는 별을 봐요.'],['The clock is black.','시계는 검은색이에요.'],['I play the drum.','나는 북을 쳐요.']],
+ f:[['🐸 ___og','fr',['fl','tr','dr']],['🚩 ___ag','fl',['fr','bl','st']],['⭐ ___ar','st',['sp','sn','tr']],['🥁 ___um','dr',['tr','fr','cl']],['🕒 ___ock','cl',['bl','fl','st']],['🥄 ___oon','sp',['st','sn','fl']]]},
+{t:'모음 두 글자가 내는 소리',k:['ee - bee','ai - rain','oa - boat'],tip:'모음 두 글자가 나란히 오면 한 소리를 길게 내요. ee와 ea는 이, ai와 ay는 에이, oa는 오우, oo는 우 소리가 나요.',
+ w:[['bee','벌','🐝'],['feet','발','🦶'],['sea','바다','🌊'],['tea','차','🍵'],['rain','비','🌧️'],['train','기차','🚆'],['play','놀다','🛝'],['boat','배','⛵'],['soap','비누','🧼'],['moon','달','🌙'],['zoo','동물원','🦒']],
+ s:[['I see a bee.','나는 벌을 봐요.'],['The train is in the rain.','기차가 빗속에 있어요.'],['I play at the zoo.','나는 동물원에서 놀아요.'],['The boat is on the sea.','배가 바다 위에 있어요.']],
+ f:[['🐝 b___','ee',['ai','oa','oo']],['🌧️ r___n','ai',['ee','oa','oo']],['⛵ b___t','oa',['ai','ee','oo']],['🌙 m___n','oo',['ee','ai','oa']],['🍵 t___','ea',['oa','ai','oo']],['🛝 pl___','ay',['ee','oa','oo']]]},
+
+]},
+7:{lead:'문장마다 나오는 낱말을 보자마자 읽을 수 있게 통째로 익히고, 짧은 문장을 읽고 만들어요.',units:[
+{t:'사이트 워드 1 (I, you, he, she, this)',k:['I am Mina.','You are my friend.','This is my bag.'],tip:'I, you, is, the처럼 문장마다 나오는 낱말은 보자마자 읽을 수 있게 통째로 익혀요. I는 항상 대문자로 써요. I 뒤에는 am, you 뒤에는 are, he와 she 뒤에는 is를 써요.',
+ w:[['I','나는',''],['you','너는',''],['he','그는',''],['she','그녀는',''],['we','우리는',''],['it','그것은',''],['this','이것',''],['that','저것',''],['my','나의',''],['the','그 (정해진 것 앞에)','']],
+ s:[['I am Mina.','나는 미나야.'],['You are my friend.','너는 내 친구야.'],['He is tall.','그는 키가 커.'],['This is my bag.','이것은 내 가방이야.'],['It is a cat.','그것은 고양이야.'],['We are happy.','우리는 행복해.']],
+ f:[['I ___ happy.','am',['is','are','a']],['You ___ my friend.','are',['am','is','the']],['She ___ my sister.','is',['am','are','my']],['이것은: ___ is a dog.','This',['My','The','Am']],['나의 가방: ___ bag','my',['I','you','it']]]},
+{t:'사이트 워드 2 (a, and, in, on, go, see)',k:['I see a dog.','We go to school.','I have a pen and a book.'],tip:'a는 하나를 나타낼 때 낱말 앞에 붙여요. and는 두 가지를 이어 줘요. go, see, like, have는 I나 we 뒤에 그대로 써요.',
+ w:[['a','하나의',''],['and','그리고',''],['in','~ 안에',''],['on','~ 위에',''],['to','~로, ~에',''],['go','가다','🚶'],['see','보다','👀'],['like','좋아하다','💛'],['have','가지고 있다','🤲'],['can','할 수 있다','💪']],
+ s:[['I see a dog.','나는 개를 봐요.'],['I have a pen and a book.','나는 펜과 책이 있어요.'],['We go to school.','우리는 학교에 가요.'],['The cat is on the bed.','고양이가 침대 위에 있어요.'],['I can see the sun.','나는 해를 볼 수 있어요.']],
+ f:[['가지고 있어요: I ___ a cat.','have',['go','and','in']],['그리고: a pen ___ a book','and',['in','to','go']],['We go ___ school.','to',['a','and','see']],['안에: The milk is ___ the cup.','in',['and','go','can']],['볼 수 있어요: I ___ see the moon.','can',['a','to','on']]]},
+{t:'사이트 워드 3 (what, who, where, yes, no, not)',k:['What is this?','Who is he?','Where is my bag?'],tip:'물어보는 말은 문장 맨 앞에 와요. 무엇은 what, 누구는 who, 어디는 where예요. 아니라고 할 때는 is 뒤에 not을 써요.',
+ w:[['what','무엇','❓'],['who','누구','🧑'],['where','어디','📍'],['how','어떻게',''],['yes','응, 네','⭕'],['no','아니','❌'],['not','~이 아니다',''],['do','하다',''],['look','보다','👀'],['here','여기','👇']],
+ s:[['What is this?','이것은 무엇이니?'],['Who is he?','그는 누구니?'],['Where is my bag?','내 가방은 어디에 있니?'],['It is not a dog.','그것은 개가 아니야.'],['Look at this.','이것을 봐.'],['Yes, I do.','응, 그래.']],
+ f:[['___ is this? It is a pen.','What',['Who','Yes','Not']],['___ is she? She is my mom.','Who',['What','Where','How']],['___ is my cap? It is on the bed.','Where',['Who','What','Yes']],['고양이가 아니야: It is ___ a cat.','not',['no','yes','do']]]}
+]},
+3:{lead:'알파벳과 소리를 익히고, 짧은 낱말과 문장으로 인사하고 묻고 답해요.',units:[
+{t:'알파벳 대문자와 소문자',k:['A a  B b  C c','D d  E e  F f'],tip:'알파벳은 모두 26글자예요. 글자마다 큰 글자(대문자)와 작은 글자(소문자)가 있어요. b와 d, p와 q처럼 닮은 글자를 잘 살펴보세요.',
+ w:[['b','대문자 B의 소문자','B'],['d','대문자 D의 소문자','D'],['p','대문자 P의 소문자','P'],['q','대문자 Q의 소문자','Q'],['g','대문자 G의 소문자','G'],['h','대문자 H의 소문자','H'],['n','대문자 N의 소문자','N'],['r','대문자 R의 소문자','R'],['e','대문자 E의 소문자','E'],['a','대문자 A의 소문자','A']],
+ s:[['A B C D E','알파벳 순서대로 놓아요 (A부터)'],['F G H I J K','알파벳 순서대로 놓아요 (F부터)'],['L M N O P','알파벳 순서대로 놓아요 (L부터)'],['Q R S T U','알파벳 순서대로 놓아요 (Q부터)'],['V W X Y Z','알파벳 순서대로 놓아요 (V부터)']],
+ f:[['대문자 G의 소문자는 ___','g',['q','j','y']],['소문자 d의 대문자는 ___','D',['B','P','O']],['A B C ___ E','D',['F','G','B']],['x y ___','z',['s','w','v']]]},
+{t:'낱말의 첫소리',k:['b - ball','c - cat','s - sun'],tip:'낱말의 첫 글자를 보면 첫소리를 알 수 있어요. b는 ball의 첫소리, s는 sun의 첫소리예요. 낱말을 눌러 소리를 듣고 따라 말해 보세요.',
+ w:[['apple','사과','🍎'],['ball','공','⚽'],['cat','고양이','🐱'],['dog','개','🐶'],['egg','달걀','🥚'],['fish','물고기','🐟'],['hat','모자','🎩'],['lion','사자','🦁'],['milk','우유','🥛'],['sun','해','☀️']],
+ s:[['A is for apple.','apple은 a로 시작해요'],['C is for cat.','cat은 c로 시작해요'],['D is for dog.','dog는 d로 시작해요'],['S is for sun.','sun은 s로 시작해요']],
+ f:[['🐱 ___at','c',['b','d','s']],['🐶 ___og','d',['b','p','g']],['☀️ ___un','s',['c','f','h']],['🐟 ___ish','f',['v','p','t']],['🥛 ___ilk','m',['n','w','l']]]},
+{t:'인사하고 소개하기',k:["Hello, I'm Mina.",'Nice to meet you.'],tip:"만나면 Hello나 Hi로 인사해요. 내 이름을 말할 때는 I'm 뒤에 이름을 붙여요. 헤어질 때는 Goodbye나 Bye라고 해요.",
+ w:[['hello','안녕 (만날 때)','👋'],['goodbye','잘 가 (헤어질 때)','🙋'],['name','이름','🏷️'],['friend','친구','🧑‍🤝‍🧑'],['teacher','선생님','🧑‍🏫'],['morning','아침','🌅'],['night','밤','🌙'],['thank you','고마워','🙏'],['sorry','미안해','😥']],
+ s:[["Hello, I'm Mina.",'안녕, 나는 미나야.'],["What's your name?",'네 이름은 뭐니?'],['My name is Jinu.','내 이름은 진우야.'],['Nice to meet you.','만나서 반가워.'],['Good morning, teacher.','선생님, 좋은 아침이에요.']],
+ f:[["A: What's your name?  B: ___ name is Jinu.",'My',['I','You','Is'],'내 이름은 My name'],['Nice to ___ you.','meet',['name','hello','good']],['아침에 만나서 하는 인사: Good ___.','morning',['night','bye','name']],['헤어질 때 하는 인사: ___, Mina.','Goodbye',['Hello','Nice','Name']]]},
+{t:'수 세기',k:['How many apples?','Three apples.'],tip:'몇 개인지 물을 때는 How many ~?라고 해요. 두 개부터는 낱말 끝에 s를 붙여요. one apple, two apples처럼요.',
+ w:[['one','하나','1'],['two','둘','2'],['three','셋','3'],['four','넷','4'],['five','다섯','5'],['six','여섯','6'],['seven','일곱','7'],['eight','여덟','8'],['nine','아홉','9'],['ten','열','10']],
+ s:[['How many apples?','사과가 몇 개니?'],['I have two pencils.','나는 연필이 두 자루 있어.'],['How old are you?','너는 몇 살이니?'],["I'm ten years old.",'나는 열 살이야.']],
+ f:[['🍎🍎🍎 ___ apples','three',['two','four','five']],['How ___ dogs?','many',['old','name','is']],['one cat, two ___','cats',['cat','cates','a cat'],'두 개부터는 끝에 s'],['seven 다음 수는 ___','eight',['six','nine','five']]]},
+{t:'색깔 말하기',k:['What color is it?',"It's red."],tip:"색깔을 물을 때는 What color is it?이라고 해요. 대답은 It's 뒤에 색깔 낱말을 붙여요.",
+ w:[['red','빨간색','🔴'],['blue','파란색','🔵'],['yellow','노란색','🟡'],['green','초록색','🟢'],['orange','주황색','🟠'],['purple','보라색','🟣'],['black','검은색','⚫'],['white','흰색','⚪'],['brown','갈색','🟤'],['pink','분홍색','🌸']],
+ s:[['What color is it?','무슨 색이니?'],["It's red.",'빨간색이야.'],['I have a blue bag.','나는 파란 가방이 있어.'],['The banana is yellow.','바나나는 노란색이야.']],
+ f:[['🍌 The banana is ___.','yellow',['blue','black','purple']],['What ___ is it?','color',['many','name','this']],['🌳 The tree is ___.','green',['pink','white','red']],["빨간 연필: It's a ___ pencil.",'red',['read','bed','ten']]]},
+{t:'물건 이름 묻기',k:["What's this?","It's a book."],tip:"가까이 있는 물건이 무엇인지 물을 때 What's this?라고 해요. 대답은 It's a 뒤에 물건 이름을 붙여요.",
+ w:[['book','책','📖'],['pencil','연필','✏️'],['bag','가방','🎒'],['chair','의자','🪑'],['ruler','자','📏'],['door','문','🚪'],['bed','침대','🛏️'],['umbrella','우산','☂️'],['robot','로봇','🤖'],['key','열쇠','🔑']],
+ s:[["What's this?",'이것은 뭐니?'],["It's a book.",'그것은 책이야.'],['Is it a robot?','그것은 로봇이니?'],['Yes, it is.','응, 맞아.'],["No, it isn't.",'아니, 그렇지 않아.']],
+ f:[["A: What's this?  B: ___ a pencil.","It's",["I'm","You're",'This']],["It's ___ umbrella.",'an',['a','two','is'],'a, e, i, o, u 소리로 시작하면 an'],['A: Is it a bag?  B: Yes, it ___.','is',["isn't",'am','a']],['A: Is it a key?  B: No, it ___.',"isn't",['is','am','yes']]]},
+{t:'좋아하는 것 말하기',k:['I like pizza.','Do you like milk?'],tip:"좋아하는 것은 I like ~, 좋아하지 않는 것은 I don't like ~라고 해요. 물을 때는 Do you like ~?라고 하고 Yes, I do. / No, I don't.로 대답해요.",
+ w:[['pizza','피자','🍕'],['chicken','치킨, 닭고기','🍗'],['banana','바나나','🍌'],['grapes','포도','🍇'],['juice','주스','🧃'],['bread','빵','🍞'],['carrot','당근','🥕'],['salad','샐러드','🥗'],['cheese','치즈','🧀'],['tomato','토마토','🍅']],
+ s:[['I like pizza.','나는 피자를 좋아해.'],["I don't like carrots.",'나는 당근을 좋아하지 않아.'],['Do you like chicken?','너는 치킨을 좋아하니?'],['Yes, I do.','응, 좋아해.'],["No, I don't.",'아니, 좋아하지 않아.']],
+ f:[['당근을 좋아하지 않아: I ___ like carrots.',"don't",['not','no',"isn't"]],['A: Do you like juice?  B: Yes, I ___.','do',['am','like','is']],['___ you like bread?','Do',['Are','Is','What']],['😋 I ___ bananas.','like',["don't like",'am','do']]]},
+{t:'할 수 있는 것 말하기',k:['I can swim.','Can you skate?'],tip:"할 수 있는 일은 I can ~, 못 하는 일은 I can't ~라고 해요. 물을 때는 Can you ~?라고 하고 Yes, I can. / No, I can't.로 대답해요.",
+ w:[['swim','수영하다','🏊'],['run','달리다','🏃'],['jump','뛰어오르다','🤸'],['dance','춤추다','💃'],['sing','노래하다','🎤'],['skate','스케이트를 타다','⛸️'],['ski','스키를 타다','⛷️'],['cook','요리하다','🍳'],['fly','날다','🦅'],['draw','그리다','🎨']],
+ s:[['I can swim.','나는 수영할 수 있어.'],["I can't skate.",'나는 스케이트를 못 타.'],['Can you dance?','너는 춤출 수 있니?'],['Yes, I can.','응, 할 수 있어.'],["No, I can't.",'아니, 못 해.']],
+ f:[['🐟 Fish ___ swim.','can',["can't",'like','is']],['🐟 Fish ___ walk.',"can't",['can','do','are']],['A: Can you sing?  B: Yes, I ___.','can',['do','am',"can't"]],['___ you jump?','Can',['Are','Is','What']]]}
+]},
+4:{lead:'기분, 요일, 시각, 날씨처럼 생활 속 이야기를 묻고 답해요.',units:[
+{t:'기분과 상태 말하기',k:['How are you?',"I'm happy."],tip:"기분을 물을 때는 How are you?라고 해요. 대답은 I'm 뒤에 기분을 나타내는 말을 붙여요. 아닐 때는 I'm not ~이라고 해요.",
+ w:[['happy','행복한','😀'],['sad','슬픈','😢'],['angry','화난','😠'],['tired','피곤한','😫'],['hungry','배고픈','🤤'],['sleepy','졸린','😴'],['sick','아픈','🤒'],['thirsty','목마른','🥤'],['scared','무서운','😨'],['excited','신난','🤩']],
+ s:[['How are you?','기분이 어때?'],["I'm happy.",'나는 행복해.'],['Are you tired?','너 피곤하니?'],['Yes, I am.','응, 그래.'],["I'm not sad.",'나는 슬프지 않아.']],
+ f:[['A: How are you?  B: ___ great.',"I'm",["It's","You're",'How']],['A: Are you hungry?  B: Yes, I ___.','am',['do','can','is']],['😢 She is ___.','sad',['happy','excited','great']],["졸리지 않아: I'm ___ sleepy.",'not',['no',"don't","can't"]]]},
+{t:'요일 묻고 답하기',k:['What day is it today?',"It's Monday."],tip:"요일을 물을 때는 What day is it today?라고 해요. 요일 이름은 첫 글자를 항상 대문자로 써요. '~요일에'는 on을 붙여 on Monday처럼 말해요.",
+ w:[['Monday','월요일','월'],['Tuesday','화요일','화'],['Wednesday','수요일','수'],['Thursday','목요일','목'],['Friday','금요일','금'],['Saturday','토요일','토'],['Sunday','일요일','일'],['today','오늘','📅'],['weekend','주말','🎈']],
+ s:[['What day is it today?','오늘은 무슨 요일이니?'],["It's Monday.",'월요일이야.'],['I play soccer on Saturday.','나는 토요일에 축구를 해.'],['See you on Sunday.','일요일에 만나.']],
+ f:[['Monday → Tuesday → ___','Wednesday',['Thursday','Friday','Sunday']],['What ___ is it today?','day',['time','color','many']],['일요일에: I swim ___ Sunday.','on',['in','at','to']],['Friday → ___ → Sunday','Saturday',['Monday','Thursday','Tuesday']]]},
+{t:'시각과 할 일',k:['What time is it?',"It's seven o'clock.","It's time for lunch."],tip:"시각을 물을 때는 What time is it?이라고 해요. 정각은 숫자 뒤에 o'clock을 붙여요. '~할 시간이야'는 It's time for ~라고 해요.",
+ w:[['time','시간','⏰'],['breakfast','아침 식사','🥞'],['lunch','점심 식사','🍱'],['dinner','저녁 식사','🍽️'],['school','학교','🏫'],['bed','침대, 잠자리','🛏️'],['eleven','열하나','11'],['twelve','열둘','12'],["o'clock",'~시 (정각)','🕛'],['late','늦은','🏃']],
+ s:[['What time is it?','몇 시니?'],["It's seven o'clock.",'7시야.'],["It's time for lunch.",'점심 먹을 시간이야.'],["It's time for bed.",'잘 시간이야.'],["Let's go to school.",'학교에 가자.']],
+ f:[["🕘 It's ___ o'clock.",'nine',['three','six','twelve']],['What ___ is it?','time',['day','color','this']],["It's time ___ dinner.",'for',['on','is','at']],["🕛 It's ___ o'clock.",'twelve',['eleven','two','ten']]]},
+{t:'날씨 묻고 답하기',k:["How's the weather?","It's sunny."],tip:"날씨를 물을 때는 How's the weather?라고 해요. 대답은 It's 뒤에 날씨를 나타내는 말을 붙여요. sun → sunny, rain → rainy처럼 끝에 y가 붙어요.",
+ w:[['sunny','맑은','☀️'],['rainy','비 오는','🌧️'],['cloudy','흐린','☁️'],['snowy','눈 오는','❄️'],['windy','바람 부는','🌬️'],['hot','더운','🥵'],['cold','추운','🥶'],['warm','따뜻한','🌤️'],['cool','시원한','🍃'],['weather','날씨','🌈']],
+ s:[["How's the weather?",'날씨가 어때?'],["It's sunny.",'맑아.'],["It's raining.",'비가 오고 있어.'],['Put on your coat.','코트를 입어.'],["Let's play outside.",'밖에서 놀자.']],
+ f:[["🌧️ It's ___.",'rainy',['sunny','snowy','hot']],["How's the ___?",'weather',['time','day','color']],["⛄ It's ___ today.",'cold',['hot','warm','sunny']],["It's snowing. Put ___ your gloves.",'on',['in','at','up']]]},
+{t:'물건의 위치',k:['Where is my cap?',"It's on the chair."],tip:'어디에 있는지 물을 때는 Where is ~?라고 해요. 안에 있으면 in, 위에 있으면 on, 아래에 있으면 under를 써요.',
+ w:[['in','~ 안에','📥'],['on','~ 위에','🔝'],['under','~ 아래에','⬇️'],['box','상자','📦'],['chair','의자','🪑'],['cap','모자','🧢'],['watch','손목시계','⌚'],['glasses','안경','👓'],['shoes','신발','👟'],['sofa','소파','🛋️']],
+ s:[['Where is my cap?','내 모자는 어디에 있니?'],["It's on the chair.",'의자 위에 있어.'],["It's in the box.",'상자 안에 있어.'],["It's under the sofa.",'소파 아래에 있어.'],['Is it on the bed?','침대 위에 있니?']],
+ f:[['상자 안에: The ball is ___ the box.','in',['on','under','is']],['의자 위에: The cat is ___ the chair.','on',['in','under','it']],['탁자 아래에: The dog is ___ the table.','under',['on','in','it']],['___ is my watch?','Where',['What','How','Who']]]},
+{t:'지금 하고 있는 일',k:['What are you doing?',"I'm reading a book."],tip:"지금 하고 있는 일은 동사 끝에 -ing를 붙여 말해요. I'm reading. He is cooking. She is sleeping.처럼 am, is, are와 함께 써요.",
+ w:[['reading','읽고 있는','📖'],['cooking','요리하고 있는','🍳'],['sleeping','자고 있는','😴'],['singing','노래하고 있는','🎤'],['dancing','춤추고 있는','💃'],['running','달리고 있는','🏃'],['swimming','수영하고 있는','🏊'],['eating','먹고 있는','🍽️'],['drawing','그리고 있는','🎨'],['cleaning','청소하고 있는','🧹']],
+ s:[['What are you doing?','너는 무엇을 하고 있니?'],["I'm reading a book.",'나는 책을 읽고 있어.'],['He is cooking.','그는 요리하고 있어.'],['She is sleeping.','그녀는 자고 있어.'],['We are singing.','우리는 노래하고 있어.']],
+ f:[["그리고 있어: I'm ___ a picture.",'drawing',['draw','draws','drew']],['What ___ you doing?','are',['is','am','do']],['She ___ dancing.','is',['are','am','can']],["run → I'm ___.",'running',['runing','run','runs'],'run은 n을 한 번 더 쓰고 -ing']]},
+{t:'가족 소개하기',k:['Who is she?',"She's my mother."],tip:"누구인지 물을 때는 Who is ~?라고 해요. 여자는 She, 남자는 He로 말해요. She's는 She is, He's는 He is를 줄인 말이에요.",
+ w:[['mother','어머니','👩'],['father','아버지','👨'],['sister','언니, 누나, 여동생','👧'],['brother','오빠, 형, 남동생','👦'],['grandmother','할머니','👵'],['grandfather','할아버지','👴'],['family','가족','👪'],['baby','아기','👶'],['he','그 (남자)','🙋‍♂️'],['she','그녀 (여자)','🙋‍♀️']],
+ s:[['Who is she?','그녀는 누구니?'],["She's my mother.",'그녀는 우리 어머니야.'],["He's my brother.",'그는 내 남자 형제야.'],['This is my family.','이쪽은 우리 가족이야.'],['He is tall.','그는 키가 커.']],
+ f:[['👵 ___ is my grandmother.','She',['He','It','I']],["A: ___ is he?  B: He's my father.",'Who',['What','Where','How']],['👦 ___ my brother.',"He's",["She's","I'm",'Who']],['This ___ my sister.','is',['am','are','do']]]},
+{t:'하지 말아요, 함께해요',k:["Don't run.","Let's play soccer."],tip:"하지 말라고 할 때는 Don't를 앞에 붙여요. 함께 하자고 할 때는 Let's를 앞에 붙여요. 좋다고 대답할 때는 Sounds good.이라고 해요.",
+ w:[['run','뛰다','🏃'],['talk','말하다','🗣️'],['touch','만지다','👆'],['enter','들어가다','🚪'],['wait','기다리다','✋'],['listen','듣다','👂'],['look','보다','👀'],['open','열다','🔓'],['close','닫다','🔒'],['quiet','조용한','🤫']],
+ s:[["Don't run here.",'여기서 뛰지 마.'],['Be quiet, please.','조용히 해 주세요.'],["Let's play soccer.",'축구 하자.'],['Sounds good.','좋아.'],['Open the door, please.','문을 열어 주세요.']],
+ f:[['만지지 마: ___ touch!',"Don't",["Let's",'Not','Is']],['함께 하자: ___ play baseball.',"Let's",["Don't",'Can','Is']],['🤫 ___ quiet, please.','Be',['Do',"Don't","Let's"]],["A: Let's go swimming.  B: Sounds ___!",'good',['no',"don't",'can']]]}
+]},
+5:{lead:'나와 주변 사람, 지난 일과 앞으로 할 일을 문장으로 말해요.',units:[
+{t:'출신 나라 묻기',k:['Where are you from?',"I'm from Korea."],tip:"어느 나라에서 왔는지 물을 때는 Where are you from?이라고 해요. 대답은 I'm from 뒤에 나라 이름을 붙여요. 나라 이름의 첫 글자는 항상 대문자예요.",
+ w:[['Korea','한국',''],['Canada','캐나다',''],['China','중국',''],['Japan','일본',''],['France','프랑스',''],['Brazil','브라질',''],['Kenya','케냐',''],['India','인도',''],['Australia','호주',''],['Mexico','멕시코','']],
+ s:[['Where are you from?','너는 어느 나라에서 왔니?'],["I'm from Canada.",'나는 캐나다에서 왔어.'],['She is from Kenya.','그녀는 케냐에서 왔어.'],['Where is he from?','그는 어느 나라에서 왔니?'],['Welcome to Korea.','한국에 온 걸 환영해.']],
+ f:[['Where are you ___?','from',['to','in','at']],['A: Where is she from?  B: ___ from India.',"She's",["He's","I'm",'Where']],['나라 이름의 첫 글자는 ___로 써요. (Korea, Japan)','대문자',['소문자','숫자','마침표']],['___ is he from?','Where',['What','Who','How']]]},
+{t:'좋아하는 과목',k:["What's your favorite subject?",'My favorite subject is science.'],tip:"가장 좋아하는 것을 물을 때 favorite를 써요. What's your favorite subject?라고 묻고 My favorite subject is ~로 대답해요.",
+ w:[['Korean','국어','📗'],['English','영어','🔤'],['math','수학','➗'],['science','과학','🔬'],['art','미술','🎨'],['music','음악','🎵'],['P.E.','체육','⚽'],['social studies','사회','🌏'],['subject','과목','📚'],['favorite','가장 좋아하는','⭐']],
+ s:[["What's your favorite subject?",'네가 가장 좋아하는 과목은 뭐니?'],['My favorite subject is science.','내가 가장 좋아하는 과목은 과학이야.'],['I like math, too.','나도 수학을 좋아해.'],['We have music today.','오늘 음악 수업이 있어.'],['Why do you like art?','너는 왜 미술을 좋아하니?']],
+ f:[["What's your ___ subject?",'favorite',['like','many','time']],['My favorite subject ___ P.E.','is',['are','am','do']],['🔬 We do experiments in ___ class.','science',['music','art','math']],['➗ 3 + 4 = 7. This is ___.','math',['art','music','P.E.']]]},
+{t:'하루 일과',k:['What time do you get up?','I get up at seven.'],tip:'날마다 하는 일은 동사를 그대로 써요. 시각 앞에는 at을 붙여요. 얼마나 자주 하는지는 always(항상), usually(보통), sometimes(가끔), never(전혀 안 함)로 나타내요.',
+ w:[['get up','일어나다','⏰'],['have breakfast','아침을 먹다','🥞'],['go to school','학교에 가다','🏫'],['do homework','숙제하다','📝'],['go to bed','잠자리에 들다','🛏️'],['brush my teeth','이를 닦다','🪥'],['always','항상','100%'],['usually','보통','80%'],['sometimes','가끔','40%'],['never','전혀 ~않다','0%']],
+ s:[['What time do you get up?','너는 몇 시에 일어나니?'],['I get up at seven.','나는 7시에 일어나.'],['I usually go to bed at ten.','나는 보통 10시에 자.'],['I always brush my teeth.','나는 항상 이를 닦아.'],['I do my homework after school.','나는 방과 후에 숙제를 해.']],
+ f:[['I get up ___ 7:30.','at',['on','in','to'],'시각 앞에는 at'],['What time ___ you go to school?','do',['are','is','can']],['날마다 빠짐없이: I ___ have breakfast.','always',['never','sometimes','not']],['한 번도 하지 않는 일: I ___ get up late.','never',['always','usually','sometimes']]]},
+{t:'지난 일 말하기',k:['What did you do yesterday?','I visited my grandparents.'],tip:'이미 지난 일은 과거형으로 말해요. 보통 동사 끝에 -ed를 붙여요(play → played). go → went, eat → ate처럼 모양이 아주 달라지는 동사도 있어요.',
+ w:[['visited','방문했다','🏠'],['played','놀았다, (운동을) 했다','⚽'],['watched','보았다','📺'],['cooked','요리했다','🍳'],['went','갔다','🚶'],['ate','먹었다','🍔'],['saw','보았다','👀'],['made','만들었다','🛠️'],['bought','샀다','🛍️'],['yesterday','어제','📅']],
+ s:[['What did you do yesterday?','너는 어제 무엇을 했니?'],['I visited my grandparents.','나는 조부모님 댁을 방문했어.'],['I went to the park.','나는 공원에 갔어.'],['We ate pizza.','우리는 피자를 먹었어.'],['It was fun.','재미있었어.']],
+ f:[['I ___ soccer yesterday.','played',['play','playing','will play'],'어제 한 일은 과거형'],['go의 과거형은 ___','went',['goed','goes','going']],['What ___ you do last weekend?','did',['do','are','will']],['eat의 과거형은 ___','ate',['eated','eats','eating']],['I ___ a movie last night.','watched',['watch','watches','watching']]]},
+{t:'앞으로 할 일',k:['What will you do this summer?','I will go camping.'],tip:"앞으로 할 일은 will을 써서 말해요. will 뒤에는 동사를 원래 모양 그대로 써요. I will은 I'll로 줄여 쓸 수 있어요.",
+ w:[['summer','여름','🏖️'],['winter','겨울','⛄'],['vacation','방학','🎒'],['camping','캠핑','🏕️'],['beach','해변','🏝️'],['travel','여행하다','✈️'],['learn','배우다','📖'],['join','가입하다, 함께하다','🤝'],['tomorrow','내일','🌅'],['weekend','주말','🗓️']],
+ s:[['What will you do this summer?','너는 이번 여름에 무엇을 할 거니?'],['I will go camping.','나는 캠핑을 갈 거야.'],['I will visit my uncle.','나는 삼촌 댁을 방문할 거야.'],["I'll learn to swim.",'나는 수영을 배울 거야.'],['Have a good vacation.','즐거운 방학 보내.']],
+ f:[['I ___ go to the beach tomorrow.','will',['did','was','am']],['What ___ you do this winter?','will',['are','is','was']],['will 뒤에는 동사의 ___을 써요. (I will play.)','원래 모양',['과거형','-ing 모양','-s 붙인 모양']],['I will = ___',"I'll",["I'm","I'd","I've"]]]},
+{t:'생김새 묘사하기',k:['What does he look like?','He has short hair.'],tip:'생김새를 물을 때는 What does he look like?라고 해요. 머리, 눈처럼 가진 것은 has로, 키처럼 상태는 is로 말해요. 입거나 쓴 것은 is wearing으로 말해요.',
+ w:[['tall','키가 큰','🦒'],['short','짧은, 키가 작은','✂️'],['long','긴','📏'],['hair','머리카락','💇'],['curly','곱슬곱슬한','🌀'],['eyes','눈','👀'],['big','큰','🐘'],['small','작은','🐭'],['glasses','안경','👓'],['wearing','입고(쓰고) 있는','👕']],
+ s:[['What does he look like?','그는 어떻게 생겼니?'],['He has short hair.','그는 머리가 짧아.'],['She has big eyes.','그녀는 눈이 커.'],['She is wearing glasses.','그녀는 안경을 쓰고 있어.'],['He is tall.','그는 키가 커.']],
+ f:[['What does she look ___?','like',['at','for','is']],['She ___ long curly hair.','has',['have','is','are']],['He ___ tall.','is',['has','have','does']],['He is ___ a blue cap.','wearing',['wear','wears','has']]]},
+{t:'누구의 것인지 말하기',k:['Whose cap is this?',"It's Mina's."],tip:"누구의 것인지 물을 때는 Whose를 써요. '미나의 것'은 이름 뒤에 's를 붙여 Mina's라고 해요. 내 것은 mine, 네 것은 yours예요.",
+ w:[['whose','누구의',''],['my','나의',''],['mine','내 것',''],['your','너의',''],['yours','네 것',''],['his','그의, 그의 것',''],['her','그녀의',''],['hers','그녀의 것',''],['our','우리의',''],['their','그들의','']],
+ s:[['Whose cap is this?','이것은 누구의 모자니?'],["It's Mina's.",'미나의 것이야.'],["It's mine.",'내 것이야.'],['Is this your umbrella?','이것은 네 우산이니?'],['This is his bag.','이것은 그의 가방이야.']],
+ f:[['___ pencil is this?','Whose',['Who','What','Where']],["진우의 가방: It's ___ bag.","Jinu's",['Jinu','Jinus',"Jinus'"]],["A: Is this your book?  B: Yes, it's ___.",'mine',['my','me','I']],['그녀의 모자: This is ___ cap.','her',['hers','she',"she's"]]]},
+{t:'장래 희망',k:['What do you want to be?','I want to be a pilot.'],tip:'되고 싶은 것을 물을 때는 What do you want to be?라고 해요. 대답은 I want to be a 뒤에 직업 이름을 붙여요.',
+ w:[['cook','요리사','🧑‍🍳'],['doctor','의사','🧑‍⚕️'],['teacher','선생님','🧑‍🏫'],['singer','가수','🎤'],['pilot','조종사','🧑‍✈️'],['police officer','경찰관','👮'],['firefighter','소방관','🧑‍🚒'],['scientist','과학자','🧑‍🔬'],['farmer','농부','🧑‍🌾'],['painter','화가','🧑‍🎨']],
+ s:[['What do you want to be?','너는 무엇이 되고 싶니?'],['I want to be a pilot.','나는 조종사가 되고 싶어.'],['I like to cook.','나는 요리하는 것을 좋아해.'],['I want to help people.','나는 사람들을 돕고 싶어.'],['You can do it.','너는 할 수 있어.']],
+ f:[['I want ___ be a doctor.','to',['for','is','at']],['What do you want to ___?','be',['is','are','am']],['🎨 I like drawing. I want to be a ___.','painter',['pilot','farmer','singer']],['She wants to be ___ scientist.','a',['an','to','is']]]}
+]},
+6:{lead:'날짜, 길, 비교, 이유처럼 조금 더 자세한 내용을 묻고 답해요.',units:[
+{t:'학년과 날짜',k:['What grade are you in?',"I'm in the sixth grade.",'When is your birthday?'],tip:'순서를 나타내는 말은 first, second, third처럼 따로 있어요. 넷째부터는 보통 끝에 th를 붙여요. 학년과 날짜를 말할 때 이 말을 써요. 달 이름의 첫 글자는 대문자예요.',
+ w:[['first','첫째','1st'],['second','둘째','2nd'],['third','셋째','3rd'],['fourth','넷째','4th'],['fifth','다섯째','5th'],['sixth','여섯째','6th'],['grade','학년','🏫'],['birthday','생일','🎂'],['January','1월','1월'],['May','5월','5월'],['October','10월','10월'],['December','12월','12월']],
+ s:[['What grade are you in?','너는 몇 학년이니?'],["I'm in the sixth grade.",'나는 6학년이야.'],['When is your birthday?','네 생일은 언제니?'],["It's May fifth.",'5월 5일이야.'],['My birthday is in October.','내 생일은 10월에 있어.']],
+ f:[["5학년: I'm in the ___ grade.",'fifth',['five','fiveth','fives']],['___ is your birthday?','When',['What','Where','Who']],['one → first, two → second, three → ___','third',['three','threeth','thirth']],['My birthday is ___ March 3rd.','on',['in','at','to'],'날짜 앞에는 on, 달 앞에는 in']]},
+{t:'길 묻고 안내하기',k:['Where is the library?','Go straight and turn left.'],tip:'길을 안내할 때는 Go straight(곧장 가세요), Turn left(왼쪽으로 도세요), Turn right(오른쪽으로 도세요)라고 해요. 위치는 next to(옆에), between(사이에)으로 말해요.',
+ w:[['straight','곧장','⬆️'],['left','왼쪽','⬅️'],['right','오른쪽','➡️'],['turn','돌다','↩️'],['corner','모퉁이','📐'],['block','구역','🧱'],['library','도서관','📚'],['hospital','병원','🏥'],['bank','은행','🏦'],['museum','박물관','🏛️'],['next to','~ 옆에',''],['between','~ 사이에','']],
+ s:[['Where is the library?','도서관은 어디에 있니?'],['Go straight one block.','한 구역 곧장 가.'],['Turn left at the corner.','모퉁이에서 왼쪽으로 돌아.'],["It's next to the bank.",'은행 옆에 있어.'],["It's on your right.",'네 오른쪽에 있어.']],
+ f:[['⬆️ Go ___.','straight',['left','right','back']],['⬅️ Turn ___ at the corner.','left',['right','straight','next']],["It's next ___ the hospital.",'to',['at','on','of']],['박물관과 도서관 사이에: The bank is ___ the museum and the library.','between',['next','under','in']]]},
+{t:'비교하기',k:["I'm taller than you.",'He is faster than me.'],tip:'둘을 비교할 때는 낱말 끝에 -er을 붙이고 뒤에 than(~보다)을 써요. tall → taller, big → bigger, heavy → heavier처럼 철자가 조금 바뀌는 낱말도 있어요.',
+ w:[['taller','키가 더 큰','🦒'],['faster','더 빠른','🐆'],['stronger','힘이 더 센','💪'],['bigger','더 큰','🐘'],['smaller','더 작은','🐭'],['older','나이가 더 많은','🧓'],['younger','더 어린','👶'],['heavier','더 무거운','🏋️'],['longer','더 긴','🐍'],['than','~보다','⚖️']],
+ s:[["I'm taller than you.",'나는 너보다 키가 커.'],['He is faster than me.','그는 나보다 빨라.'],['An elephant is bigger than a dog.','코끼리는 개보다 커.'],['Who is stronger?','누가 더 힘이 세니?'],['My bag is heavier than yours.','내 가방은 네 것보다 무거워.']],
+ f:[["I'm taller ___ my sister.",'than',['then','that','to']],['big → ___','bigger',['biger','more big','bigest'],'big은 g를 한 번 더 쓰고 -er'],['🐆 A cheetah is ___ than a turtle.','faster',['fast','slower','fastest']],['heavy → ___','heavier',['heavyer','heavyr','more heavy'],'y를 i로 바꾸고 -er']]},
+{t:'아플 때와 조언',k:["What's wrong?",'I have a headache.','You should see a doctor.'],tip:"아픈 곳은 I have a ~로 말해요. 아픈 부위 뒤에 ache를 붙이면 '~통'이 돼요(head + ache). 조언할 때는 should 뒤에 동사를 원래 모양으로 써요.",
+ w:[['headache','두통','🤕'],['stomachache','복통','🤢'],['cold','감기','🤧'],['fever','열','🤒'],['toothache','치통','🦷'],['medicine','약','💊'],['rest','휴식','🛌'],['dentist','치과 의사','🪥'],['should','~해야 한다','👉'],['water','물','💧']],
+ s:[["What's wrong?",'무슨 일이니?'],['I have a headache.','나는 머리가 아파.'],['You should see a doctor.','너는 의사 선생님께 가 봐야 해.'],['Take this medicine.','이 약을 먹어.'],['Get some rest.','좀 쉬어.']],
+ f:[['I ___ a cold.','have',['am','do','should']],['You ___ drink warm water.','should',['has','are','did']],['🦷 I have a toothache. You should see a ___.','dentist',['pilot','farmer','cook']],['You should ___ to bed early.','go',['goes','went','going'],'should 뒤에는 원래 모양']]},
+{t:'계획 말하기',k:['What are you going to do?',"I'm going to visit Jeju."],tip:"미리 정해 둔 계획은 be going to로 말해요. I'm going to, He is going to, We are going to처럼 쓰고, 뒤에는 동사를 원래 모양으로 써요.",
+ w:[['plan','계획','🗒️'],['trip','여행','🧳'],['visit','방문하다','🏠'],['stay','머무르다','🏨'],['festival','축제','🎆'],['ride','타다','🚴'],['climb','오르다','🧗'],['movie','영화','🎬'],['next week','다음 주',''],['this weekend','이번 주말','']],
+ s:[['What are you going to do?','너는 무엇을 할 예정이니?'],["I'm going to visit Jeju.",'나는 제주를 방문할 예정이야.'],['We are going to ride bikes.','우리는 자전거를 탈 예정이야.'],['She is going to see a movie.','그녀는 영화를 볼 예정이야.'],['That sounds fun.','재미있겠다.']],
+ f:[["I'm ___ to climb the mountain.",'going',['go','went','goes']],['He ___ going to stay home.','is',['are','am','be']],['What are you going to ___ this weekend?','do',['did','doing','does']],["We're going to ___ a festival.",'visit',['visited','visiting','visits']]]},
+{t:'이유 묻고 답하기',k:['Why are you happy?','Because I got a present.'],tip:'이유를 물을 때는 Why로 시작해요. 대답은 Because(왜냐하면)로 시작해요. because는 문장 가운데에서 두 문장을 이어 주기도 해요.',
+ w:[['why','왜','❓'],['because','왜냐하면','💬'],['present','선물','🎁'],['test','시험','📝'],['worried','걱정하는','😟'],['upset','속상한','😞'],['proud','자랑스러운','🏅'],['won','이겼다','🏆'],['lost','잃어버렸다, 졌다','🔍'],['got','받았다','📬']],
+ s:[['Why are you happy?','너는 왜 기쁘니?'],['Because I got a present.','선물을 받았기 때문이야.'],['Why are you upset?','너는 왜 속상하니?'],['Because I lost my dog.','내 개를 잃어버렸기 때문이야.'],["Don't worry.",'걱정하지 마.']],
+ f:[['A: ___ are you sad?  B: Because I lost the game.','Why',['What','When','Where']],['A: Why are you happy?  B: ___ we won the game.','Because',['Why','But','So']],["I'm ___ because I have a difficult test tomorrow.",'worried',['proud','tall','won']],["I'm happy ___ it's my birthday.",'because',['why','than','to']]]},
+{t:'얼마나 자주',k:['How often do you exercise?','Twice a week.'],tip:'얼마나 자주 하는지 물을 때는 How often ~?이라고 해요. 한 번은 once, 두 번은 twice, 세 번부터는 three times처럼 말해요. 일주일에는 a week를 붙여요.',
+ w:[['once','한 번','1번'],['twice','두 번','2번'],['three times','세 번','3번'],['every day','매일','📆'],['week','주, 일주일',''],['month','달, 한 달',''],['exercise','운동하다','🏃'],['healthy','건강한','💪'],['often','자주','🔁']],
+ s:[['How often do you exercise?','너는 얼마나 자주 운동하니?'],['Twice a week.','일주일에 두 번.'],['I exercise every day.','나는 매일 운동해.'],['I eat breakfast every morning.','나는 매일 아침 아침밥을 먹어.'],['You should exercise more.','너는 운동을 더 해야 해.']],
+ f:[['How ___ do you eat fast food?','often',['many','old','tall']],['일주일에 한 번: ___ a week','once',['one','first','twice']],['일주일에 두 번: ___ a week','twice',['two','second','once']],['I brush my teeth three ___ a day.','times',['time','often','once']]]},
+{t:'음식 주문과 가격',k:['What would you like?',"I'd like a hamburger.",'How much is it?'],tip:"주문을 받을 때는 What would you like?라고 물어요. 주문할 때는 I'd like ~라고 해요. I'd는 I would를 줄인 말이에요. 가격은 How much is it?으로 물어요.",
+ w:[['order','주문하다','🧾'],['menu','메뉴','📋'],['hamburger','햄버거','🍔'],['noodles','국수','🍜'],['steak','스테이크','🥩'],['soup','수프','🍲'],['dessert','후식','🍰'],['drink','음료','🥤'],['dollar','달러','💵'],['thousand','천','1,000']],
+ s:[['What would you like?','무엇을 드시겠어요?'],["I'd like a hamburger.",'햄버거로 할게요.'],['How much is it?','얼마예요?'],["It's five thousand won.",'5,000원이에요.'],['Here you are.','여기 있어요.']],
+ f:[['What ___ you like?','would',['are','is','has']],["I'd ___ noodles, please.",'like',['likes','liking','to']],['How ___ is this dessert?','much',['many','old','often']],['3,000 won = three ___ won','thousand',['hundred','ten','thousands']]]}
+]}
+};
+
+for(const u of G[1].units)if(u.letters&&!u.w)u.w=u.letters.split('').map(L=>[L.toLowerCase(),'대문자 '+L+'의 소문자',L]);
+/* 주제별 기초 어휘: "영어=뜻=그림" */
+const V=(t,s)=>({t,vocab:true,w:s.split(/, (?=[A-Za-z][A-Za-z .]*=)/).map(x=>{const a=x.split('=');return[a[0],a[1],a[2]||'']})});
+G[8]={lead:'초등 영어에서 자주 쓰는 기초 낱말을 주제별로 묶었어요. 낱말을 눌러 듣고 따라 말한 다음, 활동으로 익혀요.',units:[
+V('동물 1','dog=개=🐶, cat=고양이=🐱, bird=새=🐦, fish=물고기=🐟, rabbit=토끼=🐰, pig=돼지=🐷, cow=소=🐮, horse=말=🐴, duck=오리=🦆, chicken=닭=🐔, mouse=쥐=🐭, sheep=양=🐑'),
+V('동물 2','lion=사자=🦁, tiger=호랑이=🐯, bear=곰=🐻, monkey=원숭이=🐵, elephant=코끼리=🐘, giraffe=기린=🦒, zebra=얼룩말=🦓, fox=여우=🦊, wolf=늑대=🐺, snake=뱀=🐍, frog=개구리=🐸, whale=고래=🐋'),
+V('과일과 채소','apple=사과=🍎, banana=바나나=🍌, orange=오렌지=🍊, grape=포도=🍇, strawberry=딸기=🍓, watermelon=수박=🍉, peach=복숭아=🍑, lemon=레몬=🍋, tomato=토마토=🍅, carrot=당근=🥕, potato=감자=🥔, onion=양파=🧅, corn=옥수수=🌽'),
+V('음식과 음료','bread=빵=🍞, rice=밥, 쌀=🍚, egg=달걀=🥚, milk=우유=🥛, water=물=💧, juice=주스=🧃, cheese=치즈=🧀, pizza=피자=🍕, soup=수프, 국=🍲, cake=케이크=🎂, candy=사탕=🍬, ice cream=아이스크림=🍦, salt=소금=🧂, sugar=설탕'),
+V('몸','head=머리, face=얼굴=🙂, eye=눈=👁️, ear=귀=👂, nose=코=👃, mouth=입=👄, tooth=이=🦷, hair=머리카락=💇, hand=손=✋, arm=팔=💪, leg=다리=🦵, foot=발=🦶, finger=손가락=☝️, neck=목, shoulder=어깨, knee=무릎'),
+V('가족과 사람','mother=어머니=👩, father=아버지=👨, sister=언니, 누나, 여동생=👧, brother=오빠, 형, 남동생=👦, grandmother=할머니=👵, grandfather=할아버지=👴, aunt=이모, 고모, uncle=삼촌, 이모부, baby=아기=👶, family=가족=👪, friend=친구=🧑‍🤝‍🧑, boy=남자아이, girl=여자아이, man=남자, woman=여자'),
+V('학교와 학용품','school=학교=🏫, classroom=교실, teacher=선생님=🧑‍🏫, student=학생=🧑‍🎓, book=책=📖, notebook=공책=📓, pencil=연필=✏️, eraser=지우개, ruler=자=📏, bag=가방=🎒, desk=책상, chair=의자=🪑, scissors=가위=✂️, crayon=크레용=🖍️, glue=풀, paper=종이=📄'),
+V('색깔과 모양','red=빨간색=🔴, blue=파란색=🔵, yellow=노란색=🟡, green=초록색=🟢, orange=주황색=🟠, purple=보라색=🟣, pink=분홍색=🌸, brown=갈색=🟤, black=검은색=⚫, white=흰색=⚪, gray=회색, circle=원=⭕, square=정사각형=🟦, triangle=삼각형=🔺, star=별=⭐, heart=하트=❤️'),
+V('수 11~100','eleven=열하나=11, twelve=열둘=12, thirteen=열셋=13, fourteen=열넷=14, fifteen=열다섯=15, sixteen=열여섯=16, seventeen=열일곱=17, eighteen=열여덟=18, nineteen=열아홉=19, twenty=스물=20, thirty=서른=30, forty=마흔=40, fifty=쉰=50, hundred=백=100'),
+V('요일과 때','Monday=월요일=월, Tuesday=화요일=화, Wednesday=수요일=수, Thursday=목요일=목, Friday=금요일=금, Saturday=토요일=토, Sunday=일요일=일, today=오늘, tomorrow=내일, yesterday=어제, morning=아침=🌅, afternoon=오후=🌤️, evening=저녁=🌆, night=밤=🌙, week=주, 일주일, weekend=주말'),
+V('달과 계절','January=1월=1월, February=2월=2월, March=3월=3월, April=4월=4월, May=5월=5월, June=6월=6월, July=7월=7월, August=8월=8월, September=9월=9월, October=10월=10월, November=11월=11월, December=12월=12월, spring=봄=🌸, summer=여름=🏖️, fall=가을=🍂, winter=겨울=⛄'),
+V('날씨와 자연','sun=해=☀️, moon=달=🌙, sky=하늘, cloud=구름=☁️, rain=비=🌧️, snow=눈=❄️, wind=바람=🌬️, tree=나무=🌳, flower=꽃=🌷, river=강, sea=바다=🌊, mountain=산=⛰️, rock=바위=🪨, sand=모래'),
+V('옷','shirt=셔츠=👕, pants=바지=👖, skirt=치마, dress=원피스=👗, coat=코트=🧥, jacket=재킷, hat=모자=🎩, cap=야구 모자=🧢, shoes=신발=👟, socks=양말=🧦, gloves=장갑=🧤, scarf=목도리=🧣, glasses=안경=👓, button=단추'),
+V('집','house=집=🏠, room=방, door=문=🚪, window=창문=🪟, kitchen=부엌, bathroom=화장실, 욕실=🛁, bed=침대=🛏️, sofa=소파=🛋️, table=탁자, lamp=전등=💡, clock=시계=🕒, key=열쇠=🔑, mirror=거울=🪞, computer=컴퓨터=💻, phone=전화기=📱'),
+V('장소','park=공원=🏞️, zoo=동물원=🦒, library=도서관=📚, hospital=병원=🏥, bank=은행=🏦, store=가게=🏪, market=시장=🛒, restaurant=식당=🍽️, museum=박물관=🏛️, station=역=🚉, airport=공항=✈️, farm=농장=🚜, beach=해변=🏖️, city=도시=🏙️, bakery=빵집=🥐, street=거리'),
+V('탈것','car=자동차=🚗, bus=버스=🚌, bike=자전거=🚲, train=기차=🚆, subway=지하철=🚇, taxi=택시=🚕, truck=트럭=🚚, ship=배=🚢, boat=작은 배=⛵, airplane=비행기=✈️, helicopter=헬리콥터=🚁, rocket=로켓=🚀'),
+V('직업','doctor=의사=🧑‍⚕️, nurse=간호사, cook=요리사=🧑‍🍳, singer=가수=🎤, pilot=조종사=🧑‍✈️, farmer=농부=🧑‍🌾, police officer=경찰관=👮, firefighter=소방관=🧑‍🚒, scientist=과학자=🧑‍🔬, artist=예술가, 화가=🧑‍🎨, driver=운전사, dentist=치과 의사=🦷, writer=작가=✍️, dancer=무용수=💃'),
+V('움직임 1','go=가다, come=오다, run=달리다=🏃, walk=걷다=🚶, jump=뛰어오르다=🤸, swim=수영하다=🏊, sit=앉다=🪑, stand=서다=🧍, eat=먹다=🍽️, drink=마시다=🥤, sleep=자다=😴, play=놀다, (운동을) 하다=⚽, read=읽다=📖, write=쓰다=✍️, sing=노래하다=🎤, dance=춤추다=💃'),
+V('움직임 2','open=열다=🔓, close=닫다=🔒, look=보다=👀, listen=듣다=👂, speak=말하다=🗣️, help=돕다=🤝, make=만들다=🛠️, buy=사다=🛍️, cook=요리하다=🍳, wash=씻다=🧼, clean=청소하다=🧹, draw=그리다=🎨, study=공부하다=📚, watch=지켜보다=📺, meet=만나다, give=주다=🎁'),
+V('기분','happy=행복한=😀, sad=슬픈=😢, angry=화난=😠, tired=피곤한=😫, hungry=배고픈=🤤, thirsty=목마른=🥤, sleepy=졸린=😴, sick=아픈=🤒, scared=무서운=😨, excited=신난=🤩, sorry=미안한=😥, fine=괜찮은=🙂'),
+V('모양과 상태','big=큰=🐘, small=작은=🐭, long=긴=📏, short=짧은, 키가 작은, tall=키가 큰=🦒, fast=빠른=🐆, slow=느린=🐢, hot=뜨거운, 더운=🥵, cold=차가운, 추운=🥶, new=새로운=✨, old=오래된, 나이 든, good=좋은=👍, bad=나쁜=👎, clean=깨끗한, dirty=더러운, easy=쉬운'),
+V('운동과 취미','soccer=축구=⚽, baseball=야구=⚾, basketball=농구=🏀, tennis=테니스=🎾, badminton=배드민턴=🏸, swimming=수영=🏊, skating=스케이트 타기=⛸️, skiing=스키 타기=⛷️, music=음악=🎵, movie=영화=🎬, game=게임, 경기=🎮, piano=피아노=🎹, guitar=기타=🎸, picture=그림, 사진=🖼️'),
+V('위치와 방향','in=~ 안에, on=~ 위에, under=~ 아래에, next to=~ 옆에, behind=~ 뒤에, in front of=~ 앞에, between=~ 사이에, up=위로=⬆️, down=아래로=⬇️, left=왼쪽=⬅️, right=오른쪽=➡️, here=여기, there=저기, near=가까이, far=멀리')
+]};
+G[9]={lead:'쓰는 교과서의 단원 낱말을 직접 넣어 공부해요. 넣은 낱말은 듣기, 뜻 고르기, 따라 쓰기, 철자 쓰기 활동이 자동으로 만들어져요.',units:[]};
+/* 전치사 그림: 바닥 위에 상자, 공, 사람, 건물 같은 물체를 3차원 좌표로 놓고 비스듬히 내려다본 모습으로 그린다.
+   x는 오른쪽, y는 보는 사람에게서 멀어지는 쪽, z는 위. yaw만큼 돌려서 볼 수 있다. */
+const R3=(()=>{
+  const PH=32*Math.PI/180,CP=Math.cos(PH),SP=Math.sin(PH),S=29,CX=100,CY=103,INK='#1b2850';
+  const LIGHT=[-.42,-.56,.71];
+  const TAN=[227,173,114],DARK=[150,104,58],BLUE=[70,120,230],CREAM=[244,226,196],ROOF=[205,84,60],STEP=[200,210,232],WOOD=[196,140,86],
+        WHITE=[250,250,255],RED=[226,83,43],PINK=[236,120,170],NAVY=[52,64,110],YEL=[250,200,60],GREEN=[110,180,110],GLASS=[170,210,245],GRAY=[214,220,232];
+  const BC={red:['#ff9d7c','#c93a17'],skin:['#ffe0bd','#e0a878'],hair:['#7a5634','#3a2413'],black:['#5a6178','#232a3d'],orange:['#ffc98a','#e2801f'],
+            white:['#ffffff','#c9d1e3'],yellow:['#fff3a8','#f0b41c'],green:['#9bdc86','#3d9638'],brown:['#c9925e','#7d4f27'],gray:['#c5cbdb','#7c869f']};
+  function draw(name,yaw){
+    const t=yaw*Math.PI/180,c=Math.cos(t),s=Math.sin(t);
+    const rot=p=>[p[0]*c-p[1]*s,p[0]*s+p[1]*c,p[2]];
+    const pr=p=>{const q=rot(p);return[(CX+q[0]*S).toFixed(1),(CY-(q[2]*CP+q[1]*SP)*S).toFixed(1)]};
+    const dep=p=>{const q=rot(p);return q[1]*CP-q[2]*SP};
+    const items=[],defs=[];let floorCol='#e6ecf8';
+    /* o: L 층, bias 깊이 보정, ref 깊이 기준점, op 투명도 */
+    const face=(pts,n,col,o={})=>{
+      const r=rot(n);if(-r[1]*CP+r[2]*SP<=0.001)return;
+      const f=.6+.4*Math.max(0,n[0]*LIGHT[0]+n[1]*LIGHT[1]+n[2]*LIGHT[2]);
+      const ctr=o.ref||pts.reduce((a,p)=>[a[0]+p[0]/pts.length,a[1]+p[1]/pts.length,a[2]+p[2]/pts.length],[0,0,0]);
+      items.push({L:o.L==null?1:o.L,d:dep(ctr)+(o.bias||0),svg:`<polygon points="${pts.map(p=>pr(p).join(',')).join(' ')}" fill="rgb(${col.map(v=>Math.round(v*f)).join(',')})"${o.op?` fill-opacity="${o.op}"`:''} stroke="${INK}" stroke-width="${o.thin?.8:1.4}" stroke-linejoin="round"/>`});
+    };
+    const box=(x0,y0,z0,x1,y1,z1,col,o={})=>{
+      const F=[[[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1]],[[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]],[[x0,y0,z0],[x0,y1,z0],[x0,y1,z1],[x0,y0,z1]],[[x1,y0,z0],[x1,y1,z0],[x1,y1,z1],[x1,y0,z1]]];
+      const N=[[0,-1,0],[0,1,0],[-1,0,0],[1,0,0]],L=o.L==null?1:o.L;
+      F.forEach((q,k)=>{face(q,N[k],col,{L:o.open?2:L,op:o.op});if(o.open)face(q,N[k].map(v=>-v),o.inner||DARK,{L:0,op:o.op})});
+      if(o.open)face([[x0,y0,z0+.03],[x1,y0,z0+.03],[x1,y1,z0+.03],[x0,y1,z0+.03]],[0,0,1],o.inner||DARK,{L:0,bias:5});
+      else face([[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]],[0,0,1],col,{L,op:o.op});
+    };
+    const cube=(x,y,open)=>box(x-.55,y-.55,0,x+.55,y+.55,1.1,TAN,{open});
+    const ball=(x,y,z,o={})=>{
+      const r=o.r||.4,cn=o.c||'red',id='g'+name+cn,P=pr([x,y,z]);
+      if(!defs.some(d=>d.includes('"'+id+'"')))defs.push(`<radialGradient id="${id}" cx=".34" cy=".3" r=".8"><stop offset="0" stop-color="${BC[cn][0]}"/><stop offset="1" stop-color="${BC[cn][1]}"/></radialGradient>`);
+      if(o.shadow!==false){const z0=o.on||0,Q=pr([x,y,z0]),k=z-z0>r+.1?.8:1;
+        items.push({L:z0?(o.L||1):-1,d:dep([x,y,z])+.02,svg:`<ellipse cx="${Q[0]}" cy="${Q[1]}" rx="${(r*S*k).toFixed(1)}" ry="${(r*S*SP*k).toFixed(1)}" fill="#1b2850" opacity=".2"/>`})}
+      items.push({L:o.L||1,d:dep([x,y,z])+(o.bias||0),svg:`<circle cx="${P[0]}" cy="${P[1]}" r="${(r*S).toFixed(1)}" fill="url(#${id})" stroke="${INK}" stroke-width="${r<.15?.8:1.4}"/>`});
+    };
+    const arrow=(a,b,L)=>{const A=pr(a).map(Number),B=pr(b).map(Number),g=Math.atan2(B[1]-A[1],B[0]-A[0]),q=d=>`${(B[0]-11*Math.cos(g+d)).toFixed(1)},${(B[1]-11*Math.sin(g+d)).toFixed(1)}`;
+      items.push({L,d:0,svg:`<path d="M${A[0]} ${A[1]}L${B[0]} ${B[1]}" stroke="#2b6be6" stroke-width="4.5" stroke-linecap="round"/><polygon points="${B[0]},${B[1]} ${q(.5)} ${q(-.5)}" fill="#2b6be6" stroke="#2b6be6" stroke-width="3" stroke-linejoin="round"/>`})};
+    const text=(p,str,size,ref)=>{const P=pr(p);items.push({L:1,d:dep(ref||p)-.04,svg:`<text x="${P[0]}" y="${P[1]}" text-anchor="middle" dominant-baseline="middle" font-size="${size}" font-weight="700" font-family="Arial, sans-serif" fill="${INK}">${str}</text>`})};
+    const line=(a,b,w,ref)=>{const A=pr(a),B=pr(b);items.push({L:1,d:dep(ref)-.04,svg:`<path d="M${A[0]} ${A[1]}L${B[0]} ${B[1]}" stroke="${INK}" stroke-width="${w}" stroke-linecap="round"/>`})};
+    /* 앞을 향한 면(y 고정)에 붙이는 네모와 동그라미 */
+    const deco=(x0,z0,x1,z1,y,col,ref)=>face([[x0,y,z0],[x1,y,z0],[x1,y,z1],[x0,y,z1]],[0,-1,0],col,{ref,bias:-.02,thin:true});
+    const discY=(x,y,z,r,col,ref,b)=>face(Array.from({length:16},(_,k)=>[x+r*Math.cos(k*Math.PI/8),y,z+r*Math.sin(k*Math.PI/8)]),[0,-1,0],col,{ref,bias:b,thin:true});
+    const discZ=(x,y,z,r,col)=>face(Array.from({length:16},(_,k)=>[x+r*Math.cos(k*Math.PI/8),y+r*Math.sin(k*Math.PI/8),z]),[0,0,1],col,{thin:true});
+    /* 사람: 다리, 몸, 머리, 머리카락. z0가 있으면 그 높이에 앉은 모습 */
+    const kid=(x,y,o={})=>{const z=o.z0||0;
+      if(z)box(x-.17,y-.42,z,x+.17,y,z+.15,NAVY);else box(x-.17,y-.1,0,x+.17,y+.1,.38,NAVY);
+      const b=z?z+.15:.38;box(x-.21,y-.13,b,x+.21,y+.13,b+.5,o.shirt||BLUE);
+      ball(x,y+.08,b+.8,{r:.27,c:o.hair||'hair',shadow:false});
+      if(o.long)box(x-.2,y+.1,b+.3,x+.2,y+.22,b+.75,[90,60,34]);
+      ball(x,y-.02,b+.74,{r:.25,c:'skin',shadow:!z});
+    };
+    const person=(x,y)=>kid(x,y);
+    const tree=(x,y)=>{box(x-.09,y-.09,0,x+.09,y+.09,.7,DARK);ball(x,y,1.1,{r:.5,c:'green'});ball(x+.25,y-.1,.9,{r:.3,c:'green',shadow:false})};
+    const build=(x,y,w,dd,hh,col,label)=>{const f=y-dd/2,ref=[x,f,hh/2];box(x-w/2,f,0,x+w/2,y+dd/2,hh,col);box(x-w/2-.06,f-.06,hh,x+w/2+.06,y+dd/2+.06,hh+.1,ROOF);
+      deco(x-.14,0,x+.14,.5,f-.01,DARK,ref);deco(x-w/2+.12,.25,x-.28,.62,f-.01,GLASS,ref);deco(x+.28,.25,x+w/2-.12,.62,f-.01,GLASS,ref);
+      if(label){deco(x-w/2+.1,hh-.5,x+w/2-.1,hh-.12,f-.01,WHITE,ref);text([x,f-.02,hh-.31],label,w>1.3?7:6,ref)}};
+    const house=x=>{const a=x-.62,b=x+.62,ref=[x,-.62,.45];box(a,-.62,0,b,.62,.9,CREAM);
+      face([[a,-.62,.9],[b,-.62,.9],[b,0,1.5],[a,0,1.5]],[0,-.7,.71],ROOF);face([[a,.62,.9],[b,.62,.9],[b,0,1.5],[a,0,1.5]],[0,.7,.71],ROOF);
+      face([[a,-.62,.9],[a,.62,.9],[a,0,1.5]],[-1,0,0],CREAM);face([[b,-.62,.9],[b,.62,.9],[b,0,1.5]],[1,0,0],CREAM);
+      deco(x-.16,0,x+.16,.55,-.63,DARK,ref);deco(x+.26,.35,x+.5,.62,-.63,GLASS,ref)};
+    const stairs=()=>{for(let k=0;k<3;k++)box(-1.5+k,-.7,0,-.5+k,.7,(k+1)*.45,STEP)};
+    const bed=(by,high)=>{const g=high?.75:.3;if(high)[[-1.4,-.7],[1.4,-.7],[1.4,.7]].forEach(q=>box(q[0]-.07,by+q[1]-.07,0,q[0]+.07,by+q[1]+.07,g,WOOD));
+      else box(-1.5,by-.8,0,1.5,by+.8,g,WOOD);
+      box(-1.62,by-.8,0,-1.5,by+.8,g+.95,WOOD);box(-1.5,by-.8,g,1.5,by+.8,g+.35,[238,240,250]);
+      box(-1.35,by-.5,g+.35,-.75,by+.5,g+.5,WHITE);box(-.3,by-.8,g+.35,1.5,by+.8,g+.41,[120,170,235]);return g+.41};
+    const pet=(x,y,z,cn)=>{const col=cn==='brown'?[160,108,60]:[232,150,60];
+      ball(x,y,z+.3,{r:.32,c:cn,on:z});ball(x-.38,y+.05,z+.42,{r:.1,c:cn,shadow:false});
+      box(x+.2,y-.2,z+.72,x+.3,y-.12,z+.86,col);box(x+.42,y-.2,z+.72,x+.52,y-.12,z+.86,col);
+      ball(x+.36,y-.1,z+.55,{r:.23,c:cn,shadow:false,bias:-.3});
+      ball(x+.29,y-.31,z+.6,{r:.035,c:'black',shadow:false,bias:-.6});ball(x+.44,y-.3,z+.6,{r:.035,c:'black',shadow:false,bias:-.6})};
+    const wall=()=>box(-2.3,1.9,0,2.3,2.02,2.6,[250,240,222]);
+    const WR=[0,1.9,1.3];
+    const clock=(x,z,hr)=>{discY(x,1.88,z,.52,NAVY,WR,-.02);discY(x,1.87,z,.44,WHITE,WR,-.03);
+      const a=Math.PI/2-hr*Math.PI/6;line([x,1.86,z],[x+.26*Math.cos(a),1.86,z+.26*Math.sin(a)],1.8,WR);line([x,1.86,z],[x,1.86,z+.36],1.2,WR)};
+    const table=(x,y,w,dd,hh)=>{[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(q=>box(x+q[0]*(w/2-.1)-.06,y+q[1]*(dd/2-.1)-.06,0,x+q[0]*(w/2-.1)+.06,y+q[1]*(dd/2-.1)+.06,hh,WOOD));box(x-w/2,y-dd/2,hh,x+w/2,y+dd/2,hh+.1,WOOD)};
+    const bus=(col,label)=>{floorCol='#dfe3ea';const ref=[0,-.46,.8];box(-1.55,-.45,.28,1.55,.45,1.35,col);
+      [-1.25,-.6,.05,.7].forEach(x=>deco(x,.78,x+.5,1.18,-.46,GLASS,ref));deco(-1.4,.42,1.4,.56,-.46,WHITE,ref);text([0,-.47,.5],label,5,ref);
+      [-.95,.95].forEach(x=>{ball(x,.42,.27,{r:.27,c:'black',shadow:false,bias:.4});ball(x,-.47,.27,{r:.27,c:'black',bias:-.5});ball(x,-.5,.27,{r:.11,c:'gray',shadow:false,bias:-.9})})};
+    const calendar=(x,label)=>{const ref=[x,1.88,1.5];deco(x-.6,.9,x+.6,2.1,1.88,WHITE,ref);face([[x-.6,1.87,1.8],[x+.6,1.87,1.8],[x+.6,1.87,2.1],[x-.6,1.87,2.1]],[0,-1,0],BLUE,{ref,bias:-.03,thin:true});
+      for(let r=0;r<2;r++)for(let k=0;k<4;k++)face([[x-.5+k*.26,1.87,1.05+r*.32],[x-.3+k*.26,1.87,1.05+r*.32],[x-.3+k*.26,1.87,1.28+r*.32],[x-.5+k*.26,1.87,1.28+r*.32]],[0,-1,0],r===1&&k===0?RED:GRAY,{ref,bias:-.03,thin:true});
+      text([x,1.86,1.95],label,6,ref)};
+    ({
+      on:()=>{cube(0,0);ball(0,0,1.5,{on:1.1})},
+      in:()=>{cube(0,0,true);ball(0,0,.8,{shadow:false,L:1})},
+      under:()=>{table(0,0,2.5,1.5,1.5);ball(0,0,.4)},
+      next:()=>{cube(-.65,0);ball(.75,0,.4)},
+      behind:()=>{cube(0,.1);ball(0,1.35,.4);person(-.9,-1.8)},
+      front:()=>{cube(0,.6);ball(0,-.65,.4);person(-.9,-1.85)},
+      between:()=>{cube(-1.4,0);cube(1.4,0);ball(0,0,.4)},
+      into:()=>{cube(.7,0,true);ball(-1.25,0,2,{L:3});arrow([-.95,0,1.75],[.6,0,1.25],3)},
+      outof:()=>{cube(-.7,0,true);ball(1.25,0,2,{L:3});arrow([-.6,0,1.25],[.95,0,1.75],3)},
+      up:()=>{stairs();ball(-1,0,.85,{on:.45});arrow([-1,0,1.6],[.75,0,2.4],3)},
+      down:()=>{stairs();ball(1,0,1.75,{on:1.35});arrow([.3,0,2.3],[-1.4,0,1.5],3)},
+      to:()=>{house(1.45);ball(-1.7,0,.4);arrow([-1.2,0,.02],[.55,0,.02],-.5)},
+      from:()=>{house(-1.45);ball(1.7,0,.4);arrow([-.55,0,.02],[1.2,0,.02],-.5)},
+      /* 상황 장면 */
+      catBed:()=>{const z=bed(0);pet(.55,0,z,'orange')},
+      bookBag:()=>{box(-.7,-.42,0,.7,.42,1.15,BLUE,{open:true,inner:NAVY});box(-.4,-.12,.2,.4,.1,1.6,RED,{L:1});box(-.3,.14,.2,.45,.3,1.4,GREEN,{L:1});
+        face([[-.4,-.43,.15],[.4,-.43,.15],[.4,-.43,.6],[-.4,-.43,.6]],[0,-1,0],[110,150,240],{L:2,bias:-9,thin:true})},
+      fishTank:()=>{table(0,0,2.4,1.4,.6);box(-.95,-.5,.7,.95,.5,1.6,[120,195,245],{open:true,inner:[150,210,250],op:.55});
+        ball(-.05,0,1.15,{r:.26,c:'orange',shadow:false,L:1});face([[.2,0,1.15],[.55,0,1.38],[.55,0,.92]],[0,-1,0],[232,140,50],{L:1,bias:-.2});face([[.2,0,1.15],[.55,0,1.38],[.55,0,.92]],[0,1,0],[232,140,50],{L:1,bias:-.2});
+        ball(-.2,-.2,1.2,{r:.04,c:'black',shadow:false,L:1,bias:-.5});ball(.5,.2,1.45,{r:.06,c:'white',shadow:false,L:1});ball(.62,.1,1.3,{r:.04,c:'white',shadow:false,L:1})},
+      clockWall:()=>{wall();clock(0,1.75,3);table(0,1.3,1.8,.9,.7);box(-.2,1.15,.8,.2,1.45,1.05,RED)},
+      shoesBed:()=>{bed(.1,true);box(-.45,-.6,0,-.15,-.15,.2,RED);box(.05,-.6,0,.35,-.15,.2,RED)},
+      sitNext:()=>{box(-1.1,-.15,0,1.1,.4,.45,WOOD);box(-1.1,.3,.45,1.1,.4,1,WOOD);kid(-.45,.05,{z0:.45});kid(.45,.05,{z0:.45,shirt:PINK,long:true})},
+      bankBetween:()=>{floorCol='#e3f0dc';tree(-1.95,.2);tree(-1.35,1);box(-2.1,-.55,0,-1.2,-.3,.3,WOOD);build(0,.6,1.25,1,1.6,CREAM,'BANK');build(1.65,.6,1.25,1,1.35,[250,214,150],'SCHOOL');arrow([0,-1.5,.02],[0,-.25,.02],-.5)},
+      toSchool:()=>{build(1.35,.3,1.5,1.1,1.5,[250,214,150],'SCHOOL');kid(-1.6,-.4);arrow([-1.15,-.4,.02],[.4,-.4,.02],-.5)},
+      fromSchool:()=>{build(-1.45,.4,1.3,1,1.4,[250,214,150],'SCHOOL');house(1.5);kid(.15,-.9);arrow([-.8,-1.45,.02],[1.1,-1.45,.02],-.5)},
+      fromKorea:()=>{box(-1.52,-.05,0,-1.42,.05,1.5,DARK);box(-2.1,-.06,.95,-.85,.06,1.5,WHITE);text([-1.47,-.08,1.22],'KOREA',6,[-1.47,-.06,1.22]);kid(.2,0);box(.5,-.15,0,.85,.15,.5,RED);arrow([-.75,-.8,.02],[1.5,-.8,.02],-.5)},
+      getUp7:()=>{wall();clock(1.2,1.85,7);const z=bed(.9);kid(.1,.9,{z0:z})},
+      soccerSun:()=>{floorCol='#dcefd2';wall();calendar(0,'SUNDAY');kid(-.7,.1);ball(.45,-.3,.25,{r:.25,c:'white'});ball(.38,-.5,.3,{r:.07,c:'black',shadow:false,bias:-.6})},
+      summer:()=>{floorCol='#f6e7b4';ball(1.6,1.6,2.9,{r:.42,c:'yellow',shadow:false});box(-1.6,.5,0,-1.45,.65,1.5,DARK);ball(-1.5,.55,1.75,{r:.42,c:'green',shadow:false});ball(-1.85,.6,1.55,{r:.3,c:'green',shadow:false});ball(-1.15,.5,1.55,{r:.3,c:'green',shadow:false});
+        kid(.1,.1,{shirt:YEL});ball(1.1,-.5,.3,{r:.3,c:'white'});box(-1,-1.2,0,-.2,-.6,.06,[90,170,235])},
+      winter:()=>{floorCol='#f8fbff';ball(0,0,.5,{r:.52,c:'white'});ball(0,0,1.22,{r:.38,c:'white',shadow:false});ball(0,0,1.78,{r:.26,c:'white',shadow:false});
+        ball(-.08,-.25,1.83,{r:.035,c:'black',shadow:false,bias:-.6});ball(.1,-.24,1.83,{r:.035,c:'black',shadow:false,bias:-.6});tree(-1.6,.8);
+        [[-1.5,-1,1.6],[-.8,.4,2.4],[.9,-.6,2.2],[1.6,.5,1.5],[1.2,1.2,2.6],[-.2,-1.4,1.2],[.5,1.3,1.9],[-1.9,.2,2.3]].forEach(p=>ball(p[0],p[1],p[2],{r:.08,c:'white',shadow:false}))},
+      morningRead:()=>{wall();deco(-1.6,1.1,-.3,2.2,1.88,GLASS,WR);discY(-.95,1.87,1.35,.3,YEL,WR,-.04);box(-.3,.2,0,.5,.9,.45,WOOD);kid(.1,.5,{z0:.45,shirt:GREEN});box(-.15,-.05,.75,.35,.05,1.05,RED)},
+      beforeLunch:()=>{box(-2,.1,0,-1,.8,.8,GRAY);face([[-1.85,.2,.81],[-1.15,.2,.81],[-1.15,.7,.81],[-1.85,.7,.81]],[0,0,1],[110,170,235],{thin:true});box(-1.55,.72,.8,-1.45,.8,1.2,NAVY);box(-1.55,.5,1.12,-1.45,.8,1.2,NAVY);
+        kid(-1.5,-.25);table(1.1,.3,1.5,1,.7);discZ(1.1,.3,.81,.35,WHITE);ball(1.1,.3,.95,{r:.16,c:'orange',shadow:false});arrow([-.9,-.9,.02],[.8,-.9,.02],-.5);text([-1.5,-1.3,.02],'1',9);text([1.1,-1.3,.02],'2',9)},
+      afterSchool:()=>{build(-1.45,.7,1.3,1,1.4,[250,214,150],'SCHOOL');table(1.2,.2,1.3,.9,.7);box(.95,0,.8,1.45,.35,.84,WHITE);box(.85,.8,0,1.55,1.3,.45,WOOD);kid(1.2,1,{z0:.45,shirt:GREEN});arrow([-.7,-.9,.02],[.9,-.9,.02],-.5);text([-1.45,-1.4,.02],'1',9);text([1.2,-1.4,.02],'2',9)},
+      withFriend:()=>{floorCol='#dcefd2';kid(-.95,.1);kid(.95,.1,{shirt:PINK,long:true});ball(0,-.3,.25,{r:.25,c:'white'});ball(-.07,-.5,.3,{r:.07,c:'black',shadow:false,bias:-.6})},
+      forYou:()=>{kid(-1.1,.1);kid(1.1,.1,{shirt:GREEN,long:true});table(0,-.1,.8,.7,.5);box(-.25,-.3,.6,.25,.1,1,RED);box(-.05,-.31,.6,.05,.11,1.02,YEL);box(-.26,-.14,.6,.26,-.06,1.02,YEL);arrow([-.2,-1.1,.02],[.9,-1.1,.02],-.5)},
+      cakeFor:()=>{kid(-1.1,.1);kid(1.1,.1,{shirt:GREEN,long:true});table(0,-.1,.9,.8,.5);box(-.32,-.42,.6,.32,.22,.85,[255,236,228]);box(-.32,-.42,.85,.32,.22,.9,PINK);box(-.03,-.13,.9,.03,-.07,1.15,BLUE);ball(0,-.1,1.22,{r:.07,c:'yellow',shadow:false});arrow([-.2,-1.2,.02],[.9,-1.2,.02],-.5)},
+      byBus:()=>bus(YEL,'SCHOOL BUS'),
+      bySubway:()=>bus([150,170,205],'SUBWAY'),
+      aboutAnimals:()=>{box(-1.7,.5,0,-.1,.75,1.8,GREEN);deco(-1.5,1.15,-.3,1.6,.49,WHITE,[-.9,.5,.9]);text([-.9,.48,1.38],'ANIMALS',6,[-.9,.5,.9]);pet(.9,.5,0,'orange');pet(.5,-.8,0,'brown')},
+      aboutCat:()=>{box(-1.7,.5,0,-.1,.75,1.8,BLUE);deco(-1.5,1.15,-.3,1.6,.49,WHITE,[-.9,.5,.9]);text([-.9,.48,1.38],'A CAT',6,[-.9,.5,.9]);pet(.8,-.1,0,'orange')}
+    })[name]();
+    const FL=2.4,fl=[[-FL,-FL,0],[FL,-FL,0],[FL,FL,0],[-FL,FL,0]].map(p=>pr(p).join(',')).join(' ');
+    let grid='';for(let k=-2;k<=2;k++){const a=pr([k,-FL,0]),b=pr([k,FL,0]),e=pr([-FL,k,0]),f=pr([FL,k,0]);grid+=`M${a[0]} ${a[1]}L${b[0]} ${b[1]}M${e[0]} ${e[1]}L${f[0]} ${f[1]}`}
+    items.sort((a,b)=>a.L-b.L||b.d-a.d);
+    return `<svg class="pic" data-scene="${name}" viewBox="0 0 200 150" aria-hidden="true"><defs>${defs.join('')}</defs><polygon points="${fl}" fill="${floorCol}" stroke="#b9c4de" stroke-width="1.5" stroke-linejoin="round"/><path d="${grid}" stroke="#1b2850" stroke-opacity=".08" stroke-width="1"/>${items.map(x=>x.svg).join('')}</svg>`;
+  }
+  return draw;
+})();
+const YAW=-24;
+const PIC=(()=>{
+  const st='stroke="#1b2850" stroke-width="3" stroke-linejoin="round"';
+  const svg=b=>`<svg class="pic" viewBox="0 0 160 120" aria-hidden="true">${b}</svg>`;
+  const cal=all=>{let c='';for(let j=0;j<3;j++)for(let i=0;i<4;i++)c+=`<rect x="${40+21*i}" y="${48+18*j}" width="15" height="12" rx="2" fill="${all?'#ffc531':i===1&&j===1?'#e2532b':'#d7deee'}"/>`;
+    return `<rect x="30" y="14" width="100" height="94" rx="8" fill="#fff" ${st}/><path d="M30 38h100" ${st}/><rect x="30" y="14" width="100" height="24" rx="8" fill="#2b6be6" ${st}/>`+c};
+  const o={at:svg(`<circle cx="80" cy="60" r="44" fill="#fff" ${st}/><path d="M80 60V30M80 60l20 12" ${st} fill="none" stroke-linecap="round"/><circle cx="80" cy="60" r="4" fill="#e2532b"/>`),day:svg(cal(false)),month:svg(cal(true))};
+  ['on','in','under','next','behind','front','between','into','outof','up','down','to','from','catBed','bookBag','fishTank','clockWall','shoesBed','sitNext','bankBetween','toSchool','fromSchool','fromKorea','getUp7','soccerSun','summer','winter','morningRead','beforeLunch','afterSchool','withFriend','forYou','cakeFor','byBus','bySubway','aboutAnimals','aboutCat'].forEach(k=>o[k]=R3(k,YAW));
+  return o;
+})();
+G[10]={lead:'in, on, under, at 같은 말은 낱말 앞에 놓여서 위치, 방향, 때를 알려 줘요. 그림과 상황을 보면서 익혀요.',units:[
+{t:'위치 1 (in, on, under)',pics:true,k:['in the box','on the box','under the table'],tip:'in은 무엇의 안에 들어 있을 때 써요. on은 무엇의 겉면에 닿아서 위에 있을 때 써요. 벽에 걸린 시계처럼 붙어 있을 때도 on이에요. under는 무엇의 아래에 있을 때 써요.',
+ w:[['in','~ 안에',PIC.in],['on','~ 위에',PIC.on],['under','~ 아래에',PIC.under]],
+ s:[['The ball is in the box.','공이 상자 안에 있어요.',PIC.in],['The ball is on the box.','공이 상자 위에 있어요.',PIC.on],['The ball is under the table.','공이 탁자 아래에 있어요.',PIC.under],['The cat is on the bed.','고양이가 침대 위에 있어요.',PIC.catBed],['My book is in my bag.','내 책은 가방 안에 있어요.',PIC.bookBag]],
+ f:[['The ball is ___ the box.','in',['on','under'],'상자 안에 들어 있어요',PIC.in],['The ball is ___ the box.','on',['in','under'],'상자 위에 닿아 있어요',PIC.on],['The ball is ___ the table.','under',['in','on'],'탁자 아래에 있어요',PIC.under],['The fish is ___ the water.','in',['on','under'],'물속에 들어 있으니 in',PIC.fishTank],['The clock is ___ the wall.','on',['in','under'],'벽에 붙어 있으니 on',PIC.clockWall],['The shoes are ___ the bed.','under',['in','on'],'침대 아래에 있어요',PIC.shoesBed]]},
+{t:'위치 2 (next to, behind, in front of, between)',pics:true,k:['next to the box','behind the box','in front of the box','between the boxes'],tip:'그림 속 파란 아이가 상자를 바라보고 있어요. 아이 쪽에서 볼 때 상자 너머가 behind(뒤), 아이와 상자 사이가 in front of(앞)예요. next to는 바로 옆이에요. between은 둘 사이에 있을 때 쓰고, 뒤에 A and B처럼 두 가지를 말해요.',
+ w:[['next to','~ 옆에',PIC.next],['behind','~ 뒤에',PIC.behind],['in front of','~ 앞에',PIC.front],['between','~ 사이에',PIC.between]],
+ s:[['The ball is next to the box.','공이 상자 옆에 있어요.',PIC.next],['The ball is behind the box.','공이 상자 뒤에 있어요.',PIC.behind],['The ball is in front of the box.','공이 상자 앞에 있어요.',PIC.front],['The ball is between the boxes.','공이 상자들 사이에 있어요.',PIC.between],['I sit next to Mina.','나는 미나 옆에 앉아요.',PIC.sitNext]],
+ f:[['The ball is ___ the box.','next to',['behind','in front of','between'],'상자 바로 옆에 있어요',PIC.next],['The ball is ___ the box.','behind',['next to','in front of','between'],'상자 뒤에 가려져 있어요',PIC.behind],['The ball is ___ the box.','in front of',['behind','next to','between'],'상자 앞에 나와 있어요',PIC.front],['The ball is ___ the boxes.','between',['behind','next to','in front of'],'두 상자 사이에 있어요',PIC.between],['The bank is ___ the park and the school.','between',['behind','next to','in front of'],'A and B가 나오면 between',PIC.bankBetween]]},
+{t:'움직이는 방향 (into, out of, up, down, to, from)',pics:true,k:['into the box','out of the box','to school','from school'],tip:'움직임이 있을 때 쓰는 말이에요. 안으로 들어가면 into, 밖으로 나오면 out of예요. 가는 곳 앞에는 to, 떠나온 곳 앞에는 from을 써요.',
+ w:[['into','~ 안으로',PIC.into],['out of','~ 밖으로',PIC.outof],['up','위로',PIC.up],['down','아래로',PIC.down],['to','~로, ~에',PIC.to],['from','~에서, ~로부터',PIC.from]],
+ s:[['The ball goes into the box.','공이 상자 안으로 들어가요.',PIC.into],['The ball comes out of the box.','공이 상자 밖으로 나와요.',PIC.outof],['The ball goes up the stairs.','공이 계단 위로 올라가요.',PIC.up],['The ball comes down the stairs.','공이 계단 아래로 내려와요.',PIC.down],['I go to school.','나는 학교에 가요.',PIC.toSchool],['I am from Korea.','나는 한국에서 왔어요.',PIC.fromKorea]],
+ f:[['The ball goes ___ the box.','into',['out of','up','from'],'상자 안으로 들어가요',PIC.into],['The ball comes ___ the box.','out of',['into','down','to'],'상자 밖으로 나와요',PIC.outof],['The ball goes ___ the stairs.','up',['down','into','from'],'위로 올라가요',PIC.up],['The ball comes ___ the stairs.','down',['up','into','to'],'아래로 내려와요',PIC.down],['I go ___ school at eight.','to',['from','up','into'],'가는 곳 앞에는 to',PIC.toSchool],['I come home ___ school at three.','from',['to','into','up'],'떠나온 곳 앞에는 from',PIC.fromSchool]]},
+{t:'때를 나타내는 말 (at, on, in)',pics:true,k:['at seven','on Monday','in summer'],tip:'시각처럼 딱 한 점이면 at, 요일이나 날짜처럼 하루면 on, 달이나 계절처럼 긴 기간이면 in을 써요. 점, 하루, 긴 기간 순서로 커진다고 기억해요. 아침과 오후는 in the morning, in the afternoon이라고 해요.',
+ w:[['at','~에 (시각)',PIC.at],['on','~에 (요일, 날짜)',PIC.day],['in','~에 (달, 계절)',PIC.month],['before','~ 전에','⏪'],['after','~ 후에','⏩']],
+ s:[['I get up at seven.','나는 7시에 일어나요.',PIC.getUp7],['I play soccer on Sunday.','나는 일요일에 축구를 해요.',PIC.soccerSun],['It is hot in summer.','여름에는 더워요.',PIC.summer],['I read a book in the morning.','나는 아침에 책을 읽어요.',PIC.morningRead],['I wash my hands before lunch.','나는 점심 전에 손을 씻어요.',PIC.beforeLunch],['I do my homework after school.','나는 방과 후에 숙제를 해요.',PIC.afterSchool]],
+ f:[["I go to bed ___ nine o'clock.",'at',['on','in'],'시각 앞에는 at',PIC.at],['We have music ___ Friday.','on',['at','in'],'요일 앞에는 on',PIC.day],['My birthday is ___ May.','in',['at','on'],'달 앞에는 in',PIC.month],['It snows ___ winter.','in',['at','on'],'계절 앞에는 in',PIC.winter],['My birthday is ___ May fifth.','on',['at','in'],'날짜 앞에는 on',PIC.day],['I do my homework ___ school.','after',['in','on'],'학교가 끝난 다음이니 after',PIC.afterSchool]]},
+{t:'함께, 위해서, 타고 (with, for, by, about)',pics:true,k:['with my friend','for you','by bus'],tip:'with는 누구와 함께할 때, for는 누구를 위한 것일 때 써요. by는 타고 가는 것 앞에 써요. about은 무엇에 대한 이야기인지 말할 때 써요.',
+ w:[['with','~와 함께',PIC.withFriend],['for','~을 위해',PIC.forYou],['by','~을 타고',PIC.byBus],['about','~에 대해',PIC.aboutAnimals]],
+ s:[['I play with my friend.','나는 친구와 함께 놀아요.',PIC.withFriend],['This is for you.','이것은 너를 위한 거야.',PIC.forYou],['I go to school by bus.','나는 버스를 타고 학교에 가요.',PIC.byBus],['This book is about animals.','이 책은 동물에 대한 책이에요.',PIC.aboutAnimals]],
+ f:[['I play soccer ___ my brother.','with',['for','by','about'],'함께하는 사람 앞에는 with',PIC.withFriend],['This cake is ___ you.','for',['with','by','about'],'받는 사람 앞에는 for',PIC.cakeFor],['We go to the zoo ___ subway.','by',['with','for','about'],'타고 가는 것 앞에는 by',PIC.bySubway],['This book is ___ a cat.','about',['with','for','by'],'무엇에 대한 것인지는 about',PIC.aboutCat]]}
+]};
+const GAMES=[
+ {id:'write',name:'따라 쓰기',desc:'네 줄 공책 위의 흐린 글자를 따라 써요'},
+ {id:'listen',name:'낱말 듣기',desc:'낱말을 듣고 알맞은 낱말을 골라요'},
+ {id:'mean',name:'듣고 뜻 고르기',desc:'낱말을 듣고 알맞은 뜻을 골라요'},
+ {id:'word',name:'낱말 고르기',desc:'그림과 뜻을 보고 알맞은 영어 낱말을 골라요'},
+ {id:'match',name:'짝 맞추기',desc:'영어 낱말 카드와 뜻 카드의 짝을 찾아요'},
+ {id:'trace',name:'낱말 따라 쓰기',desc:'네 줄 공책 위의 흐린 낱말을 따라 써요'},
+ {id:'spell',name:'철자 쓰기',desc:'글자를 순서대로 놓아 낱말을 써요'},
+ {id:'fill',name:'빈칸 채우기',desc:'알맞은 말을 골라 문장을 완성해요'},
+ {id:'listen2',name:'문장 듣기',desc:'문장을 듣고 알맞은 문장을 골라요'},
+ {id:'order',name:'문장 만들기',desc:'낱말을 순서대로 놓아 문장을 만들어요'}
+];
+/* 과정 순서: 1~5단계가 기초 완성, 6~7단계는 넓히기 */
+const ORDER=[1,2,7,3,4,5,6];
+const STAGE={
+ 1:{name:'알파벳',hash:'alphabet',c:'#0a7c93',cs:'#d9f1f6',desc:'글자 이름과 모양을 익히고 네 줄에 써요'},
+ 2:{name:'파닉스',hash:'phonics',c:'#b23a7f',cs:'#fbe3f1',desc:'글자와 소리를 이어 낱말을 읽고 써요'},
+ 7:{name:'사이트 워드',hash:'sight',c:'#a35f06',cs:'#fdeccd',desc:'자주 보는 낱말을 통째로 읽고 짧은 문장을 만들어요'},
+ 3:{name:'3학년 표현',hash:'grade3',c:'#e2532b',cs:'#ffe9e1',desc:'인사, 수, 색깔, 좋아하는 것을 묻고 답해요'},
+ 4:{name:'4학년 표현',hash:'grade4',c:'#0d8a5c',cs:'#dcf5ea',desc:'기분, 요일, 시각, 날씨를 묻고 답해요'},
+ 5:{name:'5학년 표현',hash:'grade5',c:'#2b6be6',cs:'#e0ebff',desc:'지난 일과 앞으로 할 일을 말해요'},
+ 6:{name:'6학년 표현',hash:'grade6',c:'#7a4be0',cs:'#ece4ff',desc:'비교, 이유, 계획을 자세히 말해요'},
+ 8:{name:'어휘',hash:'words',c:'#3f55b8',cs:'#e3e8fb',desc:'주제별 기초 낱말을 듣고, 뜻을 익히고, 써요'},
+ 10:{name:'전치사',hash:'prepositions',c:'#5d7708',cs:'#eef4d4',desc:'그림과 상황으로 in, on, under, at 같은 말을 익혀요'},
+ 9:{name:'내 낱말',hash:'mywords',c:'#4f5d75',cs:'#e8ecf3',desc:'교과서 단원 낱말을 직접 넣어 공부해요'}
+};
+const KEY='english-playground-v1';
+const app=document.getElementById('app'), tabs=document.getElementById('tabs');
+const $=s=>app.querySelector(s);
+let S={g:1,u:0}, store={};
+try{store=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){store={}}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}};
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=(a,n)=>shuffle(a).slice(0,n);
+const hasWeb='speechSynthesis' in window;
+let canSpeak=hasWeb,TTS=null,ttsOK=false,VIEW='grade';
+let VOICE=null,lastU=null;
+function loadVoice(){try{const vs=speechSynthesis.getVoices();VOICE=vs.find(v=>/^en[-_]US/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null;return vs.length}catch(e){return 0}}
+if(hasWeb){loadVoice();try{speechSynthesis.addEventListener('voiceschanged',loadVoice)}catch(e){}}
+function mkU(t){const u=new SpeechSynthesisUtterance(t);let n=1;if(!VOICE)n=loadVoice();if(VOICE){u.voice=VOICE;u.lang=VOICE.lang}else if(!n)u.lang='en-US';u.rate=snd.rate;u.volume=1;return u}
+/* 읽을 글 다듬기: 낱글자는 글자 이름으로, 대문자·소문자 짝은 한 번만, 파닉스 표기는 낱말만 읽는다 */
+const VOICES={glassy:'맑은 목소리',airy:'가벼운 목소리',buttery:'부드러운 목소리',rounded:'둥근 목소리'};
+let lastErr='';
+const SAY={close:'cloze'};
+const LN={a:'ay',b:'bee',c:'see',d:'dee',e:'ee',f:'eff',g:'gee',h:'aitch',i:'eye',j:'jay',k:'kay',l:'ell',m:'em',n:'en',o:'oh',p:'pee',q:'cue',r:'are',s:'ess',t:'tee',u:'you',v:'vee',w:'double you',x:'ex',y:'why',z:'zee'};
+const isL=x=>/^[A-Za-z]$/.test(x);
+function norm(t){
+  t=String(t).trim();
+  if(SAY[t])return SAY[t]+'.';
+  if(t.includes('→')){const a=t.split('→').map(x=>x.trim());return(/[-+]/.test(a[0])?'':a[0]+', ')+a[1]+'.'}
+  let k=t.split(/\s+/);
+  if(k.length===3&&k[1]==='-')return(isL(k[0])?LN[k[0].toLowerCase()]+', ':'')+k[2]+'.';
+  if(k.every(isL)){
+    k=k.filter((x,i)=>!(i&&k[i-1]!==x&&k[i-1].toLowerCase()===x.toLowerCase()));
+    return k.map(x=>LN[x.toLowerCase()]).join(', ')+'.';
+  }
+  t=t.replace(/^([A-Z]) is for /,(m,c)=>LN[c.toLowerCase()]+' is for ').replace(/\s{2,}/g,', ');
+  return /[.?!]$/.test(t)?t:t+'.';
+}
+function sayList(list){
+  list=list.map(norm);
+  if(TTS){
+    const t=TTS;
+    /* 읽는 도중 다른 소리로 바뀌면 앞의 요청이 거절되므로, 사용자가 음성을 껐을 때만 브라우저 음성으로 바꾼다 */
+    t.speak(list.map(text=>({text,language:'en',rate:snd.rate,voice:VOICES[snd.voice]?snd.voice:'glassy'}))).then(()=>{ttsOK=true}).catch(e=>{
+      lastErr=e&&e.code||'error';
+      if(lastErr==='not_granted'){if(TTS===t)TTS=null;canSpeak=hasWeb;drawSnd();if(hasWeb)webSay(list)}
+    });
+    return;
+  }
+  webSay(list);
+}
+function webSay(list){
+  if(!hasWeb)return;
+  try{
+    const go=()=>{try{speechSynthesis.resume();lastU=list.map(mkU);lastU.forEach(u=>speechSynthesis.speak(u))}catch(e){}};
+    if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();setTimeout(go,150)}else go();
+  }catch(e){}
+}
+const speakAll=sayList;
+function speak(t){sayList([t])}
+/* 소리: 파일 없이 Web Audio로 직접 만든다 */
+let AC=null,bgmGain=null,bgmTimer=null,bgmNext=0,bgmStep=0;
+const snd={fx:store._fx!==false,bgm:false,voice:store._voice||'glassy',rate:[.7,.8,.9,1].includes(store._rate)?store._rate:.8};
+function ac(){
+  if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){return null}}
+  if(AC.state==='suspended'){try{AC.resume().catch(()=>{})}catch(e){}}
+  return AC;
+}
+function tone(f,t,dur,vol,type,dest){
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type=type||'triangle';o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g);g.connect(dest||AC.destination);o.start(t);o.stop(t+dur+.02);
+}
+const FX={tap:[[520,0,.07,.08]],ok:[[660,0,.12,.14],[990,.1,.22,.14]],no:[[233,0,.16,.12,'sawtooth'],[185,.13,.24,.12,'sawtooth']],
+ win:[[523,0,.16,.14],[659,.13,.16,.14],[784,.26,.16,.14],[1047,.39,.45,.16]]};
+function fx(n){if(!snd.fx)return;const a=ac();if(!a)return;const t=a.currentTime+.01;FX[n].forEach(x=>tone(x[0],t+x[1],x[2],x[3],x[4]))}
+/* 배경음: 5음 음계로 지은 짧은 가락을 되풀이한다 */
+const N={C3:130.8,F2:87.3,G2:98,A2:110,C5:523.3,D5:587.3,E5:659.3,G5:784,A5:880};
+const MEL='C5 E5 G5 E5 A5 G5 E5 - D5 E5 G5 A5 G5 E5 D5 - C5 D5 E5 G5 A5 - G5 E5 D5 C5 D5 E5 C5 - - -'.split(' ');
+const BASS=['C3','C3','A2','G2','C3','F2','G2','C3'];
+function bgmTick(){
+  if(!AC||!bgmGain)return;
+  while(bgmNext<AC.currentTime+.4){
+    const m=MEL[bgmStep%MEL.length];
+    if(m!=='-')tone(N[m],bgmNext,.34,.5,'sine',bgmGain);
+    if(bgmStep%4===0)tone(N[BASS[(bgmStep/4)%BASS.length]],bgmNext,1.1,.6,'triangle',bgmGain);
+    bgmNext+=.3;bgmStep++;
+  }
+}
+function bgmOn(){
+  const a=ac();if(!a)return false;
+  if(!bgmGain){bgmGain=a.createGain();bgmGain.gain.value=.2;bgmGain.connect(a.destination)}
+  clearInterval(bgmTimer);bgmNext=a.currentTime+.1;bgmTimer=setInterval(bgmTick,120);bgmTick();return true;
+}
+function bgmOff(){clearInterval(bgmTimer);bgmTimer=null}
+function drawSnd(){
+  const el=document.getElementById('snd');
+  el.innerHTML=`<button id="fxBtn" aria-pressed="${snd.fx}">효과음 ${snd.fx?'켜짐':'꺼짐'}</button><button id="bgmBtn" aria-pressed="${snd.bgm}">배경음 ${snd.bgm?'켜짐':'꺼짐'}</button>${TTS?`<label for="voiceSel" class="vl">목소리</label><select id="voiceSel">${Object.keys(VOICES).map(v=>`<option value="${v}"${v===snd.voice?' selected':''}>${VOICES[v]}</option>`).join('')}</select>`:''}${canSpeak?`<label for="rateSel" class="vl">읽는 속도</label><select id="rateSel">${[[.7,'아주 천천히'],[.8,'천천히'],[.9,'보통'],[1,'빠르게']].map(r=>`<option value="${r[0]}"${r[0]===snd.rate?' selected':''}>${r[1]}</option>`).join('')}</select>`:''}<button id="testBtn">소리 확인</button><span id="sndMsg" role="status"></span>`;
+  const vs=document.getElementById('voiceSel');
+  const rs=document.getElementById('rateSel');
+  if(rs)rs.onchange=()=>{snd.rate=+rs.value;store._rate=snd.rate;save();speak("Hello! Let's learn English.")};
+  if(vs)vs.onchange=()=>{snd.voice=vs.value;store._voice=snd.voice;save();speak("Hello! Let's learn English.")};
+  document.getElementById('testBtn').onclick=()=>{
+    const a=ac();let m=[];
+    if(a){const t=a.currentTime+.02;FX.win.forEach(x=>tone(x[0],t+x[1],x[2],.25));m.push('효과음: 지금 딩동 소리를 냈어요 ('+a.state+')')}else m.push('효과음: 이 브라우저에서는 낼 수 없어요');
+    if(TTS){m.push('영어 읽기: Claude 음성('+VOICES[snd.voice]+')으로 읽어요');lastErr='';speak('Hello! Can you hear me?');
+      setTimeout(()=>{if(lastErr)document.getElementById('sndMsg').textContent+=' · 읽기 오류: '+lastErr},2500)}
+    else if(!canSpeak)m.push('영어 읽기: 이 화면에서는 음성 읽기를 쓸 수 없어요');
+    else{const n=loadVoice();m.push('영어 읽기: '+(VOICE?VOICE.name:n?'영어 음성이 없어 기본 음성('+n+'개)으로 읽어요':'설치된 음성을 찾지 못했어요'));speak('Hello. Can you hear me?')}
+    document.getElementById('sndMsg').textContent=m.join(' · ');
+  };
+  document.getElementById('fxBtn').onclick=()=>{snd.fx=!snd.fx;store._fx=snd.fx;save();drawSnd();fx('ok')};
+  document.getElementById('bgmBtn').onclick=()=>{snd.bgm=!snd.bgm;if(snd.bgm){if(!bgmOn())snd.bgm=false}else bgmOff();drawSnd()};
+}
+document.addEventListener('visibilitychange',()=>{if(!snd.bgm)return;document.hidden?bgmOff():bgmOn()});
+const esc=t=>String(t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+/* 완성된 낱말·문장을 네 줄 위에 보여 주고 듣기 버튼을 붙인다 */
+const doneBox=(text,say)=>text?`<div class="key donebox"><span class="lined">${esc(text)}</span>${canSpeak?`<button class="say" data-say="${esc(say||text)}">듣기</button>`:''}</div>`:'';
+const bindSay=root=>root.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>speak(b.dataset.say));
+function bigCard(en,ko,em,from){
+  const ov=document.createElement('div');ov.className='ov';
+  ov.innerHTML=`<div class="ovc" role="dialog" aria-modal="true" aria-label="${esc(en)}">${em?`<div class="em en">${em}</div>`:''}<div class="lined">${esc(en)}</div><p>${ko}</p><div class="row">${canSpeak?'<button class="btn" id="ovSay">듣기</button>':''}<button class="btn plain" id="ovX">닫기</button></div></div>`;
+  document.body.appendChild(ov);
+  const close=()=>{ov.remove();removeEventListener('keydown',key);if(from)from.focus()};
+  const key=e=>{if(e.key==='Escape')close()};
+  addEventListener('keydown',key);
+  ov.onclick=e=>{if(e.target===ov)close()};
+  ov.querySelector('#ovX').onclick=close;
+  const sv=ov.querySelector('svg[data-scene]');
+  if(sv){const nm=sv.dataset.scene,row=document.createElement('div');row.className='rot';
+    row.innerHTML='<label for="rot">돌려서 보기</label><input type="range" id="rot" min="-60" max="60" step="2" value="'+YAW+'">';
+    ov.querySelector('.em').after(row);row.querySelector('#rot').oninput=e=>{ov.querySelector('.em').innerHTML=R3(nm,+e.target.value)}}
+  const s=ov.querySelector('#ovSay');if(s){s.onclick=()=>speak(en);s.focus()}else ov.querySelector('#ovX').focus();
+  speak(en);
+}
+const stars=n=>[1,2,3].map(i=>`<span class="star${i>n?' off':''}">★</span>`).join('');
+const unit=()=>G[S.g].units[S.u];
+const spellWords=u=>u.w.filter(w=>/^[A-Za-z]{3,}$/.test(w[0]));
+const traceWords=u=>u.w.filter(w=>/^[A-Za-z]{2,7}$/.test(w[0]));
+const gamesFor=u=>GAMES.filter(g=>g.id==='spell'?spellWords(u).length>=4:g.id==='write'?!!u.letters:g.id==='trace'?!u.letters&&traceWords(u).length>=3:g.id==='listen'?canSpeak:g.id==='mean'?canSpeak&&!!(u.vocab||u.pics):g.id==='match'?u.w.length>=3:g.id==='listen2'?canSpeak&&!u.letters&&!!u.s&&u.s.length>=3:g.id==='fill'?!!u.f:g.id==='order'?!!u.s:true);
+const slabel=g=>(sno(g)?sno(g)+'단계 ':'')+gname(g);
+function loadMy(){G[9].units=(store._my||[]).map(m=>({t:m.t,vocab:true,w:m.w}))}
+loadMy();
+const gmeta=(g,u)=>g.id==='listen'&&u.letters?{id:g.id,name:'알파벳 듣기',desc:'글자 이름을 듣고 알맞은 글자를 골라요'}:g;
+const gname=g=>STAGE[g].name;
+const ghash=g=>STAGE[g].hash;
+const sno=g=>ORDER.indexOf(g)+1;
+const got=(g,ui,id)=>store[g+'-'+ui+'-'+id]||0;
+/* 활동마다 별 2개 이상이면 완료, 모든 활동이 완료면 그 걸음이 완료 */
+const doneCount=(g,ui)=>gamesFor(G[g].units[ui]).filter(x=>got(g,ui,x.id)>=2).length;
+const isDone=(g,ui)=>doneCount(g,ui)===gamesFor(G[g].units[ui]).length;
+const stageDone=g=>G[g].units.filter((u,i)=>isDone(g,i)).length;
+function firstOpen(){for(const g of ORDER)for(let i=0;i<G[g].units.length;i++)if(!isDone(g,i))return{g,u:i};return null}
+function after(g,ui){if(ui+1<G[g].units.length)return{g,u:ui+1};const k=ORDER.indexOf(g);return k>=0&&k+1<ORDER.length?{g:ORDER[k+1],u:0}:null}
+let PEND=false;
+function goUnit(g,ui){S.g=g;S.u=ui;if(location.hash!=='#'+ghash(g)){PEND=true;location.hash=ghash(g)}else{drawTabs();viewUnit()}scrollTo(0,0)}
+
+function drawTabs(home){
+  const c=home?null:STAGE[S.g],r=document.documentElement.style;
+  r.setProperty('--gc',c?c.c:'#1b2850');r.setProperty('--gc-soft',c?c.cs:'#e3e8f6');
+  tabs.innerHTML=`<a class="tab" href="#home" ${home?'aria-current="page"':''}>과정</a>`+ORDER.map((g,i)=>`<a class="tab" href="#${ghash(g)}" ${!home&&g===S.g?'aria-current="page"':''}>${i+1} ${gname(g)}</a>`).join('')+[8,10,9].map(g=>`<a class="tab" href="#${ghash(g)}" ${!home&&g===S.g?'aria-current="page"':''}>${gname(g)}</a>`).join('');
+}
+function viewHome(){
+  VIEW='home';drawTabs(true);
+  const nx=firstOpen();
+  const card=(g,i)=>{const n=G[g].units.length,d=stageDone(g),s=STAGE[g];
+    if(i<0)return `<li><a class="stage" href="#${s.hash}" style="--gc:${s.c};--gc-soft:${s.cs}"><span class="no">${{8:'A',10:'B',9:'C'}[g]}</span><span class="sn">${s.name}</span><span class="pill${n&&d===n?' ok':d?' on':''}">${n?n+'묶음':'비어 있음'}</span><span class="sd">${s.desc}</span><span class="bar"><i style="width:${n?d/n*100:0}%"></i></span><span class="st">${n}묶음 가운데 ${d}묶음 완료</span></a></li>`;
+    return `<li><a class="stage" href="#${s.hash}" style="--gc:${s.c};--gc-soft:${s.cs}"><span class="no">${i+1}</span><span class="sn">${s.name}</span><span class="pill${d===n?' ok':d||nx&&nx.g===g?' on':''}">${d===n?'완료':d||nx&&nx.g===g?'진행 중':'시작 전'}</span><span class="sd">${s.desc}</span><span class="bar"><i style="width:${d/n*100}%"></i></span><span class="st">${n}걸음 가운데 ${d}걸음 완료</span></a></li>`};
+  app.innerHTML=`<h2 class="gh">기초 영어 완성 과정</h2>
+  <p class="lead">알파벳, 파닉스, 사이트 워드, 3학년 표현, 4학년 표현 순서로 한 걸음씩 익혀요. 걸음마다 듣기, 낱말, 쓰기, 문장 활동을 차례로 하고, 모든 활동에서 별 2개 이상을 받으면 다음 걸음으로 넘어가요.</p>
+  ${nx?`<button class="cont" id="cont"><span>이어서 하기</span><b>${sno(nx.g)}단계 ${gname(nx.g)} · ${G[nx.g].units[nx.u].t}</b></button>`:'<p class="cont fin">모든 과정을 마쳤어요!</p>'}
+  <h3 class="sub">기초 완성 (1~5단계)</h3><ol class="path">${ORDER.slice(0,5).map(card).join('')}</ol>
+  <h3 class="sub">넓히기 (6~7단계)</h3><ol class="path">${ORDER.slice(5).map((g,i)=>card(g,i+5)).join('')}</ol>
+  <h3 class="sub">어휘와 전치사 (과정과 함께 언제든지)</h3><ol class="path">${card(8,-1)}${card(10,-1)}${card(9,-1)}</ol>`;
+  if(nx)$('#cont').onclick=()=>goUnit(nx.g,nx.u);
+}
+function viewGrade(){
+  VIEW='grade';
+  drawTabs();const d=G[S.g],nx=d.units.findIndex((u,i)=>!isDone(S.g,i)),rv=store[S.g+'-review']||0;
+  app.innerHTML=`<a class="back" href="#home">← 과정 한눈에 보기</a>
+  <h2 class="gh">${slabel(S.g)}</h2><p class="lead">${d.lead} ${sno(S.g)?'번호 순서대로 한 걸음씩 해 보세요. ':''}${d.units.length?`${d.units.length}${sno(S.g)?'걸음':'묶음'} 가운데 ${stageDone(S.g)}${sno(S.g)?'걸음':'묶음'}을 마쳤어요.`:''}</p>
+  <div class="units">${d.units.map((u,i)=>{const a=doneCount(S.g,i),m=gamesFor(u).length,ok=a===m;
+    return `<button class="unit${ok?' ok':i===nx?' now':''}" data-u="${i}"><span class="no">${ok?'✓':i+1}</span><span class="ut">${u.t}</span><span class="uk en">${u.k?u.k[0]:u.w.slice(0,4).map(w=>w[0]).join(', ')+' 등 '+u.w.length+'개'}</span><span class="st">${ok?'완료':i===nx?'다음 차례 · ':''}${ok?'':`활동 ${m}개 가운데 ${a}개 완료`}</span></button>`}).join('')}</div>
+  ${S.g===9?myForm(d):''}
+  <h3 class="sub" style="margin-top:26px"${d.units.length?'':' hidden'}>모아서 복습하기</h3>
+  <div class="games"${d.units.length?'':' hidden'}><button class="gbtn" id="review"><b>${gname(S.g)} 낱말 복습</b><span>이 단계에서 배운 낱말을 섞어서 10문제를 풀어요</span><span class="st">${stars(rv)}</span></button></div>`;
+  app.querySelectorAll('.unit').forEach(b=>b.onclick=()=>{S.u=+b.dataset.u;viewUnit();scrollTo(0,0)});
+  $('#review').onclick=()=>{review();scrollTo(0,0)};
+  if(S.g===9)bindMy();
+}
+/* 내 낱말: 교과서 낱말을 직접 넣는다. 이 기기에만 저장된다 */
+function myForm(d){
+  return `${d.units.length?`<p class="dels">${d.units.map((u,i)=>`<button class="skip" data-del="${i}">「${esc(u.t)}」 지우기</button>`).join('')}</p>`:''}
+  <section class="concept" style="margin-top:22px"><h2>교과서 낱말 넣기</h2>
+   <p class="tip">한 줄에 낱말 하나씩, 영어를 먼저 쓰고 뜻을 이어서 써요. 4개 이상 넣으면 활동이 만들어져요.</p>
+   <div class="form"><label for="myT">묶음 이름</label><input id="myT" type="text" maxlength="30" placeholder="예: 3학년 1단원">
+   <label for="myW">낱말과 뜻</label><textarea id="myW" rows="8" placeholder="apple 사과&#10;ice cream 아이스크림&#10;hungry 배고픈&#10;school 학교"></textarea></div>
+   <div class="row" style="justify-content:flex-start;margin-top:12px"><button class="btn" id="myAdd">낱말 묶음 만들기</button></div>
+   <p id="myMsg" role="status" class="tip" style="margin:10px 0 0"></p></section>`;
+}
+function bindMy(){
+  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+    if(!b.dataset.sure){b.dataset.sure=1;b.textContent='한 번 더 누르면 지워져요 (내 낱말의 별도 함께 지워져요)';return}
+    store._my.splice(+b.dataset.del,1);Object.keys(store).forEach(k=>{if(k.startsWith('9-'))delete store[k]});save();loadMy();viewGrade();
+  });
+  $('#myAdd').onclick=()=>{
+    const t=$('#myT').value.trim()||'내 낱말 '+((store._my||[]).length+1),seen=new Set(),w=[];let bad=0;
+    $('#myW').value.split(/\n/).forEach(line=>{
+      line=line.trim();if(!line)return;
+      const m=/^([A-Za-z][A-Za-z .'\-]*?)\s*[,=:\t\-]?\s*([가-힣(~].*)$/.exec(line);
+      if(!m){bad++;return}
+      const en=m[1].trim();if(seen.has(en))return;seen.add(en);w.push([en,m[2].trim().replace(/</g,''),'']);
+    });
+    if(w.length<4){$('#myMsg').textContent=`낱말을 4개 이상 넣어 주세요. 지금 읽은 낱말은 ${w.length}개예요.${bad?' 읽지 못한 줄이 '+bad+'줄 있어요. 영어 다음에 한글 뜻을 써 주세요.':''}`;return}
+    store._my=(store._my||[]).concat([{t:t.replace(/</g,''),w}]);save();loadMy();viewGrade();
+    $('#myMsg').textContent=`「${t}」 묶음을 만들었어요. 낱말 ${w.length}개.${bad?' 읽지 못한 줄 '+bad+'줄은 빼고 넣었어요.':''}`;
+  };
+}
+function viewUnit(){
+  VIEW='unit';
+  const u=unit(),gs=gamesFor(u).map(g=>gmeta(g,u)),nx=gs.findIndex(g=>got(S.g,S.u,g.id)<2);
+  app.innerHTML=`<button class="back" id="toGrade">← ${slabel(S.g)} 목록</button>
+  <section class="concept"><span class="label">${slabel(S.g)} · ${S.u+1}번째 ${sno(S.g)?'걸음':'묶음'}</span><h2>${u.t}</h2>
+   <div class="keys">${(u.k||[]).map(k=>`<div class="key"><span class="lined">${k}</span>${canSpeak?`<button class="say" data-say="${k.replace(/"/g,'&quot;')}">듣기</button>`:''}</div>`).join('')}</div>
+   <p class="tip">${u.tip||'낱말을 하나씩 눌러 크게 보고, 소리를 듣고 따라 말해 보세요.'}</p>
+   <div class="lrow"><span class="label">${u.letters?'알파벳':'낱말'} 듣기 (누르면 크게 보여요)</span>${canSpeak?'<button class="say" data-all="w">모두 듣기</button>':''}</div>
+   <div class="words">${u.w.map((w,i)=>`<button class="word" data-wi="${i}">${w[2]?`<i>${w[2]}</i>`:''}<b>${w[0]}</b><span>${w[1]}</span></button>`).join('')}</div>
+   <div class="lrow"${u.s?'':' hidden'}><span class="label">${u.letters?'순서대로':u.pics?'그림과 상황으로 보기':'문장'} 듣기</span>${canSpeak?'<button class="say" data-all="s">모두 듣기</button>':''}</div>
+   <div class="sents${u.pics?' gal':''}">${(u.s||[]).map((s,i)=>`<button class="word sent" data-si="${i}">${s[2]?`<i class="spic">${s[2]}</i>`:''}<b>${s[0]}</b><span>${s[1]}</span></button>`).join('')}</div>
+  </section>
+  <h3 class="sub">순서대로 활동하기</h3>
+  <p class="lead">위의 ${u.vocab?'낱말':'개념'}과 소리를 먼저 살펴본 다음, 번호 순서대로 해 보세요. 별 2개 이상이면 그 활동은 완료예요.${nx<0?' 이 걸음의 활동을 모두 마쳤어요.':''}</p>
+  <div class="games">${gs.map((g,i)=>{const n=got(S.g,S.u,g.id);return `<button class="gbtn${n>=2?' ok':i===nx?' now':''}" data-game="${g.id}"><b><span class="num">${i+1}</span>${g.name}</b><span>${g.desc}</span><span class="st">${stars(n)} <em>${n>=2?'완료':i===nx?'다음 차례':''}</em></span></button>`}).join('')}</div>`;
+  $('#toGrade').onclick=viewGrade;
+  app.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>speak(b.dataset.say));
+  app.querySelectorAll('[data-wi]').forEach(b=>b.onclick=()=>{const w=u.w[+b.dataset.wi];bigCard(w[0],w[1],w[2],b)});
+  app.querySelectorAll('[data-si]').forEach(b=>b.onclick=()=>{const s=u.s[+b.dataset.si];bigCard(s[0],s[1],s[2]||'',b)});
+  app.querySelectorAll('[data-all]').forEach(b=>b.onclick=()=>speakAll((b.dataset.all==='w'?u.w:u.s).map(x=>x[0])));
+  app.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{play(b.dataset.game);scrollTo(0,0)});
+}
+let CTX={};
+function review(){
+  VIEW='game';CTX={key:S.g+'-review',again:review,back:viewGrade,review:true};
+  const seen=new Set(),pool=G[S.g].units.flatMap(u=>u.w).filter(w=>!seen.has(w[0])&&seen.add(w[0]));
+  runQuiz('review',gname(S.g)+' 낱말 복습',pick(pool,10).map(w=>({big:w[2],text:w[1],answer:w[0],say:w[0],sc:true,
+    choices:shuffle([w[0],...pick(pool.filter(x=>x[0]!==w[0]).map(x=>x[0]),3)])})));
+}
+function play(id){
+  VIEW='game';CTX={key:S.g+'-'+S.u+'-'+id,again:()=>play(id),back:viewUnit};
+  const u=unit(), name=gmeta(GAMES.find(g=>g.id===id),u).name;
+  if(id==='write') return runWrite(id,name,u.letters.split('').map(L=>({txt:L+' '+L.toLowerCase(),say:L.toLowerCase()})),'글자');
+  if(id==='trace') return runWrite(id,name,pick(traceWords(u),5).map(w=>({txt:w[0],say:w[0],ko:w[1]})),'낱말');
+  if(id==='listen') runQuiz(id,name,pick(u.w,Math.min(8,u.w.length)).map(w=>({listen:true,sc:true,answer:w[0],
+      choices:shuffle([w[0],...pick(u.w.filter(x=>x[0]!==w[0]).map(x=>x[0]),3)])})));
+  else if(id==='mean'){const lab=w=>(w[2]?w[2]+' ':'')+w[1];
+    runQuiz(id,name,pick(u.w,Math.min(8,u.w.length)).map(w=>({listen:true,hear:w[0],say:w[0],answer:lab(w),
+      choices:shuffle([lab(w),...pick(u.w.filter(x=>x[1]!==w[1]).map(lab),3)])})))}
+  else if(id==='listen2') runQuiz(id,name,pick(u.s,Math.min(6,u.s.length)).map(s=>({listen:true,long:true,sc:true,answer:s[0],note:'뜻: '+s[1],
+      choices:shuffle([s[0],...pick(u.s.filter(x=>x[0]!==s[0]).map(x=>x[0]),3)])})));
+  else if(id==='word') runQuiz(id,name,pick(u.w,Math.min(8,u.w.length)).map(w=>({big:w[2],text:w[1],answer:w[0],say:w[0],sc:true,
+      choices:shuffle([w[0],...pick(u.w.filter(x=>x[0]!==w[0]).map(x=>x[0]),3)])})));
+  else if(id==='fill') runQuiz(id,name,shuffle(u.f).map(f=>({big:f[4],text:f[0],en:true,answer:f[1],tip:f[3]||'',
+      say:/^[\x20-\x7e]+$/.test(f[0])?f[0].replace('___',f[1]).replace(/[AB]: /g,''):'',choices:shuffle([f[1],...f[2]])})));
+  else if(id==='order') runBuild(id,name,shuffle(u.s).map(s=>({big:s[2],text:s[1],tokens:s[0].split(' '),sep:' ',say:s[0]})));
+  else if(id==='spell') runBuild(id,name,pick(spellWords(u),6).map(w=>({big:w[2],text:w[1],tokens:w[0].split(''),sep:'',say:w[0]})));
+  else runMatch(id,name,u);
+}
+const shell=(title,i,n,body)=>`<div class="gbar"><button class="back" id="quit">← 그만하기</button><span class="gt">${title}</span><span class="gp">${Math.min(i+1,n)} / ${n}</span></div><div class="prog"><i style="width:${i/n*100}%"></i></div>${body}`;
+const qbox=q=>`<div class="q">${q.big?`<div class="big">${q.big}</div>`:''}<div class="qt${q.en?' en':''}">${q.text}</div></div>`;
+const bindQuit=()=>{$('#quit').onclick=()=>CTX.back()};
+
+function runQuiz(id,title,qs){
+  let i=0,score=0;
+  const show=()=>{
+    const q=qs[i];let first=true;
+    app.innerHTML=shell(title,i,qs.length,(q.listen?`<div class="q"><div class="qt">소리를 듣고 알맞은 것을 골라요.</div><button class="say" id="re">다시 듣기</button></div>`:qbox(q))+`<div class="choices${q.long?' long':''}">${q.choices.map((c,k)=>`<button class="choice en" data-k="${k}">${c}</button>`).join('')}</div><div class="fb" aria-live="polite"></div>`);
+    bindQuit();
+    if(q.listen){speak(q.hear||q.answer);$('#re').onclick=()=>speak(q.hear||q.answer)}
+    app.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{
+      if(q.choices[+b.dataset.k]===q.answer){
+        if(first)score++;fx('ok');
+        b.classList.add('ok');app.querySelectorAll('.choice').forEach(x=>x.disabled=true);
+        if(q.say&&!q.hear)speak(q.say);
+        $('.fb').innerHTML=`<p class="good">${first?'정답이에요!':'맞았어요!'}${q.tip?' '+q.tip+'.':''}</p>${doneBox(q.say||(q.listen?q.answer:''))}${q.note?`<p class="note">${q.note}</p>`:''}<button class="next">${i+1<qs.length?'다음 문제':'결과 보기'}</button>`;
+        bindSay($('.fb'));
+        $('.next').onclick=()=>{i++;i<qs.length?show():finish(id,score,qs.length)};$('.next').focus();
+      }else{first=false;fx('no');b.classList.add('no');b.disabled=true;const c=q.choices[+b.dataset.k];
+        $('.fb').innerHTML='<p class="bad">아쉬워요. 다시 골라 보세요.</p>'+(q.sc?doneBox(c):'');
+        if(q.sc){speak(c);bindSay($('.fb'))}}
+    });
+  };
+  show();
+}
+function runBuild(id,title,items){
+  let i=0,score=0;
+  const show=()=>{
+    const it=items[i];let first=true,done=false,ans=[],msg='';
+    let pool=shuffle(it.tokens.map((t,k)=>({t,k})));
+    if(it.tokens.length>1){let n=0;while(pool.map(x=>x.t).join('|')===it.tokens.join('|')&&n++<20)pool=shuffle(pool)}
+    const tile=(x,w)=>`<button class="tile" data-w="${w}" data-k="${x.k}" ${done?'disabled':''}>${x.t}</button>`;
+    const draw=shake=>{
+      app.innerHTML=shell(title,i,items.length,qbox(it)+`<div class="answer${done?' done':''}${shake?' shake':''}" aria-label="내가 만든 답">${ans.map(x=>tile(x,'a')).join('')}</div><div class="pool">${pool.map(x=>tile(x,'p')).join('')}</div><div class="fb" aria-live="polite">${msg}</div>`);
+      bindQuit();
+      if(done){bindSay($('.fb'));$('.next').onclick=()=>{i++;i<items.length?show():finish(id,score,items.length)};$('.next').focus();return}
+      app.querySelectorAll('.tile').forEach(b=>b.onclick=()=>{
+        const k=+b.dataset.k;fx('tap');
+        if(b.dataset.w==='p'){ans.push(pool.find(x=>x.k===k));pool=pool.filter(x=>x.k!==k)}
+        else{pool.push(ans.find(x=>x.k===k));ans=ans.filter(x=>x.k!==k)}
+        msg='';
+        if(!pool.length){
+          if(ans.map(x=>x.t).join(it.sep)===it.tokens.join(it.sep)){
+            done=true;if(first)score++;fx('ok');speak(it.say);
+            msg=`<p class="good">${first?'정답이에요!':'완성했어요!'}</p>${doneBox(it.say)}<button class="next">${i+1<items.length?'다음 문제':'결과 보기'}</button>`;
+          }else{
+            first=false;fx('no');let j=0;while(ans[j].t===it.tokens[j])j++;
+            pool=ans.slice(j);ans=ans.slice(0,j);
+            msg=`<p class="bad">${j?'앞쪽은 맞았어요. 나머지를 다시 놓아 보세요.':'처음부터 다시 놓아 보세요.'}</p>`;
+            return draw(true);
+          }
+        }
+        draw();
+      });
+    };
+    draw();
+  };
+  show();
+}
+function runWrite(id,title,items,noun){
+  let i=0,score=0;
+  const W=640,H=320;
+  const show=async()=>{
+    const it=items[i],txt=it.txt;let first=true,strokes=[],cur=null,done=false;
+    app.innerHTML=shell(title,i,items.length,`<div class="q"><div class="qt">흐린 ${noun} <b class="en">${txt}</b>${it.ko?' ('+it.ko+')':''} 위를 손가락이나 마우스로 따라 써요.</div></div><div class="pad"><canvas id="gd" width="${W}" height="${H}"></canvas><canvas id="dr" width="${W}" height="${H}" aria-label="${txt} 따라 쓰는 칸"></canvas></div><div class="row">${canSpeak?'<button class="btn plain" id="hear">듣기</button>':''}<button class="btn plain" id="clr">지우기</button><button class="btn" id="chk">다 썼어요</button></div><div class="fb" aria-live="polite"></div>`);
+    bindQuit();
+    const dr=$('#dr'),g=$('#gd').getContext('2d'),d=dr.getContext('2d');
+    try{await document.fonts.load('180px Andika')}catch(e){}
+    if(!dr.isConnected)return;
+    const fam='px Andika, "Comic Sans MS", "Trebuchet MS", sans-serif';
+    g.font=180+fam;
+    const F=Math.min(180,Math.floor(180*(W-90)/g.measureText(txt).width)),BASE=Math.round(160+F*.27),k=F/180;
+    const PEN=Math.max(8,12*k),WIDE=Math.max(26,36*k),FAT=Math.max(30,40*k),font=F+fam;
+    g.font=font;g.textAlign='center';
+    const m=c=>g.measureText(c);
+    [BASE-m('H').actualBoundingBoxAscent,BASE-m('x').actualBoundingBoxAscent,BASE,BASE+m('p').actualBoundingBoxDescent]
+      .forEach((y,n)=>{g.fillStyle=n===2?'#f0a39a':'#cfd9ee';g.fillRect(0,Math.round(y),W,n===2?3:2)});
+    g.fillStyle='#c3cce0';g.fillText(txt,W/2,BASE);
+    const off=fn=>{const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.font=font;x.textAlign='center';x.lineCap=x.lineJoin='round';fn(x);return x.getImageData(0,0,W,H).data};
+    const thin=off(x=>x.fillText(txt,W/2,BASE));
+    const fat=off(x=>{x.lineWidth=FAT;x.strokeText(txt,W/2,BASE);x.fillText(txt,W/2,BASE)});
+    const path=(x,w)=>{x.lineWidth=w;x.lineCap=x.lineJoin='round';x.strokeStyle='#1b2850';strokes.forEach(s=>{x.beginPath();x.moveTo(s[0][0],s[0][1]);if(s.length<2)x.lineTo(s[0][0]+.1,s[0][1]+.1);s.forEach(p=>x.lineTo(p[0],p[1]));x.stroke()})};
+    const redraw=()=>{d.clearRect(0,0,W,H);path(d,PEN)};
+    const pos=e=>{const r=dr.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]};
+    dr.onpointerdown=e=>{if(done)return;e.preventDefault();try{dr.setPointerCapture(e.pointerId)}catch(_){}cur=[pos(e)];strokes.push(cur);redraw()};
+    dr.onpointermove=e=>{if(!cur)return;cur.push(pos(e));redraw()};
+    dr.onpointerup=dr.onpointercancel=()=>{cur=null};
+    if(canSpeak)$('#hear').onclick=()=>speak(it.say);
+    $('#clr').onclick=()=>{if(done)return;strokes=[];redraw();$('.fb').innerHTML=''};
+    const go=()=>{i++;i<items.length?show():finish(id,score,items.length)};
+    $('#chk').onclick=()=>{
+      if(done)return;
+      const fail=t=>{first=false;fx('no');$('.fb').innerHTML=`<p class="bad">${t}<button class="skip" id="skip">이 ${noun} 넘어가기</button></p>`;$('#skip').onclick=go};
+      if(!strokes.length){$('.fb').innerHTML=`<p class="bad">먼저 흐린 ${noun} 위에 써 보세요.</p>`;return}
+      const wide=off(x=>path(x,WIDE)),nar=off(x=>path(x,PEN));
+      let gN=0,cov=0,uN=0,out=0;
+      for(let p=3;p<thin.length;p+=16){if(thin[p]>128){gN++;if(wide[p]>128)cov++}if(nar[p]>128){uN++;if(fat[p]<128)out++}}
+      if(uN&&out/uN>.4)return fail('글자 밖으로 많이 나갔어요. 지우고 다시 써 볼까요?');
+      if(!gN||cov/gN<.8)return fail('아직 덜 쓴 곳이 있어요. 흐린 글자를 끝까지 따라 써 보세요.');
+      done=true;if(first)score++;fx('ok');speak(it.say);
+      $('.fb').innerHTML=`<p class="good">${first?'잘 썼어요!':'완성했어요!'}</p>${doneBox(txt,it.say)}<button class="next">${i+1<items.length?'다음 '+noun:'결과 보기'}</button>`;
+      bindSay($('.fb'));$('.next').onclick=go;$('.next').focus();
+    };
+  };
+  show();
+}
+function runMatch(id,title,u){
+  const ws=pick(u.w,6),N=ws.length;let open=[],found=0,tries=0,lock=false;
+  const cards=shuffle(ws.flatMap((w,k)=>[{k,en:w[0]},{k,ko:w[1],em:w[2]}]));
+  app.innerHTML=shell(title,0,N,`<div class="mgrid">${cards.map((c,i)=>`<button class="mc" data-i="${i}" aria-label="카드 ${i+1}"><span class="qm">?</span><span class="face">${c.en?`<b>${c.en}</b>`:`${c.em?`<i>${c.em}</i>`:''}<span>${c.ko}</span>`}</span></button>`).join('')}</div><div class="fb" aria-live="polite"><p>카드를 두 장씩 뒤집어 영어 낱말과 뜻의 짝을 찾아요.</p></div>`);
+  bindQuit();
+  const els=[...app.querySelectorAll('.mc')];
+  els.forEach((b,i)=>b.onclick=()=>{
+    if(lock||b.classList.contains('open')||b.classList.contains('done'))return;
+    b.classList.add('open');open.push(i);fx('tap');if(cards[i].en)speak(cards[i].en);
+    if(open.length<2)return;
+    tries++;const [a,c]=open;open=[];
+    if(cards[a].k===cards[c].k){
+      [a,c].forEach(x=>{els[x].classList.remove('open');els[x].classList.add('done')});found++;fx('ok');
+      $('.gp').textContent=found+' / '+N;$('.prog i').style.width=found/N*100+'%';
+      if(found===N)setTimeout(()=>finish(id,0,N,tries),700);
+    }else{lock=true;setTimeout(()=>{[a,c].forEach(x=>els[x].classList.remove('open'));lock=false},1000)}
+  });
+}
+function finish(id,score,total,tries){
+  const n=tries?(tries<=total+2?3:tries<=total*2?2:1):(score/total>=.9?3:score/total>=.6?2:1);
+  fx('win');if(n>(store[CTX.key]||0)){store[CTX.key]=n;save()}
+  const line=tries?`${tries}번 만에 짝 ${total}쌍을 모두 찾았어요.`:`${total}문제 가운데 ${score}문제를 한 번에 맞혔어요.`;
+  let msg='',main='',go=null;
+  if(CTX.review){msg=n<2?'별 2개를 목표로 한 번 더 해 볼까요?':'이 단계의 낱말을 잘 기억하고 있어요.'}
+  else if(n<2){msg='별 2개를 받으면 이 활동을 마친 거예요. 한 번 더 해 볼까요?'}
+  else if(isDone(S.g,S.u)){
+    const a=after(S.g,S.u);msg='이 걸음의 활동을 모두 마쳤어요!';
+    if(a){main='다음 걸음: '+G[a.g].units[a.u].t;go=()=>goUnit(a.g,a.u)}else{main='과정 한눈에 보기';go=()=>{location.hash='home'}}
+  }else{
+    const u=unit(),nx=gamesFor(u).map(g=>gmeta(g,u)).find(g=>got(S.g,S.u,g.id)<2);
+    msg='이 활동을 마쳤어요. 다음 활동으로 넘어가요.';main='다음 활동: '+nx.name;go=()=>{play(nx.id);scrollTo(0,0)};
+  }
+  app.innerHTML=`<div class="result"><div class="st">${stars(n)}</div><h2>${n===3?'아주 잘했어요!':n===2?'잘했어요!':'끝까지 해냈어요!'}</h2><p>${line} ${msg}</p>
+  <div class="row">${main?`<button class="btn" id="main">${main}</button>`:''}<button class="btn${main?' plain':''}" id="again">다시 하기</button><button class="btn plain" id="other">${CTX.review?'단계 목록':'활동 목록'}</button></div></div>`;
+  if(main){$('#main').onclick=go;$('#main').focus()}else $('#again').focus();
+  $('#again').onclick=()=>CTX.again();$('#other').onclick=()=>CTX.back();
+}
+function route(){
+  const x=location.hash.slice(1),g=[...ORDER,8,10,9].find(k=>STAGE[k].hash===x);
+  if(!g){PEND=false;return viewHome()}
+  S.g=g;if(PEND){PEND=false;drawTabs();viewUnit()}else viewGrade();
+}
+addEventListener('hashchange',route);drawSnd();route();
+/* Claude 음성(tts)이 준비되면 그것으로 읽고, 없으면 브라우저 음성으로 읽는다 */
+(async()=>{try{
+  if(!window.claude||!window.claude.use)return;
+  const t=await window.claude.use('tts');if(!t)return;
+  TTS=t;canSpeak=true;drawSnd();
+  if(VIEW==='unit')viewUnit();else if(VIEW==='grade')viewGrade();else if(VIEW==='home')viewHome();
+}catch(e){}})();
+</script>
+</body>
+</html>

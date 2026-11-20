@@ -200,7 +200,8 @@ a.back{display:inline-block;text-decoration:none}
 .mc.done{border-color:var(--good);background:#e4f6ee}
 .pad{position:relative;background:#fff;border:2px solid var(--line);border-radius:18px;overflow:hidden;aspect-ratio:2/1;margin-bottom:14px}
 .pad canvas{position:absolute;inset:0;width:100%;height:100%}
-#dr{touch-action:none;cursor:crosshair}
+.pad,.pad canvas{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:contain}
+#dr{cursor:crosshair}
 .q .say{font-size:20px;padding:10px 26px;margin-top:12px}
 .skip{background:none;border:0;text-decoration:underline;color:var(--ink-soft);margin-left:10px}
 .result{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:32px 18px;text-align:center}
@@ -1007,6 +1008,9 @@ function runWrite(id,title,items,noun){
     dr.onpointerdown=e=>{if(done)return;e.preventDefault();try{dr.setPointerCapture(e.pointerId)}catch(_){}cur=[pos(e)];strokes.push(cur);redraw()};
     dr.onpointermove=e=>{if(!cur)return;cur.push(pos(e));redraw()};
     dr.onpointerup=dr.onpointercancel=()=>{cur=null};
+    /* 쓰는 동안 화면이 따라 움직이지 않게 손가락 끌기와 휠을 막는다 */
+    const stop=e=>{if(e.cancelable)e.preventDefault()};
+    ['touchstart','touchmove','touchend','gesturestart','wheel'].forEach(t=>dr.parentNode.addEventListener(t,stop,{passive:false}));
     if(canSpeak)$('#hear').onclick=()=>speak(it.say);
     $('#clr').onclick=()=>{if(done)return;strokes=[];redraw();$('.fb').innerHTML=''};
     const go=()=>{i++;i<items.length?show():finish(id,score,items.length)};

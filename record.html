@@ -129,6 +129,9 @@ ol.adv .src{display:block;color:var(--muted);font-size:.8rem;margin-top:2px}
 .sedit.hidden{display:none}
 .subnext{display:flex;flex-direction:column;gap:8px}
 .subnext.hidden{display:none}
+.subrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.subrow .btnlink{display:flex;align-items:center;justify-content:center;min-height:48px}
+.subrow .hidden{display:none}
 .btnlink{display:block;text-align:center;padding:12px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:600;text-decoration:none}
 .btnlink.hidden{display:none}
 .advbox{display:flex;flex-direction:column;gap:8px}
@@ -272,11 +275,12 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
       <h2>이번 달 제출</h2>
       <p class="sub" id="sub-summary"></p>
       <p class="note">기록은 이 기기의 이 브라우저에만 저장됩니다. 브라우저 기록을 지우거나 기기를 바꾸면 사라질 수 있으니, 제출할 때 받은 내용을 본인 카카오톡 "나와의 채팅" 등에도 보관해 주세요.</p>
-      <button class="primary hidden" id="sub-file" type="button">이번 달 제출 파일 저장</button>
-      <div id="sub-next" class="hidden subnext">
-        <p class="note">파일을 저장했으면 제출 양식을 열어 그 파일을 첨부해 보내 주세요. 같은 파일이 백업이 되니 지우지 말고 두세요.</p>
-        <a id="sub-form" class="btnlink hidden" target="_blank" rel="noopener">제출 양식 열기 (새 창)</a>
+      <p class="note">① 파일 저장을 누른 뒤 ② 제출을 눌러, 열리는 양식에 방금 저장한 파일을 첨부해 보내 주세요. 저장한 파일은 백업이 되니 지우지 말고 두세요.</p>
+      <div class="subrow">
+        <button class="primary hidden" id="sub-file" type="button">① 파일 저장</button>
+        <a id="sub-form" class="btnlink hidden" target="_blank" rel="noopener">② 제출</a>
       </div>
+      <span id="sub-next" class="hidden"></span>
       <button id="sub-copy" type="button" class="small">파일 저장이 안 될 때: 내용 복사</button>
       <p class="msg" id="sub-msg" role="status"></p>
       <label for="sub-out" class="hidden" id="sub-outl">복사가 막혔습니다. 아래 내용을 길게 눌러 전체 선택한 뒤 복사해 주세요.<textarea id="sub-out" readonly></textarea></label>

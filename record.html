@@ -125,6 +125,8 @@ ol.adv .src{display:block;color:var(--muted);font-size:.8rem;margin-top:2px}
 .navbar{display:flex;gap:8px;align-items:center;min-height:40px}
 .navbar b{font-size:1rem}
 .navbar .hidden,nav.tabs.hidden{display:none}
+.sedit{display:flex;flex-direction:column;gap:10px;padding:4px 0 14px}
+.sedit.hidden{display:none}
 .subnext{display:flex;flex-direction:column;gap:8px}
 .subnext.hidden{display:none}
 .btnlink{display:block;text-align:center;padding:12px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:600;text-decoration:none}
@@ -246,8 +248,9 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
     </div>
     <div class="card">
       <h2>학생 관리</h2>
-      <p class="sub">학생을 삭제하면 그 학생의 기록도 함께 지워집니다.</p>
+      <p class="sub">관리번호, 학년, 유형은 언제든 수정할 수 있고 기록은 그대로 남습니다. 삭제하면 그 학생의 기록도 함께 지워집니다.</p>
       <div class="list" id="s-manage"></div>
+      <p class="msg" id="s-msg2" role="status"></p>
     </div>
   </section>
 
@@ -863,8 +866,20 @@ function renderStudents(){
     var head=el("button",{type:"button",class:"shead"},[left,el("span",{class:"chev","aria-hidden":"true",text:"›"})]);
     head.addEventListener("click",function(){goStudent("record",s.id)});list.appendChild(el("div",{class:"sitem"},[head]))});
   var mg=$("s-manage");clear(mg);if(!S.students.length)mg.appendChild(el("p",{class:"sub",text:"아직 학생이 없습니다."}));
-  S.students.forEach(function(s){mg.appendChild(el("div",{class:"item"},[el("div",null,[el("b",{text:s.code}),el("div",{class:"meta",text:s.grade+" · "+TYPES[s.type].name+" · "+recsOf(S.records,s.id).length+"회기"})]),
-    twoStep("삭제",function(){S.students=S.students.filter(function(x){return x.id!==s.id});S.records=S.records.filter(function(r){return r.sid!==s.id});if(SEL===s.id)SEL=null;persist();renderAll()})]))});
+  S.students.forEach(function(s){var info=el("div",null,[el("b",{text:s.code}),el("div",{class:"meta",text:s.grade+" · "+TYPES[s.type].name+" · "+recsOf(S.records,s.id).length+"회기"})]);
+    var ed=el("button",{type:"button",class:"small",text:"수정"}),form=el("div",{class:"sedit hidden"}),wrap=el("div",{class:"sitem"});
+    var del=twoStep("삭제",function(){S.students=S.students.filter(function(x){return x.id!==s.id});S.records=S.records.filter(function(r){return r.sid!==s.id});if(SEL===s.id)SEL=null;persist();renderAll()});
+    ed.addEventListener("click",function(){if(!form.classList.contains("hidden")){form.classList.add("hidden");return}
+      clear(form);var c=el("input",{type:"text",maxlength:"12",id:"e-code-"+s.id}),g=el("select",{id:"e-grade-"+s.id}),t=el("select",{id:"e-type-"+s.id}),m=el("p",{class:"msg",role:"status"});
+      c.value=s.code;GRADES.forEach(function(x){g.appendChild(el("option",{value:x,text:x}))});g.value=s.grade;Object.keys(TYPES).forEach(function(k){t.appendChild(el("option",{value:k,text:TYPES[k].name}))});t.value=s.type;
+      var ok=el("button",{type:"button",class:"primary",text:"수정 저장"}),no=el("button",{type:"button",text:"취소"});
+      ok.addEventListener("click",function(){var code=c.value.trim();if(!code){m.className="msg err";m.textContent="관리번호를 적어 주세요.";return}
+        if(S.students.some(function(x){return x.id!==s.id&&x.code===code})){m.className="msg err";m.textContent="같은 관리번호의 학생이 이미 있습니다.";return}
+        s.code=code;s.grade=g.value;s.type=t.value;persist();renderAll();$("s-msg2").className="msg";$("s-msg2").textContent=code+" 학생 정보를 수정했습니다. 기록은 그대로 남아 있습니다."});
+      no.addEventListener("click",function(){form.classList.add("hidden")});
+      form.appendChild(el("div",{class:"row"},[el("label",{for:c.id},["관리번호 또는 이니셜",c]),el("label",{for:g.id},["학년",g])]));form.appendChild(el("label",{for:t.id},["유형",t]));
+      form.appendChild(el("div",{class:"row"},[ok,no]));form.appendChild(m);form.classList.remove("hidden");c.focus()});
+    wrap.appendChild(el("div",{class:"item"},[info,el("div",{class:"row"},[ed,del])]));wrap.appendChild(form);mg.appendChild(wrap)});
 }
 function addStudent(){
   var code=$("s-code").value.trim(),msg=$("s-msg");msg.className="msg";

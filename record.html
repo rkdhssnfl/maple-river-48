@@ -122,6 +122,9 @@ ol.adv .src{display:block;color:var(--muted);font-size:.8rem;margin-top:2px}
 .shead .meta{font-size:.85rem;color:var(--muted)}
 .shead .chev{color:var(--muted);font-size:.8rem}
 .spanel{display:flex;flex-direction:column;gap:10px;padding:4px 0 14px}
+.navbar{display:flex;gap:8px;align-items:center;min-height:40px}
+.navbar b{font-size:1rem}
+.navbar .hidden,nav.tabs.hidden{display:none}
 .subnext{display:flex;flex-direction:column;gap:8px}
 .subnext.hidden{display:none}
 .btnlink{display:block;text-align:center;padding:12px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:600;text-decoration:none}
@@ -157,12 +160,12 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
     <h1>코칭 회기 기록장</h1>
     <p class="sub">회기마다 숫자 세 개를 적고, 한 달에 한 번 센터에 제출합니다.</p>
   </header>
-  <nav class="tabs" aria-label="화면">
-    <a href="#students" data-v="students">학생</a>
-    <a href="#record" data-v="record">오늘 기록</a>
-    <a href="#progress" data-v="progress">변화 보기</a>
-    <a href="#submit" data-v="submit">제출·백업</a>
-  </nav>
+  <div class="navbar">
+    <button type="button" id="nav-back" class="small hidden">‹ 뒤로</button>
+    <button type="button" id="nav-home" class="small hidden">⌂ 홈</button>
+    <b id="nav-who"></b>
+  </div>
+  <nav class="tabs hidden" id="nav" aria-label="화면"></nav>
 
   <!-- 오늘 기록 -->
   <section id="v-record" class="view">
@@ -219,9 +222,12 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
   <section id="v-students" class="view hidden">
     <div class="card">
       <h2>학생 목록</h2>
-      <p class="sub">학생을 누르면 바로 아래로 펼쳐집니다.</p>
+      <p class="sub">학생을 누르면 그 학생의 기록 화면으로 넘어갑니다.</p>
       <div class="list" id="s-list"></div>
     </div>
+  </section>
+
+  <section id="v-setup" class="view hidden">
     <div class="card">
       <h2>내 정보</h2>
       <label for="s-coach">코칭단 이름<input id="s-coach" type="text" maxlength="20" placeholder="제출 파일에 표시됩니다"></label>
@@ -237,6 +243,11 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
       <label for="s-measure">1분 측정으로 셀 것<input id="s-measure" type="text" maxlength="60"></label>
       <button class="primary" id="s-add" type="button">학생 추가</button>
       <p class="msg" id="s-msg" role="status"></p>
+    </div>
+    <div class="card">
+      <h2>학생 관리</h2>
+      <p class="sub">학생을 삭제하면 그 학생의 기록도 함께 지워집니다.</p>
+      <div class="list" id="s-manage"></div>
     </div>
   </section>
 
@@ -275,7 +286,6 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
   </section>
 
   <!-- 센터용 -->
-  <p class="sub" id="src-note">1분 검사 문항은 센터가 생성형 AI를 활용해 자체 개발했으며 2022 개정 교육과정 성취기준에 맞추었습니다. 표준화 검사가 아니므로 같은 학생의 변화를 보는 데만 씁니다. 공식 진단은 국가기초학력지원포털의 검사를 씁니다.</p>
 </div>
 
 <script>
@@ -833,24 +843,19 @@ function qSync(){var lv=QUIZ[$("q-level").value];$("q-start").textContent=(lv.du
   $("q-std").textContent=lv.s&&STDTXT[lv.s]?"성취기준 ["+lv.s+"] "+STDTXT[lv.s]:""}
 
 /* ================= 학생 ================= */
-var OPEN=null;
-function goStudent(view,sid){if(view==="record"){$("r-student").value=sid;syncRecordForm();qSync()}else{$("p-student").value=sid;renderProgress()}location.hash="#"+view;window.scrollTo(0,0)}
+var SEL=null;
+function goStudent(view,sid){SEL=sid;location.hash="#"+view;show();window.scrollTo(0,0)}
 function renderStudents(){
   var list=$("s-list");clear(list);
-  if(!S.students.length)list.appendChild(el("p",{class:"sub",text:"아직 학생이 없습니다. 아래에서 학생을 추가해 주세요."}));
+  if(!S.students.length){list.appendChild(el("p",{class:"sub",text:"아직 학생이 없습니다."}));var a=el("a",{class:"btnlink",href:"#setup",text:"학생 추가하러 가기"});list.appendChild(a)}
   S.students.forEach(function(s){var recs=recsOf(S.records,s.id),j=judge(recs),left=el("div");
     var nm=el("div",null,[el("b",{text:s.code+" "})]);if(s.ex)nm.appendChild(el("span",{class:"tag",text:"예시"}));nm.appendChild(document.createTextNode(" "));nm.appendChild(pills(j));
     left.appendChild(nm);left.appendChild(el("div",{class:"meta",text:s.grade+" · "+TYPES[s.type].name+" · "+recs.length+"회기"+(s.ex?" · 제출에 포함되지 않음":"")}));
-    var open=OPEN===s.id,head=el("button",{type:"button",class:"shead","aria-expanded":open?"true":"false"},[left,el("span",{class:"chev","aria-hidden":"true",text:open?"▲":"▼"})]);
-    var panel=el("div",{class:"spanel"+(open?"":" hidden")});
-    head.addEventListener("click",function(){OPEN=OPEN===s.id?null:s.id;renderStudents()});
-    if(open){var rec=el("button",{type:"button",class:"primary",text:"오늘 기록 쓰기"}),pro=el("button",{type:"button",text:"변화 보기"});
-      rec.addEventListener("click",function(){goStudent("record",s.id)});pro.addEventListener("click",function(){goStudent("progress",s.id)});
-      panel.appendChild(el("div",{class:"row"},[rec,pro]));panel.appendChild(el("p",{class:"sub",text:j.why}));
-      var ab=el("div",{class:"advbox"});panel.appendChild(ab);advBox(ab,recs,s,j,false);
-      var cg=chgSum(recs);if(cg.length)panel.appendChild(el("p",{class:"sub",text:"눈에 띈 변화: "+cg.map(function(c){return CHG[c.k]+" ("+c.first+"회기부터)"}).join(", ")}));
-      panel.appendChild(twoStep("이 학생 삭제",function(){S.students=S.students.filter(function(x){return x.id!==s.id});S.records=S.records.filter(function(r){return r.sid!==s.id});OPEN=null;persist();renderAll()}))}
-    list.appendChild(el("div",{class:"sitem"},[head,panel]))});
+    var head=el("button",{type:"button",class:"shead"},[left,el("span",{class:"chev","aria-hidden":"true",text:"›"})]);
+    head.addEventListener("click",function(){goStudent("record",s.id)});list.appendChild(el("div",{class:"sitem"},[head]))});
+  var mg=$("s-manage");clear(mg);if(!S.students.length)mg.appendChild(el("p",{class:"sub",text:"아직 학생이 없습니다."}));
+  S.students.forEach(function(s){mg.appendChild(el("div",{class:"item"},[el("div",null,[el("b",{text:s.code}),el("div",{class:"meta",text:s.grade+" · "+TYPES[s.type].name+" · "+recsOf(S.records,s.id).length+"회기"})]),
+    twoStep("삭제",function(){S.students=S.students.filter(function(x){return x.id!==s.id});S.records=S.records.filter(function(r){return r.sid!==s.id});if(SEL===s.id)SEL=null;persist();renderAll()})]))});
 }
 function addStudent(){
   var code=$("s-code").value.trim(),msg=$("s-msg");msg.className="msg";
@@ -909,10 +914,16 @@ function centerTable(sep){var q=function(v){v=v==null?"":String(v);return sep===
   rows.forEach(function(r){r.recs.forEach(function(x){out.push([r.coach,r.s.code,x.n,x.d,x.m,x.ml,x.mood,x.part,chgText(x).join("; "),x.act||"",ckText(r.s,x),x.memo].map(q).join(sep))})});return out.join("\r\n")}
 
 /* ================= 화면 전환 ================= */
-var VIEWS=["record","students","progress","submit","center"].filter(function(v){return $("v-"+v)}),BUILD=document.body.getAttribute("data-build")||"center",FORM_URL=document.body.getAttribute("data-form")||"";
-function show(){var v=(location.hash||"").replace("#","");if(VIEWS.indexOf(v)<0)v=BUILD==="center"?"center":"students";
+var VIEWS=["record","students","progress","submit","center","setup"].filter(function(v){return $("v-"+v)}),BUILD=document.body.getAttribute("data-build")||"center",FORM_URL=document.body.getAttribute("data-form")||"";
+function show(){var v=(location.hash||"").replace("#","");if(VIEWS.indexOf(v)<0)v="students";
+  if((v==="record"||v==="progress")&&!S.students.length)v="students";
   VIEWS.forEach(function(n){$("v-"+n).classList.toggle("hidden",n!==v)});
-  Array.prototype.forEach.call(document.querySelectorAll("nav.tabs a"),function(a){if(a.getAttribute("data-v")===v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  if(v==="record"||v==="progress"){if(!stu(SEL))SEL=($("r-student").value&&stu($("r-student").value)?$("r-student").value:S.students[0].id);
+    if($("r-student").value!==SEL){$("r-student").value=SEL;syncRecordForm();qSync()}$("p-student").value=SEL}
+  var nav=$("nav"),items=v==="students"?[["setup","학생 추가·관리"],["submit","제출·백업"]].concat($("v-center")?[["center","센터용"]]:[]):((v==="record"||v==="progress")?[["record","오늘 기록"],["progress","변화 보기"]]:[]);
+  clear(nav);items.forEach(function(it){var a=el("a",{href:"#"+it[0],text:it[1]});if(it[0]===v)a.setAttribute("aria-current","page");nav.appendChild(a)});nav.classList.toggle("hidden",!items.length);
+  var st=stu(SEL);$("nav-who").textContent=(v==="record"||v==="progress")&&st?st.code+" · "+st.grade:({students:"학생 목록",setup:"학생 추가·관리",submit:"제출·백업",center:"센터용"}[v]||"");
+  $("nav-back").classList.toggle("hidden",v==="students");$("nav-home").classList.toggle("hidden",v==="students");
   if(v==="progress")renderProgress();if(v==="submit")renderSubmit();if(v==="center"&&$("v-center"))renderCenter()}
 function renderProgress(){var s=stu($("p-student").value)||S.students[0];detail($("p-body"),s,s?recsOf(S.records,s.id):[],true)}
 function renderAll(){fillStudents($("r-student"),true);fillStudents($("p-student"),true);syncRecordForm();renderStudents();renderProgress();renderSubmit()}
@@ -927,9 +938,11 @@ $("s-type").addEventListener("change",function(){$("s-measure").value="";$("s-me
 STEPS.forEach(function(t,i){var id="st-"+i;$("r-steps").appendChild(el("label",{for:id},[el("input",{id:id,type:"checkbox"}),t]))});
 initScales();$("r-date").value=today();qSync();
 $("s-coach").value=S.coach||"";$("s-coach").addEventListener("input",function(){S.coach=$("s-coach").value.trim();persist()});
-$("r-student").addEventListener("change",function(){syncRecordForm();qSync()});
+$("r-student").addEventListener("change",function(){SEL=$("r-student").value;syncRecordForm();qSync();show()});
+$("nav-home").addEventListener("click",function(){location.hash="#students";window.scrollTo(0,0)});
+$("nav-back").addEventListener("click",function(){if(history.length>1)history.back();else location.hash="#students"});
 $("r-save").addEventListener("click",saveRecord);$("s-add").addEventListener("click",addStudent);
-$("p-student").addEventListener("change",renderProgress);
+$("p-student").addEventListener("change",function(){SEL=$("p-student").value;show()});
 $("q-start").addEventListener("click",qStart);$("q-stop").addEventListener("click",qEnd);
 $("q-o").addEventListener("click",function(){qAns(true)});$("q-x").addEventListener("click",function(){qAns(false)});
 $("r-m").addEventListener("input",function(){cur.ml=""});

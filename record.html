@@ -229,11 +229,7 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
     </div>
   </section>
 
-  <section id="v-setup" class="view hidden">
-    <div class="card">
-      <h2>내 정보</h2>
-      <label for="s-coach">코칭단 이름<input id="s-coach" type="text" maxlength="20" placeholder="제출 파일에 표시됩니다"></label>
-    </div>
+  <section id="v-add" class="view hidden">
     <div class="card">
       <h2>학생 추가</h2>
       <p class="note">실명 대신 관리번호나 이니셜을 적어 주세요. 기분과 참여도 기록이 함께 저장됩니다.</p>
@@ -246,6 +242,9 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
       <button class="primary" id="s-add" type="button">학생 추가</button>
       <p class="msg" id="s-msg" role="status"></p>
     </div>
+  </section>
+
+  <section id="v-manage" class="view hidden">
     <div class="card">
       <h2>학생 관리</h2>
       <p class="sub">관리번호, 학년, 유형은 언제든 수정할 수 있고 기록은 그대로 남습니다. 삭제하면 그 학생의 기록도 함께 지워집니다.</p>
@@ -265,6 +264,10 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
 
   <!-- 제출·백업 -->
   <section id="v-submit" class="view hidden">
+    <div class="card">
+      <h2>내 정보</h2>
+      <label for="s-coach">코칭단 이름<input id="s-coach" type="text" maxlength="20" placeholder="제출 파일에 표시됩니다"></label>
+    </div>
     <div class="card">
       <h2>이번 달 제출</h2>
       <p class="sub" id="sub-summary"></p>
@@ -786,7 +789,7 @@ var cur={mood:0,part:0,kl:"",al:"",ob:[],t:[],chg:[]};
 function scale(host,get,set,from,to,labels){clear(host);for(var i=from;i<=to;i++){(function(v){var b=el("button",{type:"button","aria-pressed":String(get()===v),text:labels?labels[v-from]:String(v)});
   b.addEventListener("click",function(){set(get()===v?null:v);Array.prototype.forEach.call(host.children,function(c,idx){c.setAttribute("aria-pressed",String(idx+from===get()))})});host.appendChild(b)})(i)}}
 function fillStudents(sel,keep){var v=keep?sel.value:"";clear(sel);S.students.forEach(function(s){sel.appendChild(el("option",{value:s.id,text:s.code+" ("+s.grade+")"}))});
-  if(!S.students.length)sel.appendChild(el("option",{value:"",text:"학생 탭에서 먼저 추가"}));if(v&&stu(v))sel.value=v}
+  if(!S.students.length)sel.appendChild(el("option",{value:"",text:"학생을 먼저 추가"}));if(v&&stu(v))sel.value=v}
 function syncRecordForm(){
   var s=stu($("r-student").value);if(!s){$("r-typeinfo").textContent="";return}
   var t=TYPES[s.type],recs=recsOf(S.records,s.id),next=recs.length?recs[recs.length-1].n+1:1,ja=judgeAll(recs,s);
@@ -810,7 +813,7 @@ function syncCk(){
 }
 function saveRecord(){
   var msg=$("r-msg"),s=stu($("r-student").value);msg.className="msg";
-  if(!s){msg.className="msg err";msg.textContent="학생 탭에서 학생을 먼저 추가해 주세요.";return}
+  if(!s){msg.className="msg err";msg.textContent="학생을 먼저 추가해 주세요.";return}
   var n=parseInt($("r-n").value,10),kv=$("r-k").value,av=$("r-a").value,mv=kv+av,filled=function(a){return a.some(function(v){return v!=null})},ck=(filled(cur.ob)||filled(cur.t))?"term":"none";
   if(!n||n<1){msg.className="msg err";msg.textContent="회기 번호를 숫자로 적어 주세요.";return}
   if(mv===""&&!cur.mood&&!cur.part&&ck==="none"&&!cur.chg.length){msg.className="msg err";msg.textContent="도전 점수, 기분, 참여도 중 하나는 적어 주세요.";return}
@@ -859,7 +862,7 @@ var SEL=null;
 function goStudent(view,sid){SEL=sid;location.hash="#"+view;show();window.scrollTo(0,0)}
 function renderStudents(){
   var list=$("s-list");clear(list);
-  if(!S.students.length){list.appendChild(el("p",{class:"sub",text:"아직 학생이 없습니다."}));var a=el("a",{class:"btnlink",href:"#setup",text:"학생 추가하러 가기"});list.appendChild(a)}
+  if(!S.students.length){list.appendChild(el("p",{class:"sub",text:"아직 학생이 없습니다."}));var a=el("a",{class:"btnlink",href:"#add",text:"학생 추가하러 가기"});list.appendChild(a)}
   S.students.forEach(function(s){var recs=recsOf(S.records,s.id),left=el("div");
     var nm=el("div",null,[el("b",{text:s.code+" "})]);if(s.ex)nm.appendChild(el("span",{class:"tag",text:"예시"}));nm.appendChild(document.createTextNode(" "));nm.appendChild(pillsAll(judgeAll(recs,s)));
     left.appendChild(nm);left.appendChild(el("div",{class:"meta",text:s.grade+" · "+TYPES[s.type].name+" · "+recs.length+"회기"+(s.ex?" · 제출에 포함되지 않음":"")}));
@@ -902,7 +905,7 @@ function copyText(text,msgEl,okMsg,outL,outT){
   function fallback(){outL.classList.remove("hidden");outT.value=text;outT.focus();outT.select();msgEl.className="msg err";msgEl.textContent="자동 복사가 막혔습니다. 아래 칸에서 직접 복사해 주세요."}
   try{navigator.clipboard.writeText(text).then(function(){msgEl.className="msg";msgEl.textContent=okMsg;outL.classList.add("hidden")},fallback)}catch(e){fallback()}}
 function readFiles(input){var fs=Array.prototype.slice.call(input.files||[]);return Promise.all(fs.map(function(f){return f.text()})).then(function(a){return a.join("\n")})}
-function renderSubmit(){var p=payload();$("sub-summary").textContent=(S.coach?S.coach+" · ":"코칭단 이름이 비어 있습니다(학생 탭에서 입력) · ")+"학생 "+p.students.length+"명, 기록 "+p.records.length+"건이 제출됩니다. 예시 학생은 빠집니다."+(S.lastSub?" 마지막으로 제출 파일을 만든 날: "+S.lastSub+".":"");
+function renderSubmit(){var p=payload();$("sub-summary").textContent=(S.coach?S.coach+" · ":"코칭단 이름이 비어 있습니다(위 칸에 입력) · ")+"학생 "+p.students.length+"명, 기록 "+p.records.length+"건이 제출됩니다. 예시 학생은 빠집니다."+(S.lastSub?" 마지막으로 제출 파일을 만든 날: "+S.lastSub+".":"");
   var f=$("sub-form");if(f){if(FORM_URL){f.href=FORM_URL;f.classList.remove("hidden")}else f.classList.add("hidden")}}
 
 /* ================= 센터 ================= */
@@ -938,15 +941,15 @@ function centerTable(sep){var q=function(v){v=v==null?"":String(v);return sep===
   rows.forEach(function(r){r.recs.forEach(function(x){var ks=sc(x,"ko",r.s),as=sc(x,"ma",r.s);out.push([r.coach,r.s.code,x.n,x.d,ks.m,ks.ml,as.m,as.ml,x.mood,x.part,chgText(x).join("; "),x.act||"",ckText(r.s,x),x.memo].map(q).join(sep))})});return out.join("\r\n")}
 
 /* ================= 화면 전환 ================= */
-var VIEWS=["record","students","progress","submit","center","setup"].filter(function(v){return $("v-"+v)}),BUILD=document.body.getAttribute("data-build")||"center",FORM_URL=document.body.getAttribute("data-form")||"";
+var VIEWS=["record","students","progress","submit","center","add","manage"].filter(function(v){return $("v-"+v)}),BUILD=document.body.getAttribute("data-build")||"center",FORM_URL=document.body.getAttribute("data-form")||"";
 function show(){var v=(location.hash||"").replace("#","");if(VIEWS.indexOf(v)<0)v="students";
   if((v==="record"||v==="progress")&&!S.students.length)v="students";
   VIEWS.forEach(function(n){$("v-"+n).classList.toggle("hidden",n!==v)});
   if(v==="record"||v==="progress"){if(!stu(SEL))SEL=($("r-student").value&&stu($("r-student").value)?$("r-student").value:S.students[0].id);
     if($("r-student").value!==SEL){$("r-student").value=SEL;syncRecordForm();qSync()}$("p-student").value=SEL}
-  var nav=$("nav"),items=v==="students"?[["setup","학생 추가·관리"],["submit","제출·백업"]].concat($("v-center")?[["center","센터용"]]:[]):((v==="record"||v==="progress")?[["record","오늘 기록"],["progress","변화 보기"]]:[]);
+  var nav=$("nav"),items=v==="students"?[["add","학생 추가"],["manage","학생 관리"],["submit","제출·백업"]].concat($("v-center")?[["center","센터용"]]:[]):((v==="record"||v==="progress")?[["record","오늘 기록"],["progress","변화 보기"]]:[]);
   clear(nav);items.forEach(function(it){var a=el("a",{href:"#"+it[0],text:it[1]});if(it[0]===v)a.setAttribute("aria-current","page");nav.appendChild(a)});nav.classList.toggle("hidden",!items.length);
-  var st=stu(SEL);$("nav-who").textContent=(v==="record"||v==="progress")&&st?st.code+" · "+st.grade:({students:"학생 목록",setup:"학생 추가·관리",submit:"제출·백업",center:"센터용"}[v]||"");
+  var st=stu(SEL);$("nav-who").textContent=(v==="record"||v==="progress")&&st?st.code+" · "+st.grade:({students:"학생 목록",add:"학생 추가",manage:"학생 관리",submit:"제출·백업",center:"센터용"}[v]||"");
   $("nav-back").classList.toggle("hidden",v==="students");$("nav-home").classList.toggle("hidden",v==="students");
   if(v==="progress")renderProgress();if(v==="submit")renderSubmit();if(v==="center"&&$("v-center"))renderCenter()}
 function renderProgress(){var s=stu($("p-student").value)||S.students[0];detail($("p-body"),s,s?recsOf(S.records,s.id):[],true)}
@@ -960,7 +963,7 @@ $("q-level").addEventListener("change",qSync);
 $("s-measure").placeholder=TYPES.hangul.measure;
 $("s-type").addEventListener("change",function(){$("s-measure").value="";$("s-measure").placeholder=TYPES[$("s-type").value].measure});
 initScales();$("r-date").value=today();qSync();
-$("s-coach").value=S.coach||"";$("s-coach").addEventListener("input",function(){S.coach=$("s-coach").value.trim();persist()});
+$("s-coach").value=S.coach||"";$("s-coach").addEventListener("input",function(){S.coach=$("s-coach").value.trim();persist();renderSubmit()});
 $("r-student").addEventListener("change",function(){SEL=$("r-student").value;syncRecordForm();qSync();show()});
 $("nav-home").addEventListener("click",function(){location.hash="#students";window.scrollTo(0,0)});
 $("nav-back").addEventListener("click",function(){if(history.length>1)history.back();else location.hash="#students"});

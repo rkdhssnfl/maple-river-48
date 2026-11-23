@@ -127,6 +127,25 @@ ol.adv .src{display:block;color:var(--muted);font-size:.8rem;margin-top:2px}
 .navbar .hidden,nav.tabs.hidden{display:none}
 .sedit{display:flex;flex-direction:column;gap:10px;padding:4px 0 14px}
 .sedit.hidden{display:none}
+.drop{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;text-align:center;min-height:110px;padding:16px;border:2px dashed var(--line);border-radius:12px;font-weight:600;cursor:pointer}
+.drop.over{border-color:var(--accent);background:var(--soft)}
+.cleft,.cright{display:flex;flex-direction:column;gap:16px;min-width:0}
+#v-center:not(.hidden){display:flex;flex-direction:column;gap:16px}
+@media (min-width:1000px){
+  .wrap.wide{max-width:1800px}
+  #v-center:not(.hidden){display:grid;grid-template-columns:minmax(340px,1fr) minmax(0,2fr);align-items:start}
+  .cright{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+}
+tr.sel td{background:var(--soft)}
+.qfb{border-radius:10px;padding:8px 12px;font-weight:600;text-align:center;min-height:42px}
+.qfb.ok{background:var(--soft);color:var(--good)}.qfb.no{background:var(--soft);color:var(--warn)}
+.qfb:empty{display:none}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
+.pad button{min-height:52px;font-size:1.15rem;padding:4px}
+.mtin{font-size:1.6rem;font-weight:600;text-align:center;min-height:52px;border:2px solid var(--accent);border-radius:10px;padding:6px;font-variant-numeric:tabular-nums;white-space:pre}
+.mtc{font-size:1.4rem;min-height:64px}
+.mtcol{display:flex;flex-direction:column;gap:8px}
+.mtcol .mtc{font-size:1.1rem;min-height:52px;text-align:left;padding:8px 12px}
 .subnext{display:flex;flex-direction:column;gap:8px}
 .subnext.hidden{display:none}
 .subrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
@@ -193,9 +212,11 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
           <button type="button" id="q-start">1분 도전 시작</button>
           <div id="q-run" class="hidden">
             <p class="sub" id="q-time"></p>
+            <div id="q-fb" class="qfb" role="status"></div>
             <div id="q-item" class="qitem"></div>
             <p class="sub" id="q-ans"></p>
-            <div class="row"><button type="button" id="q-o" class="primary">○ 맞음</button><button type="button" id="q-x">✕ 틀림</button></div>
+            <div id="q-input"></div>
+            <div class="row" id="q-manual"><button type="button" id="q-o" class="primary">○ 맞음</button><button type="button" id="q-x">✕ 틀림</button></div>
             <button type="button" id="q-stop" class="small">지금 끝내기</button>
           </div>
         </div>
@@ -835,11 +856,21 @@ function initScales(){scale($("r-mood"),function(){return cur.mood||null},functi
 
 /* ================= 오늘의 도전 ================= */
 var Q={on:false,tm:null,end:0,next:null,ok:0,no:0};
-function qShow(){var it=Q.next(),box=$("q-item");clear(box);box.appendChild(qnode(it.q));
+function qFb(ok,it){var f=$("q-fb");clear(f);f.className="qfb "+(ok?"ok":"no");f.appendChild(document.createTextNode(ok?"앞 문제: ○ 맞았어요":"앞 문제: ✕ 틀렸어요 · 정답 "));if(!ok)f.appendChild(qnode(ansText(it.a)))}
+function qSubmit(v){if(!Q.on)return;var it=Q.it,ok=v!==null&&isRight(it.a,v);qFb(ok,it);qAns(ok)}
+function qInput(it){var host=$("q-input"),manual=!it.a||$("q-showans").checked;clear(host);$("q-manual").classList.toggle("hidden",!manual);if(manual)return;Q.inp="";
+  if(it.a.t==="choice"){var long=it.a.opts.some(function(o){return o.length>7}),row=el("div",{class:long?"mtcol":"row"});it.a.opts.forEach(function(o,idx){var bt=el("button",{type:"button",class:"mtc"});bt.appendChild(qnode(o));bt.addEventListener("click",function(){qSubmit(idx)});row.appendChild(bt)});host.appendChild(row)}
+  else{var disp=el("div",{class:"mtin","aria-live":"polite",text:" "});host.appendChild(disp);
+    var hint=it.a.t==="qr"?"몫을 누르고 띄움을 누른 뒤 나머지를 누릅니다. (예: 12 띄움 3)":(it.a.t==="frac"?"분수는 3/4처럼, 대분수는 1 띄움 2/5처럼 누릅니다.":"");if(hint)host.appendChild(el("p",{class:"sub",text:hint}));
+    var pad=el("div",{class:"pad"});["7","8","9","지움","4","5","6","/","1","2","3","띄움","-","0",".","확인"].forEach(function(k){var bt=el("button",{type:"button",text:k,class:k==="확인"?"primary":""});
+      bt.addEventListener("click",function(){if(k==="확인"){if(Q.inp.trim())qSubmit(Q.inp);return}
+        if(k==="지움")Q.inp=Q.inp.slice(0,-1);else if(k==="띄움"){if(Q.inp&&Q.inp.slice(-1)!==" ")Q.inp+=" "}else if(k==="-"){if(!Q.inp)Q.inp="-"}else if(Q.inp.length<12)Q.inp+=k;disp.textContent=Q.inp||" "});pad.appendChild(bt)});host.appendChild(pad)}
+  var dk=el("button",{type:"button",text:"모르겠어요"});dk.addEventListener("click",function(){qSubmit(null)});host.appendChild(dk)}
+function qShow(){var it=Q.next(),box=$("q-item");Q.it=it;clear(box);box.appendChild(qnode(it.q));qInput(it);
   var a=$("q-ans");a.textContent=(it.a&&$("q-showans").checked)?"정답 "+ansText(it.a).replace(/\{([^|]+)\|(\d+)\}/g,"$1/$2"):""}
 function qTick(){var left=Math.max(0,Math.ceil((Q.end-Date.now())/1000));$("q-time").textContent="남은 시간 "+left+"초 · 맞음 "+Q.ok+" · 틀림 "+Q.no;if(left<=0)qEnd()}
 function qStart(){var lv=QUIZ[$("q-level").value];Q.next=lv.make();Q.ok=0;Q.no=0;Q.on=true;Q.dur=lv.dur;Q.end=Date.now()+lv.dur*1000;
-  $("q-run").classList.remove("hidden");$("q-start").classList.add("hidden");qShow();qTick();Q.tm=setInterval(qTick,250)}
+  $("q-run").classList.remove("hidden");$("q-start").classList.add("hidden");clear($("q-fb"));$("q-fb").className="qfb";qShow();qTick();Q.tm=setInterval(qTick,250)}
 function qEnd(){if(!Q.on)return;Q.on=false;clearInterval(Q.tm);$("q-run").classList.add("hidden");$("q-start").classList.remove("hidden");
   var used=Math.round(Math.min(Q.dur,Q.dur-Math.max(0,(Q.end-Date.now())/1000))),early=used<Q.dur-1,lv=QUIZ[$("q-level").value];
   var tg=lv.g.indexOf("국어")===0?"k":"a";$("r-"+tg).value=Q.ok;cur[tg+"l"]=lv.g.replace("수학 ","").replace("국어 ","")+" "+lv.name+(Q.dur!==60?" ("+(Q.dur/60)+"분)":"")+(early?" ("+used+"초에 중단)":"");
@@ -918,21 +949,27 @@ function centerRows(){var rows=[];Object.keys(C.subs).sort().forEach(function(co
     var f=tm.length?termSum(tm[0]):null,l=tm.length>1?termSum(tm[tm.length-1]):null;
     rows.push({coach:coach,s:s,recs:recs,j:j,ja:ja,acts:recs.filter(function(r){return r.act}).length,k0:K[0],k1:K[2]>1?K[1]:null,a0:A[0],a1:A[2]>1?A[1]:null,lastD:last?last.d:"",
       ob0:f&&f.obN?Math.round(f.obAvg*10)/10:null,ob1:l&&l.obN?Math.round(l.obAvg*10)/10:null,chg:chgSum(recs).length,t0:f?f.tAvg:null,t1:l?l.tAvg:null})})});return rows}
+function cHint(){var d=$("c-detail");clear(d);d.appendChild(el("h2",{text:"학생 기록"}));d.appendChild(el("p",{class:"sub",text:"왼쪽 표에서 학생을 누르면 여기에 그 학생의 기록이 나옵니다."}))}
+var CSEL=null;
 function renderCenter(){
   var rows=centerRows(),tiles=$("c-tiles"),tb=$("c-table");clear(tiles);clear(tb);
   var cnt={keep:0,adjust:0,emo:0,wait:0},due=0,obUp=0,obBoth=0;
   rows.forEach(function(r){cnt[r.j.k]++;if(r.j.due)due++;if(r.ob0!=null&&r.ob1!=null){obBoth++;if(r.ob1>r.ob0)obUp++}});
   [["학생",rows.length],["유지",cnt.keep],["조정",cnt.adjust],["정서 중심",cnt.emo],["기록 쌓는 중",cnt.wait],["변화가 기록된 학생",rows.filter(function(r){return r.chg}).length],["방법을 바꾼 학생",rows.filter(function(r){return r.acts}).length],["관찰표 오른 학생",obBoth?obUp+"/"+obBoth:"-"]].forEach(function(t){tiles.appendChild(el("div",{class:"tile"},[el("span",{class:"sub",text:t[0]}),el("b",{text:String(t[1])})]))});
-  if(!rows.length){tb.appendChild(el("tr",null,[el("td",{class:"sub",text:"아직 모은 제출이 없습니다. 위에 붙여 넣고 모으기를 눌러 주세요."})]));$("c-detail").classList.add("hidden");return}
+  if(!rows.length){tb.appendChild(el("tr",null,[el("td",{class:"sub",text:"아직 모은 제출이 없습니다. 위에 붙여 넣고 모으기를 눌러 주세요."})]));cHint();return}
   var hr=el("tr");["코칭단","학생","학년","유형","회기","국어 도전 (첫→최근)","수학 도전 (첫→최근)","관찰표 평균 (처음→최근)","눈에 띈 변화","바꾼 횟수","판정"].forEach(function(h){hr.appendChild(el("th",{text:h}))});tb.appendChild(hr);
-  var order={adjust:0,emo:1,keep:2,wait:3};rows.sort(function(a,b){return order[a.j.k]-order[b.j.k]});
+  var opened=null;var order={adjust:0,emo:1,keep:2,wait:3};rows.sort(function(a,b){return order[a.j.k]-order[b.j.k]});
   rows.forEach(function(r){var tr=el("tr",{class:"click",tabindex:"0"});
     [r.coach,r.s.code,r.s.grade,(TYPES[r.s.type]||{name:""}).name].forEach(function(v){tr.appendChild(el("td",{text:v}))});
     tr.appendChild(el("td",{class:"num",text:String(r.recs.length)}));[[r.k0,r.k1],[r.a0,r.a1]].forEach(function(p){tr.appendChild(el("td",{text:p[0]==null?"":p[0]+(p[1]!=null?" → "+p[1]:"")}))});
     tr.appendChild(el("td",{text:r.ob0!=null?r.ob0+(r.ob1!=null?" → "+r.ob1:""):""}));tr.appendChild(el("td",{class:"num",text:r.chg?r.chg+"가지":""}));tr.appendChild(el("td",{class:"num",text:r.acts?String(r.acts):""}));
     var td=el("td");td.appendChild(pillsAll(r.ja));tr.appendChild(td);
-    function open(){var d=$("c-detail");d.classList.remove("hidden");clear(d);d.appendChild(el("h2",{text:r.coach+" 코칭단의 학생"}));var b=el("div");d.appendChild(b);detail(b,r.s,r.recs,false);d.scrollIntoView({block:"start"})}
+    var key=r.coach+"|"+r.s.id;function open(){CSEL=key;var d=$("c-detail");clear(d);d.appendChild(el("h2",{text:r.coach+" 코칭단의 학생"}));var b=el("div");d.appendChild(b);detail(b,r.s,r.recs,false);
+      Array.prototype.forEach.call(tb.querySelectorAll("tr.sel"),function(x){x.classList.remove("sel")});tr.classList.add("sel");
+      if(window.innerWidth<1000)d.scrollIntoView({block:"start"});else{var cr=d.parentNode;if(cr)cr.scrollTop=0}}
+    if(CSEL===key)opened=open;
     tr.addEventListener("click",open);tr.addEventListener("keydown",function(e){if(e.key==="Enter")open()});tb.appendChild(tr)});
+  if(opened)opened();else{CSEL=null;cHint()}
 }
 function centerAdd(text){var subs=dec(text),msg=$("c-msg");
   if(!subs.length){msg.className="msg err";msg.textContent="제출 내용을 찾지 못했습니다. "+PREFIX+" 로 시작하는 내용 전체를 붙여 넣어 주세요.";return}
@@ -955,6 +992,7 @@ function show(){var v=(location.hash||"").replace("#","");if(VIEWS.indexOf(v)<0)
   clear(nav);items.forEach(function(it){var a=el("a",{href:"#"+it[0],text:it[1]});if(it[0]===v)a.setAttribute("aria-current","page");nav.appendChild(a)});nav.classList.toggle("hidden",!items.length);
   var st=stu(SEL);$("nav-who").textContent=(v==="record"||v==="progress")&&st?st.code+" · "+st.grade:({students:"학생 목록",add:"학생 추가",manage:"학생 관리",submit:"제출·백업",center:"센터용"}[v]||"");
   $("nav-back").classList.toggle("hidden",v==="students");$("nav-home").classList.toggle("hidden",v==="students");
+  document.querySelector(".wrap").classList.toggle("wide",v==="center");
   if(v==="progress")renderProgress();if(v==="submit")renderSubmit();if(v==="center"&&$("v-center"))renderCenter()}
 function renderProgress(){var s=stu($("p-student").value)||S.students[0];detail($("p-body"),s,s?recsOf(S.records,s.id):[],true)}
 function renderAll(){fillStudents($("r-student"),true);fillStudents($("p-student"),true);syncRecordForm();renderStudents();renderProgress();renderSubmit()}
@@ -982,6 +1020,18 @@ $("bk-load").addEventListener("click",function(){var msg=$("bk-msg");readFiles($
   var o=a[a.length-1];S={coach:o.coach==="이름 없음"?"":o.coach,students:o.students,records:o.records};persist();$("s-coach").value=S.coach;$("bk-text").value="";$("bk-file").value="";renderAll();
   msg.className="msg";msg.textContent="학생 "+o.students.length+"명, 기록 "+o.records.length+"건을 불러왔습니다."})});
 if($("v-center")){
+(function(){var dz=$("c-drop"),depth=0;if(!dz)return;
+  function stop(e){e.preventDefault();e.stopPropagation()}
+  dz.addEventListener("dragenter",function(e){stop(e);depth++;dz.classList.add("over")});
+  dz.addEventListener("dragover",function(e){stop(e);if(e.dataTransfer)e.dataTransfer.dropEffect="copy"});
+  dz.addEventListener("dragleave",function(e){stop(e);depth=Math.max(0,depth-1);if(!depth)dz.classList.remove("over")});
+  dz.addEventListener("drop",function(e){stop(e);depth=0;dz.classList.remove("over");var fs=Array.prototype.slice.call((e.dataTransfer&&e.dataTransfer.files)||[]),msg=$("c-msg");
+    if(!fs.length){msg.className="msg err";msg.textContent="파일을 찾지 못했습니다. 제출 파일(.txt)을 끌어다 놓아 주세요.";return}
+    Promise.all(fs.map(function(f){return f.text()})).then(function(a){centerAdd(a.join("\n"))},function(){msg.className="msg err";msg.textContent="파일을 읽지 못했습니다. 파일 선택으로 다시 올려 주세요."})});
+  dz.addEventListener("click",function(){$("c-file").click()});dz.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();$("c-file").click()}});
+  $("c-file").addEventListener("change",function(){if($("c-file").files.length)readFiles($("c-file")).then(function(ft){centerAdd(ft)})});
+  ["dragover","drop"].forEach(function(ev){window.addEventListener(ev,function(e){if($("v-center")&&!$("v-center").classList.contains("hidden"))e.preventDefault()})});
+})();
 $("c-add").addEventListener("click",function(){readFiles($("c-file")).then(function(ft){centerAdd($("c-text").value+"\n"+ft)})});
 (function(){var b=$("c-clear"),armed=false,tm;b.addEventListener("click",function(){if(armed){clearTimeout(tm);armed=false;b.textContent="모은 자료 지우기";C={subs:{}};save(CKEY,C);renderCenter();$("c-msg").className="msg";$("c-msg").textContent="모은 자료를 지웠습니다."}
   else{armed=true;b.textContent="한 번 더 누르면 지웁니다";tm=setTimeout(function(){armed=false;b.textContent="모은 자료 지우기"},3000)}})})();

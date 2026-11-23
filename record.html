@@ -195,8 +195,12 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
           </div>
         </div>
       </details>
-      <p class="sub">오늘의 도전을 하면 맞은 개수가 아래 칸에 자동으로 들어갑니다. 종이로 쟀다면 숫자를 직접 적습니다.</p>
-      <label for="r-m"><span id="r-mlabel">도전 점수</span><input id="r-m" type="number" min="0" inputmode="numeric" placeholder="숫자만"></label>
+      <p class="sub">오늘의 도전을 하면 맞은 개수가 아래 국어 또는 수학 칸에 자동으로 들어갑니다. 종이로 쟀다면 숫자를 직접 적습니다.</p>
+      <div class="row">
+        <label for="r-k">국어 도전 점수<input id="r-k" type="number" min="0" inputmode="numeric" placeholder="숫자만"></label>
+        <label for="r-a">수학 도전 점수<input id="r-a" type="number" min="0" inputmode="numeric" placeholder="숫자만"></label>
+      </div>
+      <p class="sub">한 과목만 했으면 그 칸만 적습니다. 두 과목을 다 하려면 오늘의 도전을 국어 한 번, 수학 한 번 합니다.</p>
       <div>
         <label id="r-moodl">시작할 때 기분 (1 매우 나쁨, 5 매우 좋음)</label>
         <div class="scale" id="r-mood" role="group" aria-labelledby="r-moodl"></div>
@@ -236,7 +240,7 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
         <label for="s-grade">학년<select id="s-grade"></select></label>
         <label for="s-type">유형<select id="s-type"></select></label>
       </div>
-      <label for="s-measure">오늘의 도전에서 셀 것<input id="s-measure" type="text" maxlength="60"></label>
+      <label for="s-measure" class="hidden">오늘의 도전에서 셀 것<input id="s-measure" type="text" maxlength="60"></label>
       <button class="primary" id="s-add" type="button">학생 추가</button>
       <p class="msg" id="s-msg" role="status"></p>
     </div>
@@ -652,7 +656,7 @@ var SRC={
   "과제 길이 반으로":KRI+": 지루해하지 않도록 흥미를 고려해 방법을 다양하게 한다",
   "해낸 것 말해 주기":PLAN+": 학생의 변화를 참여 태도, 학습 동기와 흥미, 자신감과 자기효능감으로도 확인",
   "같은 종류로 4회 더":"공식 기준이 아니라 측정 원칙입니다 (같은 도구로 재야 비교할 수 있음)"};
-function advise(recs,stu,j){var ms=recs.filter(function(r){return typeof r.m==="number"}),out={head:"",steps:[],notes:[]};
+function advise(recs,stu,j,sub){var ms=recs.filter(function(r){return typeof r.m==="number"}),out={head:"",steps:[],notes:[]};
   if(j.k==="wait"){out.head="아직 판정하지 않습니다. 회기마다 같은 종류의 오늘의 도전으로 재어 주세요.";return out}
   var l8=ms.slice(-8),l4=ms.slice(-4),la=avg(l4.map(function(r){return r.m})),pa=avg(ms.slice(-8,-4).map(function(r){return r.m})),f4=avg(ms.slice(0,4).map(function(r){return r.m}));
   var kinds={};l8.forEach(function(r){if(r.ml)kinds[r.ml]=1});var mixed=Object.keys(kinds).length>1;
@@ -661,7 +665,7 @@ function advise(recs,stu,j){var ms=recs.filter(function(r){return typeof r.m==="
   if(la>0&&(mx-mn)/la>0.5)out.notes.push("최근 점수가 들쭉날쭉합니다("+mn+"~"+mx+"). 오늘의 도전을 회기의 같은 순서, 같은 종류로 재고 있는지 확인해 주세요.");
   var r4=recs.slice(-4),gap=0;for(var i=1;i<r4.length;i++){var g=(new Date(r4[i].d)-new Date(r4[i-1].d))/864e5;if(g>gap)gap=g}
   if(gap>=15)out.notes.push("회기 사이가 "+Math.round(gap)+"일 벌어진 적이 있습니다. 쉬고 온 뒤에는 점수가 내려가는 것이 보통이니, 2회기 더 지켜본 뒤 판단해도 됩니다.");
-  var how=HOW[stu.type]||HOW.reading;
+  var how=sub?(sub==="ma"?(stu.type==="life"?HOW.life:HOW.math):(stu.type==="hangul"?HOW.hangul:HOW.reading)):(HOW[stu.type]||HOW.reading);
   if(j.k==="keep"){out.head="잘 오르고 있습니다. 지금 방법을 그대로 이어 가세요.";if(f4&&la>=f4*1.5)out.steps.push(["한 단계 올리기","처음보다 1.5배 넘게 올랐습니다. 오늘의 도전 종류를 한 단계 어려운 것으로 바꿀 수 있습니다."]);return out}
   if(j.k==="emo"){out.head="점수는 오르지만 기분이나 참여도가 낮습니다. 마음을 먼저 살핍니다.";
     if(mo!=null&&mo<3)out.steps.push(["정서 활동 먼저","회기 처음 10분을 기분 이야기나 좋아하는 활동으로 시작하고, 학습 1과 학습 2를 5분씩 줄입니다."]);
@@ -682,14 +686,24 @@ function advise(recs,stu,j){var ms=recs.filter(function(r){return typeof r.m==="
   else{out.head="점수가 제자리입니다. 같은 방법을 계속하기보다 방법을 하나 바꿔 봅니다.";how.forEach(function(h){out.steps.push(h)});
     out.steps.push(["연습 횟수 늘리기","오늘의 도전과 같은 내용을 회기 안에서 3분씩 두 번 더 연습합니다."])}
   return out}
-function advBox(host,recs,stu,j,pick){var a=advise(recs,stu,j);clear(host);if(!a.head)return a;
+function advBox(host,recs,stu,j,pick,sub,title){var a=advise(recs,stu,j,sub),aid="r-act"+(sub?"-"+sub:"");clear(host);if(!a.head)return a;if(title)host.appendChild(el("h3",{text:title}));
   host.appendChild(el("p",{class:"note",text:a.head}));
   if(a.steps.length){host.appendChild(el("p",{class:"sub",text:"제시하는 지도 방법입니다. 꼭 따라야 하는 것은 아니며, 학생에게 맞는 것을 코칭단이 골라 씁니다."}));var ol=el("ol",{class:"adv"});a.steps.forEach(function(s){var li=el("li",null,[el("b",{text:s[0]+". "}),s[1]]);if(SRC[s[0]])li.appendChild(el("span",{class:"src",text:"근거: "+SRC[s[0]]}));ol.appendChild(li)});host.appendChild(ol)}
   a.notes.forEach(function(n){host.appendChild(el("p",{class:"sub",text:n}))});
-  if(pick&&a.steps.length&&(j.k==="adjust"||j.k==="emo")){var sel=el("select",{id:"r-act"});sel.appendChild(el("option",{value:"",text:"제시된 방법을 쓰지 않음"}));
+  if(pick&&a.steps.length&&(j.k==="adjust"||j.k==="emo")){var sel=el("select",{id:aid});sel.appendChild(el("option",{value:"",text:"제시된 방법을 쓰지 않음"}));
     a.steps.forEach(function(s){sel.appendChild(el("option",{value:s[0],text:s[0]}))});sel.appendChild(el("option",{value:"다른 방법으로 바꿈",text:"다른 방법을 씀 (메모에 적기)"}));
-    host.appendChild(el("label",{for:"r-act"},["이번 회기에 써 본 방법 (센터에 함께 제출됩니다)",sel]))}
+    host.appendChild(el("label",{for:aid},["이번 회기에 써 본 방법 (센터에 함께 제출됩니다)",sel]))}
   return a}
+/* ================= 국어·수학 두 과목 ================= */
+var SUBS={ko:"국어",ma:"수학"};
+function subOfMl(ml,st){if(ml)return/낱말 읽기|문장 읽기|바른 표기/.test(ml)?"ko":"ma";var t=TYPES[st&&st.type]||TYPES.hangul;return t.areas.indexOf("ko")===0?"ko":"ma"}
+function sc(r,sub,st){if(r.k!==undefined||r.a!==undefined)return sub==="ko"?{m:r.k,ml:r.kl||""}:{m:r.a,ml:r.al||""};
+  if(typeof r.m==="number"&&subOfMl(r.ml,st)===sub)return{m:r.m,ml:r.ml||""};return{m:null,ml:""}}
+function view(recs,sub,st){return recs.map(function(r){var o={},k;for(k in r)o[k]=r[k];var x=sc(r,sub,st);o.m=typeof x.m==="number"?x.m:null;o.ml=x.ml;return o})}
+function subsOf(recs,st){var out=["ko","ma"].filter(function(sub){return recs.some(function(r){return typeof sc(r,sub,st).m==="number"})});return out.length?out:[subOfMl("",st)]}
+function judgeAll(recs,st){var order={adjust:0,emo:1,keep:2,wait:3},list=subsOf(recs,st).map(function(sub){var v=view(recs,sub,st);return{sub:sub,v:v,j:judge(v)}});
+  return{list:list,multi:list.length>1,j:list.slice().sort(function(a,b){return order[a.j.k]-order[b.j.k]})[0].j,label:list.map(function(x){return(list.length>1?SUBS[x.sub]+" ":"")+x.j.label}).join(", ")}}
+function pillsAll(ja){var f=document.createDocumentFragment();ja.list.forEach(function(x,i){if(i)f.appendChild(document.createTextNode(" "));f.appendChild(el("span",{class:"pill "+x.j.k,text:(ja.multi?SUBS[x.sub]+" ":"")+x.j.label}))});return f}
 function pills(j){var f=document.createDocumentFragment();f.appendChild(el("span",{class:"pill "+j.k,text:j.label}));if(j.due){f.appendChild(document.createTextNode(" "));f.appendChild(el("span",{class:"pill due",text:"점검할 때"}))}return f}
 
 /* ================= 차트 ================= */
@@ -741,9 +755,9 @@ function table(heads,rows){var tb=el("table"),hr=el("tr");heads.forEach(function
 function detail(host,student,recs,editable){
   clear(host);
   if(!student){host.appendChild(el("p",{class:"sub",text:"학생을 먼저 추가해 주세요."}));return}
-  var j=judge(recs),t=TYPES[student.type]||TYPES.hangul;
-  var head=el("p",null,[el("b",{text:student.code+" "}),el("span",{class:"sub",text:student.grade+" · "+t.name+" · "+recs.length+"회기 "})]);head.appendChild(pills(j));
-  host.appendChild(head);host.appendChild(el("p",{class:"sub",text:j.why}));var ab=el("div",{class:"advbox"});host.appendChild(ab);advBox(ab,recs,student,j,false);
+  var ja=judgeAll(recs,student),t=TYPES[student.type]||TYPES.hangul;
+  var head=el("p",null,[el("b",{text:student.code+" "}),el("span",{class:"sub",text:student.grade+" · "+t.name+" · "+recs.length+"회기 "})]);head.appendChild(pillsAll(ja));
+  host.appendChild(head);ja.list.forEach(function(x){host.appendChild(el("p",{class:"sub",text:(ja.multi?SUBS[x.sub]+": ":"")+x.j.why}));var ab=el("div",{class:"advbox"});host.appendChild(ab);advBox(ab,x.v,student,x.j,false,x.sub,ja.multi?SUBS[x.sub]+" 지도 방법":"")});
   var acts=recs.filter(function(r){return r.act});if(acts.length)host.appendChild(el("p",{class:"sub",text:"바꾼 기록: "+acts.map(function(r){return r.n+"회기 "+r.act}).join(", ")}));
   var tm=terms(recs);
   if(tm.length){var fl=tm.length>1?[tm[0],tm[tm.length-1]]:[tm[0]];host.appendChild(el("h3",{text:"관찰표와 담임 평정: 처음과 최근"}));
@@ -753,29 +767,29 @@ function detail(host,student,recs,editable){
   var c1=el("div"),c2=el("div"),c3=el("div");host.appendChild(c1);host.appendChild(c2);host.appendChild(c3);
   var obp=tm.map(function(r){var s=termSum(r);return{x:r.n,y:s.obAvg==null?null:Math.round(s.obAvg*10)/10}}).filter(function(p){return p.y!=null});
   if(obp.length>1)chart(c3,"배움 모습 평정 평균 (1~5)",[{name:"관찰표 평균",color:"var(--series-1)",pts:obp}],{ymin:1,ymax:5,ticks:[1,3,5]});
-  chart(c1,student.measure||t.measure,[{name:"도전 점수",color:"var(--series-1)",pts:recs.filter(function(r){return typeof r.m==="number"}).map(function(r){return{x:r.n,y:r.m}})}]);
+  ja.list.forEach(function(x){var cc=el("div");c1.appendChild(cc);chart(cc,SUBS[x.sub]+" 도전 점수 (맞힌 수)",[{name:SUBS[x.sub]+" 도전 점수",color:"var(--series-1)",pts:x.v.filter(function(r){return typeof r.m==="number"}).map(function(r){return{x:r.n,y:r.m}})}])});
   chart(c2,"기분과 참여도 (1~5)",[
     {name:"기분",color:"var(--series-1)",pts:recs.filter(function(r){return r.mood}).map(function(r){return{x:r.n,y:r.mood}})},
     {name:"참여도",color:"var(--series-2)",pts:recs.filter(function(r){return r.part}).map(function(r){return{x:r.n,y:r.part}})}],{ymin:1,ymax:5,ticks:[1,3,5]});
   host.appendChild(el("h3",{text:"회기별 기록"}));
-  host.appendChild(table(["회기","날짜","측정","기분","참여","점검·메모",""],recs.slice().reverse().map(function(r){
-    var note=el("td",{text:[r.ml?"("+r.ml+")":"",chgText(r).length?"변화: "+chgText(r).join(", "):"",r.act?"바꾼 것: "+r.act:"",ckText(student,r),r.memo].filter(Boolean).join(" / ")});note.style.whiteSpace="normal";note.style.minWidth="160px";
+  host.appendChild(table(["회기","날짜","국어","수학","기분","참여","점검·메모",""],recs.slice().reverse().map(function(r){
+    var ks=sc(r,"ko",student),as=sc(r,"ma",student);var note=el("td",{text:[ks.ml?"(국어 "+ks.ml+")":"",as.ml?"(수학 "+as.ml+")":"",chgText(r).length?"변화: "+chgText(r).join(", "):"",r.act?"바꾼 것: "+r.act:"",ckText(student,r),r.memo].filter(Boolean).join(" / ")});note.style.whiteSpace="normal";note.style.minWidth="160px";
     var last=el("td");if(editable)last.appendChild(twoStep("삭제",function(){S.records=S.records.filter(function(x){return x.id!==r.id});persist();renderAll()}));
-    return[r.n,r.d,r.m,r.mood,r.part,note,last]})));
+    return[r.n,r.d,ks.m,as.m,r.mood,r.part,note,last]})));
 }
 
 /* ================= 오늘 기록 ================= */
-var cur={mood:0,part:0,ml:"",ob:[],t:[],chg:[]};
+var cur={mood:0,part:0,kl:"",al:"",ob:[],t:[],chg:[]};
 function scale(host,get,set,from,to,labels){clear(host);for(var i=from;i<=to;i++){(function(v){var b=el("button",{type:"button","aria-pressed":String(get()===v),text:labels?labels[v-from]:String(v)});
   b.addEventListener("click",function(){set(get()===v?null:v);Array.prototype.forEach.call(host.children,function(c,idx){c.setAttribute("aria-pressed",String(idx+from===get()))})});host.appendChild(b)})(i)}}
 function fillStudents(sel,keep){var v=keep?sel.value:"";clear(sel);S.students.forEach(function(s){sel.appendChild(el("option",{value:s.id,text:s.code+" ("+s.grade+")"}))});
   if(!S.students.length)sel.appendChild(el("option",{value:"",text:"학생 탭에서 먼저 추가"}));if(v&&stu(v))sel.value=v}
 function syncRecordForm(){
   var s=stu($("r-student").value);if(!s){$("r-typeinfo").textContent="";return}
-  var t=TYPES[s.type],recs=recsOf(S.records,s.id),next=recs.length?recs[recs.length-1].n+1:1,j=judge(recs);
-  $("r-n").value=next;$("r-mlabel").textContent="도전 점수: "+(s.measure||t.measure);
-  $("r-typeinfo").textContent=t.name+" · 지금까지 "+recs.length+"회기"+(j.due&&recs.length?" · 시작 또는 학기 말 점검을 할 때입니다":"");
-  advBox($("r-adv"),recs,s,j,true);
+  var t=TYPES[s.type],recs=recsOf(S.records,s.id),next=recs.length?recs[recs.length-1].n+1:1,ja=judgeAll(recs,s);
+  $("r-n").value=next;
+  $("r-typeinfo").textContent=t.name+" · 지금까지 "+recs.length+"회기";
+  var ah=$("r-adv");clear(ah);ja.list.forEach(function(x){var b=el("div",{class:"advbox"});ah.appendChild(b);advBox(b,x.v,s,x.j,true,x.sub,ja.multi?SUBS[x.sub]:"")});
   $("q-level").value=s.type==="hangul"?"r1":(t.areas[0]==="ko"?(KQDEF[s.grade]||"r1"):(QDEF[s.grade]||"f1"));qSync();syncCk();
 }
 function rateRow(label,arr,idx,from,to,labels){var box=el("div",{class:"rate"}),sc=el("div",{class:"scale",role:"group","aria-label":label});
@@ -794,18 +808,18 @@ function syncCk(){
 function saveRecord(){
   var msg=$("r-msg"),s=stu($("r-student").value);msg.className="msg";
   if(!s){msg.className="msg err";msg.textContent="학생 탭에서 학생을 먼저 추가해 주세요.";return}
-  var n=parseInt($("r-n").value,10),mv=$("r-m").value,filled=function(a){return a.some(function(v){return v!=null})},ck=(filled(cur.ob)||filled(cur.t))?"term":"none";
+  var n=parseInt($("r-n").value,10),kv=$("r-k").value,av=$("r-a").value,mv=kv+av,filled=function(a){return a.some(function(v){return v!=null})},ck=(filled(cur.ob)||filled(cur.t))?"term":"none";
   if(!n||n<1){msg.className="msg err";msg.textContent="회기 번호를 숫자로 적어 주세요.";return}
   if(mv===""&&!cur.mood&&!cur.part&&ck==="none"&&!cur.chg.length){msg.className="msg err";msg.textContent="도전 점수, 기분, 참여도 중 하나는 적어 주세요.";return}
   var d=$("r-date").value||today(),cv={};
   if(ck==="school")schoolFields(s.grade).forEach(function(f){var i=$("ck-"+f.k);if(i&&i.value!=="")cv[f.k]=i.value});
   if(ck==="term"){cv.ob=cur.ob.slice();cv.t=cur.t.slice();if(cur.mt)cv.mt=cur.mt;if(cur.kt)cv.kt=cur.kt}
   S.records=S.records.filter(function(r){return!(r.sid===s.id&&r.n===n)});
-  S.records.push({id:uid(),sid:s.id,d:d,n:n,m:mv===""?null:+mv,ml:mv===""?"":cur.ml,mood:cur.mood||null,part:cur.part||null,memo:$("r-memo").value.trim(),chg:cur.chg.slice().sort(function(a,b){return a-b}),act:$("r-act")?$("r-act").value:"",ck:ck,cv:cv});
+  S.records.push({id:uid(),sid:s.id,d:d,n:n,k:kv===""?null:+kv,kl:kv===""?"":cur.kl,a:av===""?null:+av,al:av===""?"":cur.al,mood:cur.mood||null,part:cur.part||null,memo:$("r-memo").value.trim(),chg:cur.chg.slice().sort(function(a,b){return a-b}),act:["ko","ma"].map(function(b){var e=$("r-act-"+b);return e&&e.value?SUBS[b]+": "+e.value:""}).filter(Boolean).join(" / "),ck:ck,cv:cv});
   persist();
-  $("r-m").value="";$("r-memo").value="";cur.mood=0;cur.part=0;cur.ml="";initScales();
-  renderAll();var j=judge(recsOf(S.records,s.id));
-  syncRecordForm();msg.textContent=s.code+" "+n+"회기를 저장했습니다. 현재 판정: "+j.label+(j.due?", 점검할 때":"")+"."+((j.k==="adjust"||j.k==="emo")?" 위쪽 안내에서 다음 회기에 할 일을 확인해 주세요.":"");
+  $("r-k").value="";$("r-a").value="";$("r-memo").value="";cur.mood=0;cur.part=0;cur.kl="";cur.al="";initScales();
+  renderAll();var ja=judgeAll(recsOf(S.records,s.id),s),j=ja.j;
+  syncRecordForm();msg.textContent=s.code+" "+n+"회기를 저장했습니다. 현재 판정: "+ja.label+"."+((j.k==="adjust"||j.k==="emo")?" 위쪽 안내에서 다음 회기에 할 일을 확인해 주세요.":"");
 }
 function initScales(){scale($("r-mood"),function(){return cur.mood||null},function(v){cur.mood=v||0},1,5);scale($("r-part"),function(){return cur.part||null},function(v){cur.part=v||0},1,5)}
 
@@ -818,8 +832,8 @@ function qStart(){var lv=QUIZ[$("q-level").value];Q.next=lv.make();Q.ok=0;Q.no=0
   $("q-run").classList.remove("hidden");$("q-start").classList.add("hidden");qShow();qTick();Q.tm=setInterval(qTick,250)}
 function qEnd(){if(!Q.on)return;Q.on=false;clearInterval(Q.tm);$("q-run").classList.add("hidden");$("q-start").classList.remove("hidden");
   var used=Math.round(Math.min(Q.dur,Q.dur-Math.max(0,(Q.end-Date.now())/1000))),early=used<Q.dur-1,lv=QUIZ[$("q-level").value];
-  $("r-m").value=Q.ok;cur.ml=lv.g.replace("수학 ","").replace("국어 ","")+" "+lv.name+(Q.dur!==60?" ("+(Q.dur/60)+"분)":"")+(early?" ("+used+"초에 중단)":"");
-  var m=$("r-msg");m.className="msg";m.textContent="검사 결과 맞음 "+Q.ok+", 틀림 "+Q.no+". 맞은 개수를 도전 점수 칸에 넣었습니다."+(early?" "+used+"초에 중단한 기록이라 다른 회기와 비교할 때 주의하세요.":"");}
+  var tg=lv.g.indexOf("국어")===0?"k":"a";$("r-"+tg).value=Q.ok;cur[tg+"l"]=lv.g.replace("수학 ","").replace("국어 ","")+" "+lv.name+(Q.dur!==60?" ("+(Q.dur/60)+"분)":"")+(early?" ("+used+"초에 중단)":"");
+  var m=$("r-msg");m.className="msg";m.textContent="맞음 "+Q.ok+", 틀림 "+Q.no+". 맞은 개수를 "+(tg==="k"?"국어":"수학")+" 도전 점수 칸에 넣었습니다."+(early?" "+used+"초에 중단한 기록이라 다른 회기와 비교할 때 주의하세요.":"");}
 function qAns(ok){if(!Q.on)return;if(ok)Q.ok++;else Q.no++;qShow();qTick()}
 var STDTXT={"2국02-01":"글자, 단어, 문장, 짧은 글을 정확하게 소리 내어 읽는다.","2국04-02":"소리와 표기가 다를 수 있음을 알고 단어를 바르게 읽고 쓴다.","4국02-01":"글의 의미를 파악하며 유창하게 글을 읽는다.",
   "6국04-06":"글과 담화에 쓰인 단어 및 문장, 띄어쓰기를 민감하게 살펴 바르게 고치는 태도를 지닌다.","9국04-06":"한글 맞춤법의 기본 원리와 내용을 이해하고 국어생활에 적용한다.",
@@ -843,8 +857,8 @@ function goStudent(view,sid){SEL=sid;location.hash="#"+view;show();window.scroll
 function renderStudents(){
   var list=$("s-list");clear(list);
   if(!S.students.length){list.appendChild(el("p",{class:"sub",text:"아직 학생이 없습니다."}));var a=el("a",{class:"btnlink",href:"#setup",text:"학생 추가하러 가기"});list.appendChild(a)}
-  S.students.forEach(function(s){var recs=recsOf(S.records,s.id),j=judge(recs),left=el("div");
-    var nm=el("div",null,[el("b",{text:s.code+" "})]);if(s.ex)nm.appendChild(el("span",{class:"tag",text:"예시"}));nm.appendChild(document.createTextNode(" "));nm.appendChild(pills(j));
+  S.students.forEach(function(s){var recs=recsOf(S.records,s.id),left=el("div");
+    var nm=el("div",null,[el("b",{text:s.code+" "})]);if(s.ex)nm.appendChild(el("span",{class:"tag",text:"예시"}));nm.appendChild(document.createTextNode(" "));nm.appendChild(pillsAll(judgeAll(recs,s)));
     left.appendChild(nm);left.appendChild(el("div",{class:"meta",text:s.grade+" · "+TYPES[s.type].name+" · "+recs.length+"회기"+(s.ex?" · 제출에 포함되지 않음":"")}));
     var head=el("button",{type:"button",class:"shead"},[left,el("span",{class:"chev","aria-hidden":"true",text:"›"})]);
     head.addEventListener("click",function(){goStudent("record",s.id)});list.appendChild(el("div",{class:"sitem"},[head]))});
@@ -878,9 +892,9 @@ function renderSubmit(){var p=payload();$("sub-summary").textContent=(S.coach?S.
 
 /* ================= 센터 ================= */
 function centerRows(){var rows=[];Object.keys(C.subs).sort().forEach(function(coach){var sub=C.subs[coach];
-  sub.students.forEach(function(s){var recs=recsOf(sub.records,s.id),j=judge(recs),ms=recs.filter(function(r){return typeof r.m==="number"}),last=recs[recs.length-1],tm=terms(recs);
+  sub.students.forEach(function(s){var recs=recsOf(sub.records,s.id),ja=judgeAll(recs,s),j=ja.j,last=recs[recs.length-1],tm=terms(recs),fl=function(b){var v=recs.map(function(r){return sc(r,b,s).m}).filter(function(m){return typeof m==="number"});return v.length?[v[0],v[v.length-1],v.length]:[null,null,0]},K=fl("ko"),A=fl("ma");
     var f=tm.length?termSum(tm[0]):null,l=tm.length>1?termSum(tm[tm.length-1]):null;
-    rows.push({coach:coach,s:s,recs:recs,j:j,acts:recs.filter(function(r){return r.act}).length,first:ms.length?ms[0].m:null,latest:ms.length?ms[ms.length-1].m:null,lastD:last?last.d:"",
+    rows.push({coach:coach,s:s,recs:recs,j:j,ja:ja,acts:recs.filter(function(r){return r.act}).length,k0:K[0],k1:K[2]>1?K[1]:null,a0:A[0],a1:A[2]>1?A[1]:null,lastD:last?last.d:"",
       ob0:f&&f.obN?Math.round(f.obAvg*10)/10:null,ob1:l&&l.obN?Math.round(l.obAvg*10)/10:null,chg:chgSum(recs).length,t0:f?f.tAvg:null,t1:l?l.tAvg:null})})});return rows}
 function renderCenter(){
   var rows=centerRows(),tiles=$("c-tiles"),tb=$("c-table");clear(tiles);clear(tb);
@@ -888,13 +902,13 @@ function renderCenter(){
   rows.forEach(function(r){cnt[r.j.k]++;if(r.j.due)due++;if(r.ob0!=null&&r.ob1!=null){obBoth++;if(r.ob1>r.ob0)obUp++}});
   [["학생",rows.length],["유지",cnt.keep],["조정",cnt.adjust],["정서 중심",cnt.emo],["기록 쌓는 중",cnt.wait],["변화가 기록된 학생",rows.filter(function(r){return r.chg}).length],["방법을 바꾼 학생",rows.filter(function(r){return r.acts}).length],["관찰표 오른 학생",obBoth?obUp+"/"+obBoth:"-"]].forEach(function(t){tiles.appendChild(el("div",{class:"tile"},[el("span",{class:"sub",text:t[0]}),el("b",{text:String(t[1])})]))});
   if(!rows.length){tb.appendChild(el("tr",null,[el("td",{class:"sub",text:"아직 모은 제출이 없습니다. 위에 붙여 넣고 모으기를 눌러 주세요."})]));$("c-detail").classList.add("hidden");return}
-  var hr=el("tr");["코칭단","학생","학년","유형","회기","첫 측정","최근 측정","관찰표 평균 (처음→최근)","눈에 띈 변화","바꾼 횟수","판정"].forEach(function(h){hr.appendChild(el("th",{text:h}))});tb.appendChild(hr);
+  var hr=el("tr");["코칭단","학생","학년","유형","회기","국어 도전 (첫→최근)","수학 도전 (첫→최근)","관찰표 평균 (처음→최근)","눈에 띈 변화","바꾼 횟수","판정"].forEach(function(h){hr.appendChild(el("th",{text:h}))});tb.appendChild(hr);
   var order={adjust:0,emo:1,keep:2,wait:3};rows.sort(function(a,b){return order[a.j.k]-order[b.j.k]});
   rows.forEach(function(r){var tr=el("tr",{class:"click",tabindex:"0"});
     [r.coach,r.s.code,r.s.grade,(TYPES[r.s.type]||{name:""}).name].forEach(function(v){tr.appendChild(el("td",{text:v}))});
-    [r.recs.length,r.first,r.latest].forEach(function(v){tr.appendChild(el("td",{class:"num",text:v==null?"":String(v)}))});
+    tr.appendChild(el("td",{class:"num",text:String(r.recs.length)}));[[r.k0,r.k1],[r.a0,r.a1]].forEach(function(p){tr.appendChild(el("td",{text:p[0]==null?"":p[0]+(p[1]!=null?" → "+p[1]:"")}))});
     tr.appendChild(el("td",{text:r.ob0!=null?r.ob0+(r.ob1!=null?" → "+r.ob1:""):""}));tr.appendChild(el("td",{class:"num",text:r.chg?r.chg+"가지":""}));tr.appendChild(el("td",{class:"num",text:r.acts?String(r.acts):""}));
-    var td=el("td");td.appendChild(pills(r.j));tr.appendChild(td);
+    var td=el("td");td.appendChild(pillsAll(r.ja));tr.appendChild(td);
     function open(){var d=$("c-detail");d.classList.remove("hidden");clear(d);d.appendChild(el("h2",{text:r.coach+" 코칭단의 학생"}));var b=el("div");d.appendChild(b);detail(b,r.s,r.recs,false);d.scrollIntoView({block:"start"})}
     tr.addEventListener("click",open);tr.addEventListener("keydown",function(e){if(e.key==="Enter")open()});tb.appendChild(tr)});
 }
@@ -903,10 +917,10 @@ function centerAdd(text){var subs=dec(text),msg=$("c-msg");
   subs.forEach(function(o){var old=C.subs[o.coach];if(!old||!old.at||old.at<=o.at)C.subs[o.coach]={at:o.at,students:o.students,records:o.records}});
   save(CKEY,C);$("c-text").value="";$("c-file").value="";renderCenter();msg.className="msg";msg.textContent=subs.length+"건을 모았습니다. 지금 "+Object.keys(C.subs).length+"명의 코칭단 자료가 있습니다."}
 function centerTable(sep){var q=function(v){v=v==null?"":String(v);return sep===","?'"'+v.replace(/"/g,'""')+'"':v.replace(/[\t\r\n]+/g," ")};
-  var out=["[학생별 요약]",["코칭단","학생","학년","유형","회기 수","첫 1분 측정","최근 1분 측정","관찰표 평균 처음","관찰표 평균 최근","눈에 띈 변화 가짓수","담임 평정 시작","담임 평정 최근","방법을 바꾼 횟수","현재 판정"].map(q).join(sep)];
-  var rows=centerRows();rows.forEach(function(r){out.push([r.coach,r.s.code,r.s.grade,(TYPES[r.s.type]||{name:""}).name,r.recs.length,r.first,r.latest,r.ob0,r.ob1,r.chg,r1(r.t0),r1(r.t1),r.acts,r.j.label+(r.j.due?", 점검할 때":"")].map(q).join(sep))});
-  out.push("","[회기별 기록]",["코칭단","학생","회기","날짜","1분 측정","측정 종류","기분","참여도","눈에 띈 변화","바꾼 것","관찰표","메모"].map(q).join(sep));
-  rows.forEach(function(r){r.recs.forEach(function(x){out.push([r.coach,r.s.code,x.n,x.d,x.m,x.ml,x.mood,x.part,chgText(x).join("; "),x.act||"",ckText(r.s,x),x.memo].map(q).join(sep))})});return out.join("\r\n")}
+  var out=["[학생별 요약]",["코칭단","학생","학년","유형","회기 수","국어 1분 측정 첫","국어 1분 측정 최근","수학 1분 측정 첫","수학 1분 측정 최근","관찰표 평균 처음","관찰표 평균 최근","눈에 띈 변화 가짓수","담임 평정 시작","담임 평정 최근","방법을 바꾼 횟수","현재 판정"].map(q).join(sep)];
+  var rows=centerRows();rows.forEach(function(r){out.push([r.coach,r.s.code,r.s.grade,(TYPES[r.s.type]||{name:""}).name,r.recs.length,r.k0,r.k1,r.a0,r.a1,r.ob0,r.ob1,r.chg,r1(r.t0),r1(r.t1),r.acts,r.ja.label].map(q).join(sep))});
+  out.push("","[회기별 기록]",["코칭단","학생","회기","날짜","국어 점수","국어 종류","수학 점수","수학 종류","기분","참여도","눈에 띈 변화","바꾼 것","관찰표","메모"].map(q).join(sep));
+  rows.forEach(function(r){r.recs.forEach(function(x){var ks=sc(x,"ko",r.s),as=sc(x,"ma",r.s);out.push([r.coach,r.s.code,x.n,x.d,ks.m,ks.ml,as.m,as.ml,x.mood,x.part,chgText(x).join("; "),x.act||"",ckText(r.s,x),x.memo].map(q).join(sep))})});return out.join("\r\n")}
 
 /* ================= 화면 전환 ================= */
 var VIEWS=["record","students","progress","submit","center","setup"].filter(function(v){return $("v-"+v)}),BUILD=document.body.getAttribute("data-build")||"center",FORM_URL=document.body.getAttribute("data-form")||"";
@@ -939,7 +953,7 @@ $("r-save").addEventListener("click",saveRecord);$("s-add").addEventListener("cl
 $("p-student").addEventListener("change",function(){SEL=$("p-student").value;show()});
 $("q-start").addEventListener("click",qStart);$("q-stop").addEventListener("click",qEnd);
 $("q-o").addEventListener("click",function(){qAns(true)});$("q-x").addEventListener("click",function(){qAns(false)});
-$("r-m").addEventListener("input",function(){cur.ml=""});
+$("r-k").addEventListener("input",function(){cur.kl=""});$("r-a").addEventListener("input",function(){cur.al=""});
 $("sub-copy").addEventListener("click",function(){copyText(enc(payload()),$("sub-msg"),"복사했습니다. 카카오톡이나 메일, 제출 양식에 붙여 넣어 센터로 보내 주세요.",$("sub-outl"),$("sub-out"))});
 $("bk-load").addEventListener("click",function(){var msg=$("bk-msg");readFiles($("bk-file")).then(function(ft){var a=dec($("bk-text").value+"\n"+ft);
   if(!a.length){msg.className="msg err";msg.textContent="불러올 내용을 찾지 못했습니다. "+PREFIX+" 로 시작하는 내용 전체가 필요합니다.";return}

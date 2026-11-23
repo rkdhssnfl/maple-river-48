@@ -178,10 +178,6 @@ ol.adv{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;fon
       </div>
       <p id="r-typeinfo" class="sub"></p>
       <div id="r-adv" class="advbox"></div>
-      <details id="r-stepsbox">
-        <summary>90분 진행 순서 확인하기</summary>
-        <div class="steps" id="r-steps"></div>
-      </details>
       <details id="q-box">
         <summary>1분 검사 하기<span class="sm">낱말 읽기 · 학년군별 셈하기</span></summary>
         <div class="qz">
@@ -805,10 +801,9 @@ function saveRecord(){
   if(ck==="school")schoolFields(s.grade).forEach(function(f){var i=$("ck-"+f.k);if(i&&i.value!=="")cv[f.k]=i.value});
   if(ck==="term"){cv.ob=cur.ob.slice();cv.t=cur.t.slice();if(cur.mt)cv.mt=cur.mt;if(cur.kt)cv.kt=cur.kt}
   S.records=S.records.filter(function(r){return!(r.sid===s.id&&r.n===n)});
-  S.records.push({id:uid(),sid:s.id,d:d,n:n,m:mv===""?null:+mv,ml:mv===""?"":cur.ml,mood:cur.mood||null,part:cur.part||null,memo:$("r-memo").value.trim(),chg:cur.chg.slice().sort(function(a,b){return a-b}),act:$("r-act")?$("r-act").value:"",ck:ck,cv:cv,steps:$("r-steps").querySelectorAll("input:checked").length});
+  S.records.push({id:uid(),sid:s.id,d:d,n:n,m:mv===""?null:+mv,ml:mv===""?"":cur.ml,mood:cur.mood||null,part:cur.part||null,memo:$("r-memo").value.trim(),chg:cur.chg.slice().sort(function(a,b){return a-b}),act:$("r-act")?$("r-act").value:"",ck:ck,cv:cv});
   persist();
   $("r-m").value="";$("r-memo").value="";cur.mood=0;cur.part=0;cur.ml="";initScales();
-  Array.prototype.forEach.call($("r-steps").querySelectorAll("input"),function(c){c.checked=false});
   renderAll();var j=judge(recsOf(S.records,s.id));
   syncRecordForm();msg.textContent=s.code+" "+n+"회기를 저장했습니다. 현재 판정: "+j.label+(j.due?", 점검할 때":"")+"."+((j.k==="adjust"||j.k==="emo")?" 위쪽 안내에서 다음 회기에 할 일을 확인해 주세요.":"");
 }
@@ -935,7 +930,6 @@ Object.keys(TYPES).forEach(function(k){$("s-type").appendChild(el("option",{valu
 $("q-level").addEventListener("change",qSync);
 $("s-measure").placeholder=TYPES.hangul.measure;
 $("s-type").addEventListener("change",function(){$("s-measure").value="";$("s-measure").placeholder=TYPES[$("s-type").value].measure});
-STEPS.forEach(function(t,i){var id="st-"+i;$("r-steps").appendChild(el("label",{for:id},[el("input",{id:id,type:"checkbox"}),t]))});
 initScales();$("r-date").value=today();qSync();
 $("s-coach").value=S.coach||"";$("s-coach").addEventListener("input",function(){S.coach=$("s-coach").value.trim();persist()});
 $("r-student").addEventListener("change",function(){SEL=$("r-student").value;syncRecordForm();qSync();show()});

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>교재·교구 바코드 스캔</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+  /* 레이아웃: 휴대폰 한 열. 1) 반납·대출 고르기 2) 카메라로 연속 스캔 3) 쌓인 번호 확인·복사 4) 왈라 양식 열기 */
+  html, body { margin: 0; } [hidden] { display: none !important; }
+  :root {
+    --bg: #f5f4f0; --surface: #ffffff; --fg: #26231d; --muted: #6f6a60; --line: #ddd9d0;
+    --accent: #8a5a1f; --accent-fg: #ffffff; --accent-soft: #f3e8d8; --input: #fffbe6;
+    --ret: #2e7d32; --ret-soft: #e4f2e5; --lend: #b4542b; --lend-soft: #f9e6dc; --err: #c62828;
+    --font-body: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1a1816; --surface: #242019; --fg: #ece8e0; --muted: #a39d92; --line: #3d3830;
+      --accent: #d9a35c; --accent-fg: #1a1410; --accent-soft: #3a2f22; --input: #2a2b1f;
+      --ret: #66bb6a; --ret-soft: #1f3222; --lend: #e8936a; --lend-soft: #3b2619; --err: #ef5350; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1a1816; --surface: #242019; --fg: #ece8e0; --muted: #a39d92; --line: #3d3830;
+    --accent: #d9a35c; --accent-fg: #1a1410; --accent-soft: #3a2f22; --input: #2a2b1f;
+    --ret: #66bb6a; --ret-soft: #1f3222; --lend: #e8936a; --lend-soft: #3b2619; --err: #ef5350; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+    padding-top: env(safe-area-inset-top, 0px); }
+  .wrap { max-width: 560px; margin: 0 auto; padding-block: 18px 48px; display: flex; flex-direction: column; gap: 12px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1 { font-size: 20px; margin: 0; }
+  h2 { font-size: 15px; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; margin: 2px 0 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* 반납 · 대출 고르기 */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .seg button { font: inherit; font-size: 17px; font-weight: 700; padding: 13px 8px; border-radius: 10px; border: 2px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
+  .seg button[data-mode="ret"][aria-pressed="true"] { border-color: var(--ret); background: var(--ret-soft); color: var(--ret); }
+  .seg button[data-mode="lend"][aria-pressed="true"] { border-color: var(--lend); background: var(--lend-soft); color: var(--lend); }
+
+  .btn { font: inherit; font-size: 15px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; text-decoration: none; text-align: center; display: block; }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; font-size: 17px; padding: 15px; width: 100%; }
+  .btn.ghost { color: var(--muted); font-size: 13px; padding: 7px 10px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  button:focus-visible, a:focus-visible, input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  #camwrap { background: #000; border-radius: 12px; overflow: hidden; position: relative; aspect-ratio: 16 / 9; }
+  #video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .aim { position: absolute; left: 6%; right: 6%; top: 50%; height: 2px; background: #ff5247; opacity: .85; box-shadow: 0 0 6px #ff5247; }
+  .camrow { display: flex; gap: 8px; }
+  .camrow .btn { flex: 1; }
+
+  .status { border-radius: 10px; padding: 11px 13px; font-size: 14px; background: var(--accent-soft); }
+  .status.ret { background: var(--ret-soft); color: var(--ret); font-weight: 700; }
+  .status.lend { background: var(--lend-soft); color: var(--lend); font-weight: 700; }
+  .status.dup { background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+  .status.err { background: transparent; border: 1px solid var(--err); color: var(--err); }
+  .big { font-size: 34px; font-weight: 700; letter-spacing: .08em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .raw { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .head h2 .n { font-variant-numeric: tabular-nums; }
+  .card.ret { border-left: 5px solid var(--ret); } .card.lend { border-left: 5px solid var(--lend); }
+  .card.ret h2 { color: var(--ret); } .card.lend h2 { color: var(--lend); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px; align-items: center; }
+  .chip { font: inherit; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: .05em; padding: 5px 6px 5px 10px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--fg); display: inline-flex; align-items: center; gap: 4px; }
+  .chip button { font: inherit; font-size: 15px; line-height: 1; border: 0; background: transparent; color: var(--muted); padding: 4px 5px; cursor: pointer; border-radius: 6px; }
+  .none { color: var(--muted); font-size: 13px; }
+  .tools { display: flex; gap: 8px; }
+  .tools .btn { flex: 1; }
+
+  .manual { display: flex; gap: 8px; align-items: stretch; }
+  .manual input { font: inherit; font-size: 17px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--input); color: var(--fg); width: 100%; min-width: 0; font-variant-numeric: tabular-nums; letter-spacing: .08em; }
+  .manual .btn { white-space: nowrap; }
+  details summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+  details ul { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .pop { animation: pop .35s ease-out; }
+    @keyframes pop { from { transform: scale(1.04); } to { transform: scale(1); } }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>교재·교구 바코드 스캔</h1>
+    <p class="sub">물품 바코드를 차례로 비추면 관리번호 끝 네 자리가 쌓입니다. 다 찍은 뒤 번호를 복사해 왈라 양식에 붙여 넣으세요.</p>
+  </header>
+
+  <div class="seg" role="group" aria-label="지금 찍는 물품">
+    <button type="button" data-mode="ret" id="modeRet" aria-pressed="true">반납할 물품</button>
+    <button type="button" data-mode="lend" id="modeLend" aria-pressed="false">대출할 물품</button>
+  </div>
+
+  <button type="button" class="btn primary" id="btnScan">카메라 켜고 스캔 시작</button>
+  <div id="camwrap" hidden><video id="video" playsinline muted autoplay></video><span class="aim" aria-hidden="true"></span></div>
+  <div class="camrow" id="camrow" hidden>
+    <button type="button" class="btn" id="btnTorch" hidden>손전등 켜기</button>
+  </div>
+
+  <div class="status" id="status" role="status" aria-live="polite">반납인지 대출인지 고른 뒤 "카메라 켜고 스캔 시작"을 누르세요.</div>
+
+  <section class="card ret" id="cardRet">
+    <div class="head">
+      <h2>반납 <span class="n" id="nRet">0</span>개</h2>
+      <button type="button" class="btn ghost" data-clear="ret">반납 목록 비우기</button>
+    </div>
+    <div class="chips" id="chipsRet"></div>
+    <button type="button" class="btn" data-copy="ret">반납 번호 복사</button>
+  </section>
+
+  <section class="card lend" id="cardLend">
+    <div class="head">
+      <h2>대출 <span class="n" id="nLend">0</span>개</h2>
+      <button type="button" class="btn ghost" data-clear="lend">대출 목록 비우기</button>
+    </div>
+    <div class="chips" id="chipsLend"></div>
+    <button type="button" class="btn" data-copy="lend">대출 번호 복사</button>
+  </section>
+
+  <section class="card">
+    <h2>바코드가 안 읽히는 물품</h2>
+    <form class="manual" id="manualForm">
+      <input type="text" id="manualNum" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="관리번호 끝 네 자리" aria-label="관리번호 끝 네 자리">
+      <button type="submit" class="btn">직접 추가</button>
+    </form>
+  </section>
+
+  <a class="btn primary" id="wallaLink" href="https://walla.my/v/dQxgX01DyZjLc1TCJbPf" target="_blank" rel="noopener">왈라 대출·반납 양식 열기</a>
+
+  <details>
+    <summary>잘 안 읽힐 때</summary>
+    <ul>
+      <li>바코드가 화면 가로의 절반 이상을 차지하도록 15~20cm 거리에서 비춥니다.</li>
+      <li>코팅 면에 조명이 반사되면 휴대폰을 살짝 기울입니다.</li>
+      <li>카메라가 안 켜지면 브라우저 주소창의 자물쇠 표시를 눌러 카메라 사용을 허용합니다.</li>
+      <li>카카오톡 안에서 열면 카메라가 막힐 수 있습니다. 크롬이나 사파리에서 열어 주세요.</li>
+    </ul>
+  </details>
+</div>
+
+<script src="lib/zxing-js.umd.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var KEY = "lend-scan-v1";
+  var LABEL = { ret: "반납", lend: "대출" };
+  var lists = { ret: [], lend: [] };   // 각 항목: {num, raw}
+  var mode = "ret";
+  var scanning = false, torchOn = false;
+  var lastSeen = { raw: "", at: 0 };
+  var audio = null;
+
+  /* ---------- 저장 (왈라 탭에 다녀와도 목록이 남도록) ---------- */
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ lists: lists, mode: mode, at: Date.now() })); } catch (e) {} }
+  function load() {
+    try {
+      var d = JSON.parse(localStorage.getItem(KEY) || "null");
+      // 반나절 지난 목록은 지난 방문 것이므로 버린다
+      if (d && d.lists && Date.now() - (d.at || 0) < 12 * 3600 * 1000) {
+        ["ret", "lend"].forEach(function (k) {
+          if (Array.isArray(d.lists[k])) lists[k] = d.lists[k].filter(function (x) { return x && typeof x.num === "string"; });
+        });
+        if (d.mode === "lend" || d.mode === "ret") mode = d.mode;
+      }
+    } catch (e) {}
+  }
+
+  /* ---------- 관리번호 끝 네 자리 ---------- */
+  function numOf(text) {
+    var digits = String(text).replace(/\D/g, "");
+    if (digits.length >= 4) return digits.slice(-4);
+    return "";
+  }
+
+  function setStatus(html, kind) { var s = $("status"); s.innerHTML = html; s.className = "status" + (kind ? " " + kind : ""); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  /* ---------- 소리 · 진동 ---------- */
+  function beep(ok) {
+    try { if (navigator.vibrate) navigator.vibrate(ok ? 60 : [40, 60, 40]); } catch (e) {}
+    try {
+      if (!audio) return;
+      var o = audio.createOscillator(), g = audio.createGain();
+      o.type = "square"; o.frequency.value = ok ? 1175 : 300;
+      g.gain.value = 0.08;
+      o.connect(g); g.connect(audio.destination);
+      o.start(); o.stop(audio.currentTime + (ok ? 0.09 : 0.22));
+    } catch (e) {}
+  }
+
+  /* ---------- 목록 ---------- */
+  function add(raw, viaManual) {
+    var num = numOf(raw);
+    if (!num) {
+      beep(false);
+      setStatus("읽었지만 숫자 네 자리를 찾지 못했습니다.<div class=\"raw\">읽은 값 " + esc(raw) + "</div>", "err");
+      return false;
+    }
+    var list = lists[mode];
+    var dup = list.some(function (x) { return x.num === num; });
+    if (dup) {
+      beep(false);
+      setStatus("<div class=\"big\">" + esc(num) + "</div>이미 " + LABEL[mode] + " 목록에 있습니다.", "dup");
+      return false;
+    }
+    list.push({ num: num, raw: String(raw) });
+    save(); render();
+    beep(true);
+    setStatus("<div class=\"big\">" + esc(num) + "</div>" + LABEL[mode] + " 목록에 넣었습니다 (" + list.length + "개째)." +
+      (viaManual ? "" : "<div class=\"raw\">바코드 전체 값 " + esc(raw) + "</div>"), mode);
+    var card = mode === "ret" ? $("cardRet") : $("cardLend");
+    card.classList.remove("pop"); void card.offsetWidth; card.classList.add("pop");
+    return true;
+  }
+
+  function render() {
+    ["ret", "lend"].forEach(function (k) {
+      var box = k === "ret" ? $("chipsRet") : $("chipsLend");
+      box.textContent = "";
+      if (!lists[k].length) {
+        var p = document.createElement("span"); p.className = "none";
+        p.textContent = "아직 찍은 " + LABEL[k] + " 물품이 없습니다.";
+        box.appendChild(p);
+      }
+      lists[k].forEach(function (it, i) {
+        var chip = document.createElement("span"); chip.className = "chip"; chip.textContent = it.num;
+        var x = document.createElement("button"); x.type = "button"; x.textContent = "×";
+        x.setAttribute("aria-label", it.num + " 지우기");
+        x.addEventListener("click", function () { lists[k].splice(i, 1); save(); render(); setStatus(esc(it.num) + "을(를) " + LABEL[k] + " 목록에서 지웠습니다."); });
+        chip.appendChild(x); box.appendChild(chip);
+      });
+      (k === "ret" ? $("nRet") : $("nLend")).textContent = String(lists[k].length);
+    });
+    $("modeRet").setAttribute("aria-pressed", String(mode === "ret"));
+    $("modeLend").setAttribute("aria-pressed", String(mode === "lend"));
+  }
+
+  function setMode(m) {
+    mode = m; save(); render();
+    lastSeen = { raw: "", at: 0 };
+    setStatus("지금부터 찍는 물품은 <b>" + LABEL[m] + "</b> 목록에 들어갑니다.", m);
+  }
+  $("modeRet").addEventListener("click", function () { setMode("ret"); });
+  $("modeLend").addEventListener("click", function () { setMode("lend"); });
+
+  /* ---------- 연속 스캔 ---------- */
+  var stream = null, timer = null, detector = null, zxReader = null;
+  var canvas = document.createElement("canvas");
+  var ctx = canvas.getContext("2d", { willReadFrequently: true });
+  var NATIVE_FORMATS = ["code_128", "code_39", "code_93", "codabar", "ean_13", "ean_8", "itf", "upc_a", "upc_e", "qr_code", "data_matrix"];
+
+  // 기기에 내장된 인식기가 있으면 그것을 쓰고(안드로이드 크롬), 없으면 함께 올린 ZXing으로 읽는다(아이폰)
+  function prepareDecoders() {
+    var p = Promise.resolve();
+    if (!detector && "BarcodeDetector" in window) {
+      p = window.BarcodeDetector.getSupportedFormats().then(function (ok) {
+        var use = NATIVE_FORMATS.filter(function (f) { return ok.indexOf(f) >= 0; });
+        if (use.length) detector = new window.BarcodeDetector({ formats: use });
+      }).catch(function () { detector = null; });
+    }
+    return p.then(function () {
+      if (!zxReader && window.ZXing) {
+        var Z = window.ZXing, F = Z.BarcodeFormat, hints = new Map();
+        hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [F.CODE_128, F.CODE_39, F.CODE_93, F.CODABAR, F.EAN_13, F.EAN_8, F.ITF, F.UPC_A, F.UPC_E, F.QR_CODE, F.DATA_MATRIX]);
+        hints.set(Z.DecodeHintType.TRY_HARDER, true);
+        zxReader = new Z.MultiFormatReader();
+        zxReader.setHints(hints);
+      }
+    });
+  }
+
+  function decodeZX() {
+    if (!zxReader) return "";
+    var Z = window.ZXing;
+    try {
+      var bmp = new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(canvas)));
+      return zxReader.decodeWithState(bmp).getText();
+    } catch (e) { return ""; }
+    finally { try { zxReader.reset(); } catch (e2) {} }
+  }
+  function decodeFrame() {
+    if (detector) {
+      return detector.detect(canvas).then(function (found) {
+        return found.length ? found[0].rawValue : "";
+      }).catch(function () { detector = null; return decodeZX(); });
+    }
+    return Promise.resolve(decodeZX());
+  }
+
+  // 화면에 보이는 부분(가운데 띠)만 잘라서, 줄이지 않고 원래 해상도로 읽는다
+  function grabFrame() {
+    var v = $("video");
+    if (v.readyState < 2 || !v.videoWidth) return false;
+    var box = $("camwrap").getBoundingClientRect();
+    var ar = box.width / Math.max(1, box.height);
+    var sw = v.videoWidth, sh = Math.round(sw / ar), sx = 0, sy;
+    if (sh > v.videoHeight) { sh = v.videoHeight; sw = Math.round(sh * ar); sx = Math.round((v.videoWidth - sw) / 2); }
+    sy = Math.round((v.videoHeight - sh) / 2);
+    var scale = Math.min(1, 1280 / sw);
+    canvas.width = Math.max(1, Math.round(sw * scale)); canvas.height = Math.max(1, Math.round(sh * scale));
+    ctx.drawImage(v, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    return true;
+  }
+
+  function tick() {
+    if (!scanning) return;
+    if (!grabFrame()) { timer = setTimeout(tick, 150); return; }
+    decodeFrame().then(function (text) {
+      if (text && scanning) onRead(text);
+    }).catch(function () {}).then(function () {
+      if (scanning) timer = setTimeout(tick, 70);
+    });
+  }
+
+  function videoTrack() { return stream && stream.getVideoTracks()[0]; }
+
+  function stopScan() {
+    scanning = false; torchOn = false;
+    clearTimeout(timer);
+    if (stream) { stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} }); stream = null; }
+    try { $("video").srcObject = null; } catch (e) {}
+    $("btnScan").textContent = "카메라 켜고 스캔 시작";
+    $("camwrap").hidden = true; $("camrow").hidden = true; $("btnTorch").hidden = true;
+    return Promise.resolve();
+  }
+
+  function onRead(text) {
+    var now = Date.now();
+    // 같은 바코드를 계속 비추고 있을 때는 한 번만 처리한다
+    if (text === lastSeen.raw && now - lastSeen.at < 3000) { lastSeen.at = now; return; }
+    lastSeen = { raw: text, at: now };
+    add(text, false);
+  }
+
+  function startScan() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setStatus("이 브라우저에서는 카메라를 쓸 수 없습니다. 크롬이나 사파리에서 열어 주세요.", "err"); return;
+    }
+    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === "suspended") audio.resume(); } catch (e) {}
+    $("btnScan").disabled = true;
+    setStatus("카메라를 켜는 중입니다. 카메라 사용을 허용해 주세요.");
+    prepareDecoders().then(function () {
+      if (!detector && !zxReader) throw new Error("NoDecoder");
+      return navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+    }).then(function (s) {
+      stream = s;
+      var v = $("video");
+      $("camwrap").hidden = false;
+      v.srcObject = s;
+      return v.play();
+    }).then(function () {
+      scanning = true;
+      $("btnScan").textContent = "스캔 멈추기";
+      setStatus("<b>" + LABEL[mode] + "</b>할 물품의 바코드를 화면 가운데 선에 차례로 비추세요. 읽히면 소리가 납니다.", mode);
+      var track = videoTrack(), caps = {};
+      try { caps = track.getCapabilities ? track.getCapabilities() : {}; } catch (e) {}
+      // 가까운 바코드에 계속 초점을 맞추도록 요청 (지원하는 기기만)
+      if (caps.focusMode && caps.focusMode.indexOf("continuous") >= 0) {
+        try { track.applyConstraints({ advanced: [{ focusMode: "continuous" }] }).catch(function () {}); } catch (e) {}
+      }
+      if (caps.torch) { $("camrow").hidden = false; $("btnTorch").hidden = false; $("btnTorch").textContent = "손전등 켜기"; }
+      tick();
+    }).catch(function (err) {
+      var name = err && (err.name || err.message || String(err));
+      stopScan();
+      if (/NoDecoder/.test(name)) {
+        setStatus("인식 도구를 불러오지 못했습니다. 페이지를 새로 고쳐 주세요.", "err");
+      } else if (/NotAllowed|Permission|Security/i.test(name)) {
+        setStatus("카메라 사용이 허용되지 않았습니다. 주소창의 자물쇠 표시를 눌러 카메라를 허용한 뒤 다시 눌러 주세요.", "err");
+      } else if (/NotFound|Overconstrained/i.test(name)) {
+        setStatus("카메라를 찾지 못했습니다. 휴대폰에서 열어 주세요.", "err");
+      } else {
+        setStatus("카메라를 켜지 못했습니다. 다른 앱이 카메라를 쓰고 있으면 닫고, 크롬이나 사파리에서 다시 열어 주세요.", "err");
+      }
+    }).then(function () { $("btnScan").disabled = false; });
+  }
+
+  $("btnScan").addEventListener("click", function () {
+    if (scanning) stopScan().then(function () { setStatus("스캔을 멈췄습니다. 번호를 확인하고 복사하세요."); });
+    else startScan();
+  });
+
+  $("btnTorch").addEventListener("click", function () {
+    var track = videoTrack();
+    if (!track) return;
+    try {
+      track.applyConstraints({ advanced: [{ torch: !torchOn }] }).then(function () {
+        torchOn = !torchOn;
+        $("btnTorch").textContent = torchOn ? "손전등 끄기" : "손전등 켜기";
+      }).catch(function () {});
+    } catch (e) {}
+  });
+
+  // 다른 탭·앱으로 넘어가면 카메라를 놓아 준다
+  document.addEventListener("visibilitychange", function () { if (document.hidden && scanning) stopScan(); });
+
+  /* ---------- 직접 추가 ---------- */
+  $("manualForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var v = $("manualNum").value.trim();
+    if (!v) return;
+    if (!numOf(v)) { setStatus("숫자 네 자리를 넣어 주세요.", "err"); return; }
+    add(v, true);
+    $("manualNum").value = "";
+  });
+
+  /* ---------- 복사 · 비우기 ---------- */
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).catch(function () { return legacyCopy(text); });
+    }
+    return legacyCopy(text);
+  }
+  function legacyCopy(text) {
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error("copy"));
+    });
+  }
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-copy],[data-clear]");
+    if (!t) return;
+    var k = t.getAttribute("data-copy") || t.getAttribute("data-clear");
+    if (t.hasAttribute("data-copy")) {
+      if (!lists[k].length) { setStatus("복사할 " + LABEL[k] + " 번호가 없습니다."); return; }
+      var text = lists[k].map(function (x) { return x.num; }).join(", ");
+      copyText(text).then(function () {
+        setStatus(LABEL[k] + " 번호 " + lists[k].length + "개를 복사했습니다. 왈라 양식의 " + LABEL[k] + " 관리번호 칸에 붙여 넣으세요.<div class=\"raw\">" + esc(text) + "</div>", k);
+      }, function () {
+        setStatus("복사가 막혀 있습니다. 아래 번호를 길게 눌러 복사하세요.<div class=\"raw\" style=\"font-size:15px;user-select:all\">" + esc(text) + "</div>", "err");
+      });
+    } else {
+      if (!lists[k].length) return;
+      var n = lists[k].length;
+      lists[k] = []; save(); render();
+      setStatus(LABEL[k] + " 목록 " + n + "개를 비웠습니다.");
+    }
+  });
+
+  /* ---------- 시작 ---------- */
+  load(); render();
+  if (lists.ret.length || lists.lend.length) setStatus("아까 찍던 목록을 그대로 불러왔습니다. 이어서 찍거나 번호를 복사하세요.");
+  if (!window.ZXing && !("BarcodeDetector" in window)) setStatus("인식 도구를 불러오지 못했습니다. 페이지를 새로 고쳐 주세요.", "err");
+})();
+</script>
+</body>
+</html>

@@ -154,11 +154,9 @@
     </section>
 </div>
 
-<script src="config.js"></script>
 <script>
 (function () {
   const $ = id => document.getElementById(id);
-  const FORM = (window.CENTER_FORM || '').trim();
   const DOW = ['일', '월', '화', '수', '목', '금', '토'];
   const TYPE = { meet: '사례회의', train: '제출', etc: '기타' };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -199,21 +197,6 @@
       '<div class="et">' + esc(e.title) + '' + '</div>' +
       ((e.time || e.place) ? '<div class="em">' + (e.time ? '<span>🕑 ' + esc(e.time) + '</span>' : '') + (e.place ? '<span>📍 ' + esc(e.place) + '</span>' : '') + '</div>' : '') +
       (e.note ? '<div class="nb">' + esc(e.note) + '</div>' : '') + '</div></div>';
-    return h + '</div>';
-  }
-
-  // 참석·불참은 왈라 양식으로 받고, 이름별 현황은 센터가 응답을 정리해 올립니다(data.json).
-  function rsvpHtml(e) {
-    const form = e.form || FORM, st = e.status || {};
-    const names = (e.roster || []).slice().sort(sortKo); Object.keys(st).forEach(n => { if (names.indexOf(n) < 0) names.push(n); });
-    let y = 0, n = 0, w = 0; names.forEach(x => { const s = st[x] && st[x].s; if (s === '참석') y++; else if (s === '불참') n++; else w++; });
-    let h = '<div class="rsvp">';
-    if (form && e.date >= TODAY) h += '<a class="go" href="' + esc(form) + '" target="_blank" rel="noopener">참석·불참 응답하기 (왈라 양식 열기)</a><div class="hint">양식에서 이름과 참석 또는 불참을 골라 제출하면 끝이에요. 다시 내면 마지막 응답으로 정리돼요.</div>';
-    if (names.length) {
-      h += '<div class="sum"><span class="s-y">참석 ' + y + '</span><span class="s-n">불참 ' + n + '</span><span class="s-w">미응답 ' + w + '</span></div>';
-      h += '<table class="st">' + names.map(x => { const r = st[x]; const c = !r ? 'w' : (r.s === '참석' ? 'y' : 'x'); return '<tr><td class="n">' + esc(x) + '</td><td class="' + c + '">' + (r ? esc(r.s) : '미응답') + (r && r.memo ? '<span class="memo">' + esc(r.memo) + '</span>' : '') + '</td></tr>'; }).join('') + '</table>';
-      h += '<div class="hint">' + (e.statusAt ? esc(e.statusAt) + ' 기준 · ' : '') + '현황은 센터가 응답을 정리해 올릴 때 바뀌어요.</div>';
-    }
     return h + '</div>';
   }
 

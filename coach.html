@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>기초학력거점지원센터</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f6f5c">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-title" content="기초학력센터">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <style>
   :root { --bg:#f3f5f2; --fg:#1d2a24; --muted:#65736c; --line:#d6ddd8; --green:#1f6f5c; --blue:#1f4e9c; --brown:#8a5a1f; --meet:#2e7d32; --surface:#fff; }
@@ -21,6 +27,21 @@
   .d { font-size:13px; color:var(--muted); margin-top:2px; }
   .arrow { margin-left:auto; color:var(--muted); font-size:20px; }
   .foot { font-size:12px; color:var(--muted); margin-top:24px; line-height:1.6; text-align:center; }
+  [hidden] { display:none !important; }
+  #addBox { margin-top:22px; }
+  #addBtn { font:inherit; font-size:17px; font-weight:700; width:100%; padding:15px; border-radius:14px; border:2px solid var(--green); background:var(--green); color:#fff; cursor:pointer; }
+  @media (prefers-color-scheme: dark) { #addBtn { color:#10201a; } }
+  #addBtn:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
+  #addHelp { margin-top:10px; background:var(--surface); border:2px solid var(--green); border-radius:14px; padding:16px; }
+  #addHelp h2 { font-size:16px; margin:0 0 10px; }
+  #addHelp ol { margin:0; padding:0; list-style:none; display:grid; gap:10px; counter-reset:s; }
+  #addHelp li { counter-increment:s; display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start; font-size:16px; line-height:1.5; }
+  #addHelp li::before { content:counter(s); width:30px; height:30px; border-radius:50%; background:var(--green); color:#fff; font-weight:700; display:grid; place-items:center; font-size:15px; }
+  #addHelp b { white-space:nowrap; }
+  #addHelp .key { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--line); border-radius:8px; padding:0 7px; font-weight:700; background:var(--bg); white-space:nowrap; }
+  #addHelp .key svg { width:17px; height:17px; }
+  #addHelp .note { font-size:13px; color:var(--muted); margin:10px 0 0; }
+  #addDone { font-size:14px; color:var(--meet); font-weight:700; text-align:center; margin-top:10px; }
 </style>
 </head>
 <body>
@@ -32,7 +53,101 @@
   <a class="card" href="center/"><span class="ic" style="background:var(--meet)">📅</span><span><div class="t">센터 안내·일정</div><div class="d">센터 일정과 안내사항</div></span><span class="arrow">›</span></a>
   <a class="card" href="scan.html"><span class="ic" style="background:var(--brown)">📚</span><span><div class="t">교재·교구 대출·반납</div><div class="d">바코드를 찍어 번호를 모으고 왈라로 제출해요</div></span><span class="arrow">›</span></a>
 
-  <p class="foot">이 페이지를 홈 화면에 추가해 두면 한 번에 들어올 수 있어요.</p>
+  <div id="addBox" hidden>
+    <button type="button" id="addBtn">홈 화면에 추가하기</button>
+    <div id="addHelp" hidden></div>
+    <div id="addDone" hidden>홈 화면에 추가했어요. 이제 홈 화면의 "기초학력센터" 아이콘으로 들어오세요.</div>
+  </div>
+  <p class="foot" id="addFoot">홈 화면에 추가해 두면 다음부터 아이콘 한 번으로 들어올 수 있어요.</p>
 </main>
+<script>
+(function () {
+  var box = document.getElementById('addBox'), btn = document.getElementById('addBtn');
+  var help = document.getElementById('addHelp'), done = document.getElementById('addDone'), foot = document.getElementById('addFoot');
+  var ua = navigator.userAgent || '';
+  var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  // 이미 홈 화면 아이콘으로 들어온 경우에는 단추를 보이지 않는다
+  if (standalone) { foot.hidden = true; return; }
+
+  var isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var isKakao = /KAKAOTALK/i.test(ua);
+  var isInApp = isKakao || /NAVER\(inapp|Line\/|FBAN|FBAV|Instagram|DaumApps|BAND\//i.test(ua);
+  var isAndroid = /Android/i.test(ua);
+  var isSamsung = /SamsungBrowser/i.test(ua);
+  var isMacSafari = !isIOS && /Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome|Chromium|Edg\//.test(ua);
+  var isFirefox = /Firefox|FxiOS/i.test(ua);
+  var deferred = null;
+
+  var SHARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M8 7l4-4 4 4"/><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/></svg>';
+  function key(t) { return '<span class="key">' + t + '</span>'; }
+  function steps(title, list, note) {
+    help.innerHTML = '<h2>' + title + '</h2><ol>' + list.map(function (s) { return '<li><span>' + s + '</span></li>'; }).join('') + '</ol>' + (note ? '<p class="note">' + note + '</p>' : '');
+    help.hidden = false;
+    try { help.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
+  }
+
+  function showGuide() {
+    if (isInApp && isIOS) {
+      steps('먼저 사파리에서 열어 주세요', [
+        '화면 아래(또는 위)의 ' + key(SHARE + ' 공유') + ' 또는 ' + key('⋯') + ' 을 눌러요.',
+        '<b>"Safari로 열기"</b> 또는 <b>"다른 브라우저로 열기"</b>를 눌러요.',
+        '사파리에서 이 페이지가 열리면 <b>"홈 화면에 추가하기"</b> 단추를 다시 눌러요.'
+      ], '카카오톡 같은 앱 안에서는 홈 화면에 추가할 수 없어요.');
+    } else if (isInApp) {
+      steps('먼저 크롬에서 열어 주세요', [
+        '화면 오른쪽 아래(또는 위)의 ' + key('⋮') + ' 을 눌러요.',
+        '<b>"다른 브라우저로 열기"</b>를 눌러요.',
+        '크롬에서 이 페이지가 열리면 <b>"홈 화면에 추가하기"</b> 단추를 다시 눌러요.'
+      ], '카카오톡 같은 앱 안에서는 홈 화면에 추가할 수 없어요.');
+    } else if (isIOS) {
+      steps('아이폰·아이패드는 세 번만 누르면 돼요', [
+        '화면 아래(아이패드는 위)의 ' + key(SHARE + ' 공유') + ' 단추를 눌러요.',
+        '목록을 아래로 내려 <b>"홈 화면에 추가"</b>를 눌러요.',
+        '오른쪽 위 <b>"추가"</b>를 눌러요.'
+      ], '아이폰은 정책상 단추 한 번으로 추가할 수 없어서 이 순서를 직접 눌러야 해요.');
+    } else if (isMacSafari) {
+      steps('맥 사파리에서 추가하기', [
+        '화면 맨 위 메뉴에서 <b>"파일"</b>을 눌러요.',
+        '<b>"Dock에 추가"</b>를 눌러요.',
+        '<b>"추가"</b>를 눌러요.'
+      ]);
+    } else if (isAndroid) {
+      steps(isSamsung ? '삼성 인터넷에서 추가하기' : '휴대폰에서 추가하기', [
+        '화면 ' + (isSamsung ? '아래 ' + key('≡') : '오른쪽 위 ' + key('⋮')) + ' 메뉴를 눌러요.',
+        '<b>"홈 화면에 추가"</b>' + (isSamsung ? ' 또는 <b>"현재 페이지 추가" → "홈 화면"</b>' : ' 또는 <b>"앱 설치"</b>') + '를 눌러요.',
+        '<b>"추가"</b> 또는 <b>"설치"</b>를 눌러요.'
+      ]);
+    } else {
+      steps('컴퓨터에서 추가하기', isFirefox ? [
+        '파이어폭스는 바탕화면에 추가하는 기능이 없어요.',
+        '<b>크롬</b>이나 <b>엣지</b>에서 이 페이지를 열어 주세요.',
+        '그런 다음 <b>"홈 화면에 추가하기"</b> 단추를 다시 눌러요.'
+      ] : [
+        '주소창 오른쪽 끝의 ' + key('설치') + ' 그림(모니터에 화살표 모양)을 눌러요.',
+        '그림이 안 보이면 오른쪽 위 ' + key('⋮') + ' 또는 ' + key('⋯') + ' 메뉴에서 <b>"앱 설치"</b> 또는 <b>"앱 → 이 사이트를 앱으로 설치"</b>를 눌러요.',
+        '<b>"설치"</b>를 눌러요.'
+      ], '설치하면 바탕화면과 시작 메뉴에 아이콘이 생겨요.');
+    }
+  }
+
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; });
+  window.addEventListener('appinstalled', function () { deferred = null; btn.hidden = true; help.hidden = true; done.hidden = false; foot.hidden = true; });
+
+  btn.addEventListener('click', function () {
+    // 크롬·엣지·삼성 인터넷: 단추 한 번으로 설치 창이 뜬다
+    if (deferred) {
+      var d = deferred; deferred = null; help.hidden = true;
+      try { d.prompt(); if (d.userChoice && d.userChoice.then) d.userChoice.then(function (c) { if (c && c.outcome !== 'accepted') deferred = d; }, function () {}); }
+      catch (e) { showGuide(); }
+      return;
+    }
+    if (!help.hidden) { help.hidden = true; return; }
+    showGuide();
+  });
+
+  box.hidden = false;
+  if ('serviceWorker' in navigator && location.protocol === 'https:') { try { navigator.serviceWorker.register('sw.js'); } catch (e) {} }
+})();
+</script>
 </body>
 </html>

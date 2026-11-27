@@ -71,6 +71,8 @@
   .chip { font: inherit; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: .05em; padding: 5px 6px 5px 10px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--fg); display: inline-flex; align-items: center; gap: 4px; }
   .chip button { font: inherit; font-size: 15px; line-height: 1; border: 0; background: transparent; color: var(--muted); padding: 4px 5px; cursor: pointer; border-radius: 6px; }
   .none { color: var(--muted); font-size: 13px; }
+  .line { font-size: 15px; font-variant-numeric: tabular-nums; background: var(--input); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; min-height: 44px; -webkit-user-select: all; user-select: all; }
+  .line.empty { color: var(--muted); font-size: 13px; -webkit-user-select: none; user-select: none; }
   .tools { display: flex; gap: 8px; }
   .tools .btn { flex: 1; }
 
@@ -89,7 +91,7 @@
 <div class="wrap">
   <header>
     <h1>교재·교구 바코드 스캔</h1>
-    <p class="sub">물품 바코드를 차례로 비추면 관리번호 끝 네 자리가 쌓입니다. 다 찍은 뒤 번호를 복사해 왈라 양식에 붙여 넣으세요.</p>
+    <p class="sub">반납할 물품과 대출할 물품의 바코드를 차례로 비춘 뒤, 맨 아래 단추로 번호를 한 번에 복사해 왈라 양식의 번호 칸에 붙여 넣으세요. 제출은 한 번이면 됩니다.</p>
   </header>
 
   <div class="seg" role="group" aria-label="지금 찍는 물품">
@@ -111,7 +113,6 @@
       <button type="button" class="btn ghost" data-clear="ret">반납 목록 비우기</button>
     </div>
     <div class="chips" id="chipsRet"></div>
-    <button type="button" class="btn" data-copy="ret">반납 번호 복사</button>
   </section>
 
   <section class="card lend" id="cardLend">
@@ -120,7 +121,6 @@
       <button type="button" class="btn ghost" data-clear="lend">대출 목록 비우기</button>
     </div>
     <div class="chips" id="chipsLend"></div>
-    <button type="button" class="btn" data-copy="lend">대출 번호 복사</button>
   </section>
 
   <section class="card">
@@ -131,7 +131,12 @@
     </form>
   </section>
 
-  <a class="btn primary" id="wallaLink" href="https://walla.my/v/dQxgX01DyZjLc1TCJbPf" target="_blank" rel="noopener">왈라 대출·반납 양식 열기</a>
+  <section class="card">
+    <h2>왈라에 붙여 넣을 내용</h2>
+    <div class="line" id="line"></div>
+    <a class="btn primary" id="wallaLink" href="https://walla.my/v/dQxgX01DyZjLc1TCJbPf" target="_blank" rel="noopener">번호 복사하고 왈라 양식 열기</a>
+    <button type="button" class="btn" id="btnCopyAll">번호만 복사</button>
+  </section>
 
   <details>
     <summary>잘 안 읽힐 때</summary>
@@ -220,6 +225,13 @@
     return true;
   }
 
+  // 왈라 한 칸에 붙여 넣는 한 줄: "반납 0123, 반납 0456, 대출 1024"
+  function lineText() {
+    return ["ret", "lend"].map(function (k) {
+      return lists[k].map(function (x) { return LABEL[k] + " " + x.num; });
+    }).reduce(function (a, b) { return a.concat(b); }, []).join(", ");
+  }
+
   function render() {
     ["ret", "lend"].forEach(function (k) {
       var box = k === "ret" ? $("chipsRet") : $("chipsLend");
@@ -238,6 +250,9 @@
       });
       (k === "ret" ? $("nRet") : $("nLend")).textContent = String(lists[k].length);
     });
+    var line = lineText();
+    $("line").textContent = line || "아직 찍은 물품이 없습니다.";
+    $("line").className = "line" + (line ? "" : " empty");
     $("modeRet").setAttribute("aria-pressed", String(mode === "ret"));
     $("modeLend").setAttribute("aria-pressed", String(mode === "lend"));
   }
@@ -386,7 +401,7 @@
   }
 
   $("btnScan").addEventListener("click", function () {
-    if (scanning) stopScan().then(function () { setStatus("스캔을 멈췄습니다. 번호를 확인하고 복사하세요."); });
+    if (scanning) stopScan().then(function () { setStatus("스캔을 멈췄습니다. 번호를 확인하고 맨 아래 단추를 누르세요."); });
     else startScan();
   });
 
@@ -431,24 +446,32 @@
       ok ? resolve() : reject(new Error("copy"));
     });
   }
+  function copyAll() {
+    var text = lineText();
+    if (!text) { setStatus("복사할 번호가 없습니다. 먼저 바코드를 찍어 주세요.", "err"); return Promise.resolve(false); }
+    var n = lists.ret.length + lists.lend.length;
+    return copyText(text).then(function () {
+      setStatus("반납 " + lists.ret.length + "개, 대출 " + lists.lend.length + "개를 복사했습니다. 왈라 양식의 번호 칸에 붙여 넣고 제출하세요.<div class=\"raw\">" + esc(text) + "</div>");
+      return true;
+    }, function () {
+      setStatus("복사가 막혀 있습니다. \"왈라에 붙여 넣을 내용\" 칸의 글자를 길게 눌러 복사하세요.", "err");
+      return false;
+    });
+  }
+  $("btnCopyAll").addEventListener("click", function () { copyAll(); });
+  // 복사와 양식 열기를 한 번에. 찍은 번호가 없으면 양식을 열지 않는다
+  $("wallaLink").addEventListener("click", function (e) {
+    if (!lineText()) { e.preventDefault(); setStatus("복사할 번호가 없습니다. 먼저 바코드를 찍어 주세요.", "err"); return; }
+    copyAll();
+  });
   document.addEventListener("click", function (e) {
-    var t = e.target.closest("[data-copy],[data-clear]");
+    var t = e.target.closest("[data-clear]");
     if (!t) return;
-    var k = t.getAttribute("data-copy") || t.getAttribute("data-clear");
-    if (t.hasAttribute("data-copy")) {
-      if (!lists[k].length) { setStatus("복사할 " + LABEL[k] + " 번호가 없습니다."); return; }
-      var text = lists[k].map(function (x) { return x.num; }).join(", ");
-      copyText(text).then(function () {
-        setStatus(LABEL[k] + " 번호 " + lists[k].length + "개를 복사했습니다. 왈라 양식의 " + LABEL[k] + " 관리번호 칸에 붙여 넣으세요.<div class=\"raw\">" + esc(text) + "</div>", k);
-      }, function () {
-        setStatus("복사가 막혀 있습니다. 아래 번호를 길게 눌러 복사하세요.<div class=\"raw\" style=\"font-size:15px;user-select:all\">" + esc(text) + "</div>", "err");
-      });
-    } else {
-      if (!lists[k].length) return;
-      var n = lists[k].length;
-      lists[k] = []; save(); render();
-      setStatus(LABEL[k] + " 목록 " + n + "개를 비웠습니다.");
-    }
+    var k = t.getAttribute("data-clear");
+    if (!lists[k].length) return;
+    var n = lists[k].length;
+    lists[k] = []; save(); render();
+    setStatus(LABEL[k] + " 목록 " + n + "개를 비웠습니다.");
   });
 
   /* ---------- 시작 ---------- */

@@ -171,7 +171,7 @@
     if (typeof v === 'number' && v > 20000) { const ms = Math.round((v - 25569) * 86400000); const d = new Date(ms); return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes()); }
     if (typeof v === 'string') {
       const s = v.trim();
-      let m = s.match(/(\d{4})[.\-\/년]\s*(\d{1,2})[.\-\/월]\s*(\d{1,2})[일.]?\s*(?:[T,\s]+\s*(?:(오전|오후)\s*)?(\d{1,2}):(\d{2}))?/);
+      let m = s.match(/(\d{4})[.\-\/년]\s*(\d{1,2})[.\-\/월]\s*(\d{1,2})[일.]?(?:[T,\s]+(?:(오전|오후)\s*)?(\d{1,2}):(\d{2}))?/);
       if (m) { let h = m[5] ? Number(m[5]) : 0; if (m[4] === '오후' && h < 12) h += 12; if (m[4] === '오전' && h === 12) h = 0; return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), h, m[6] ? Number(m[6]) : 0); }
       m = s.match(/^(\d{2})[.\-\/](\d{1,2})[.\-\/](\d{1,2})$/);
       if (m) return new Date(2000 + Number(m[1]), Number(m[2]) - 1, Number(m[3]));
@@ -181,6 +181,12 @@
   }
   function typeOf(v) { const s = norm(v); if (!s) return ''; if (s.includes('반납')) return '반납'; if (s.includes('대출') || s.includes('대여')) return '대출'; return ''; }
   function statusOf(v) { const s = norm(v); if (!s) return ''; if (s.includes('이상') || s.includes('파손') || s.includes('분실')) return '이상'; if (s.includes('양호') || s.includes('정상')) return '양호'; return String(v).trim(); }
+  // 한 칸에 "반납 0123, 반납 0456, 대출 1024"처럼 대출·반납이 섞여 있어도 번호마다 구분을 붙여 준다 (표시가 없으면 def)
+  function splitTagged(v, def) {
+    const out = []; let cur = def || ''; const re = /(반납|대출|대여)|([0-9A-Za-z][0-9A-Za-z\-]*)/g; let m; const s = String(v == null ? '' : v);
+    while ((m = re.exec(s))) { if (m[1]) cur = m[1] === '반납' ? '반납' : '대출'; else out.push({ type: cur, num: m[2] }); }
+    return out;
+  }
   const splitNums = v => String(v || '').split(/[,，\s\/·;]+/).map(x => x.trim()).filter(Boolean).map(x => x.replace(/[^0-9A-Za-z\-]/g, '')).filter(Boolean);
 
   /* ---------- 파일 읽기 ---------- */
@@ -240,7 +246,7 @@
         const note = cols.note >= 0 ? String(row[cols.note] || '').trim() : '';
         let any = false;
         wide.forEach(w => {
-          splitNums(row[w.i]).forEach(num => { any = true; out.push({ name, type: forced || w.type, num: num.length > 4 ? num.slice(-4) : num, numRaw: num, status, at, note, src: file.name }); });
+          splitTagged(row[w.i], forced || w.type).forEach(x => { const num = x.num; any = true; out.push({ name, type: x.type, num: num.length > 4 ? num.slice(-4) : num, numRaw: num, status, at, note, src: file.name }); });
         });
         if (!any) skipped++;
       }
@@ -251,15 +257,15 @@
     for (let r = hi + 1; r < rows.length; r++) {
       const row = rows[r]; if (!row) continue;
       const name = String(row[cols.name] || '').trim();
-      const nums = splitNums(row[cols.num]);
-      if (!name || !nums.length) { skipped++; continue; }
-      let type = forced || (cols.type >= 0 ? typeOf(row[cols.type]) : '');
+      let type = forced || (cols.type >= 0 && cols.type !== cols.num ? typeOf(row[cols.type]) : '');
       if (!type) type = typeOf(file.name) || '';
-      if (!type) { skipped++; continue; }
+      // 번호 앞에 대출·반납이 붙어 있으면 그 표시가 우선
+      const tagged = splitTagged(row[cols.num], type).filter(x => x.type);
+      if (!name || !tagged.length) { skipped++; continue; }
       const at = cols.at >= 0 ? toDate(row[cols.at]) : null;
       const status = cols.status >= 0 ? statusOf(row[cols.status]) : '';
       const note = cols.note >= 0 ? String(row[cols.note] || '').trim() : '';
-      nums.forEach(num => out.push({ name, type, num: num.length > 4 ? num.slice(-4) : num, numRaw: num, status, at, note, src: file.name }));
+      tagged.forEach(x => { const num = x.num; out.push({ name, type: x.type, num: num.length > 4 ? num.slice(-4) : num, numRaw: num, status, at, note, src: file.name }); });
     }
     return { out, skipped, cols };
   }
